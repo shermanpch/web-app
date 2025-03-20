@@ -20,3 +20,11 @@ class IChingTextResponse(BaseModel):
     child_coord: str
     parent_text: Optional[str] = None
     child_text: Optional[str] = None
+
+
+class IChingImage(BaseModel):
+    """I Ching image model."""
+
+    parent_coord: str
+    child_coord: str
+    image_url: str

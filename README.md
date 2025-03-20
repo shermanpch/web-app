@@ -1,6 +1,6 @@
-# Web App Monorepo
+# Divination Web App Monorepo
 
-A monorepo project with a NextJS frontend and Python FastAPI backend.
+A monorepo project with a NextJS frontend and Python FastAPI backend for I Ching divination.
 
 ## Project Structure
 
@@ -34,6 +34,7 @@ web-app/
    ```
    cd apps/backend
    pip install -r requirements.txt
+   cp .env.example .env
    ```
 
 3. Start development servers:
@@ -51,7 +52,9 @@ docker-compose up
 ## Features
 
 - **Frontend**: NextJS, Tailwind CSS, TypeScript
-- **Backend**: Python FastAPI
+- **Backend**: Python FastAPI with Supabase integration
+- **Authentication**: User authentication and quota management
+- **Divination**: I Ching text and image generation
 - **CI/CD**: GitHub Actions
 - **Containerization**: Docker & Docker Compose
 

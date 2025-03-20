@@ -1,6 +1,13 @@
 # Backend Service
 
-A FastAPI backend service for the web-app project.
+A FastAPI backend service for the Divination web application.
+
+## Features
+
+- User authentication with Supabase
+- I Ching text divination
+- User quota management
+- Reading history
 
 ## Getting Started
 
@@ -13,6 +20,9 @@ A FastAPI backend service for the web-app project.
 ```bash
 # Install dependencies
 pip install -r requirements.txt
+
+# Copy environment variables and configure them
+cp .env.example .env
 ```
 
 ### Development
@@ -37,6 +47,26 @@ src/
 ├── api/                # API endpoints
 │   ├── endpoints/      # Route handlers
 │   └── router.py       # API router
+├── auth/               # Authentication logic
+│   ├── dependencies.py # Auth middleware
+│   └── supabase.py     # Supabase integration
+├── divination/         # Divination logic
+│   ├── iching.py       # I Ching divination
+│   └── quota.py        # User quota management
 ├── models/             # Data models
+│   ├── auth.py         # Auth models
+│   ├── divination.py   # Divination models
+│   ├── quota.py        # Quota models
+│   └── readings.py     # User reading models
 └── config.py           # Configuration
+```
+
+## Testing
+
+```bash
+# Run tests
+pytest
+
+# Run tests with coverage
+pytest --cov=src
 ```

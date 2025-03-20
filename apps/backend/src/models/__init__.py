@@ -1,4 +1,5 @@
-# Models package
+"""Models package for the Divination application."""
+
 from .auth import (
     PasswordChange,
     PasswordReset,
@@ -9,3 +10,4 @@ from .auth import (
 )
 from .divination import IChingTextRequest, IChingTextResponse
 from .quota import UserQuota
+from .readings import UserReading, UserReadingCreate, UserReadingUpdate

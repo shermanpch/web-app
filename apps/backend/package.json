@@ -8,6 +8,7 @@
     "test:auth": "pytest -xvs tests/api/test_auth.py",
     "test:divination": "pytest -xvs tests/api/test_divination.py",
     "test:quota": "pytest -xvs tests/api/test_quota.py",
+    "test:api_client": "pytest -xvs tests/api/test_api_client.py",
     "test:all": "pytest -xvs tests/",
     "test:watch": "ptw -- -xvs tests/"
   }
