@@ -1,0 +1,21 @@
+{
+  "name": "web-app",
+  "version": "0.0.1",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run --prefix apps/frontend dev & npm run --prefix apps/backend dev",
+    "build": "npm run --prefix apps/frontend build",
+    "start": "npm run --prefix apps/frontend start",
+    "lint": "npm run --prefix apps/frontend lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+} 
