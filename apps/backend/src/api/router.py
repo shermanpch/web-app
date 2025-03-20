@@ -1,3 +1,5 @@
+"""API router configuration for the application."""
+
 from fastapi import APIRouter
 
 from .endpoints import auth, divination, health

@@ -1,24 +1,89 @@
 """Divination API endpoints."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, HTTPException, status
 
-from ...auth.dependencies import get_current_user
-from ...divination.quota import get_user_quota
-from ...models.auth import UserData
+from ...divination.iching import get_iching_text_from_db
+from ...divination.quota import get_user_quota_from_db
+from ...models.divination import IChingTextRequest, IChingTextResponse
+from ...models.quota import UserQuota
 
 router = APIRouter(prefix="/divination", tags=["divination"])
 
 
-@router.get("/user-quota", response_model=dict)
-async def get_user_quota_info(current_user: UserData = Depends(get_current_user)):
+@router.get("/user-quota", response_model=UserQuota)
+async def get_user_quota(user_id: str, access_token: str, refresh_token: str):
     """
-    Get current user's quota information.
+    Get user quota information using access and refresh tokens.
+
+    This endpoint allows passing tokens directly instead of using the authorization header.
 
     Args:
-        current_user: Current authenticated user
+        user_id: ID of the user to get quota for
+        access_token: User's access token from login
+        refresh_token: User's refresh token from login
 
     Returns:
         User quota information
+
+    Raises:
+        HTTPException: If quota information cannot be retrieved
     """
-    quota = get_user_quota(current_user.id)
-    return quota
+    try:
+        # Get the user quota using the provided tokens
+        quota = get_user_quota_from_db(
+            user_id=user_id,
+            access_token=access_token,
+            refresh_token=refresh_token,
+        )
+        return quota
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        # Log error and return a generic error message
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve user quota: {str(e)}",
+        )
+
+
+@router.post("/iching-text", response_model=IChingTextResponse)
+async def get_iching_text(
+    request: IChingTextRequest, access_token: str, refresh_token: str
+):
+    """
+    Get I Ching text using a provided access token and refresh token.
+
+    This endpoint allows passing tokens directly instead of using the authorization header.
+
+    Args:
+        request: Request with parent and child coordinates
+        access_token: User's access token from login
+        refresh_token: User's refresh token from login
+
+    Returns:
+        I Ching text for the given coordinates
+
+    Raises:
+        HTTPException: If text cannot be retrieved
+    """
+    try:
+        # Get the I Ching text using the provided tokens
+        result = get_iching_text_from_db(
+            request.parent_coord,
+            request.child_coord,
+            access_token=access_token,
+            refresh_token=refresh_token,  # Pass the refresh token
+        )
+
+        return result
+
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        # Log error and return a generic error message
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve I Ching text: {str(e)}",
+        )

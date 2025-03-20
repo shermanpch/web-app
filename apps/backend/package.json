@@ -6,6 +6,9 @@
     "dev": "python main.py",
     "start": "python main.py",
     "test:auth": "pytest -xvs tests/api/test_auth.py",
+    "test:divination": "pytest -xvs tests/api/test_divination.py",
+    "test:quota": "pytest -xvs tests/api/test_quota.py",
+    "test:all": "pytest -xvs tests/",
     "test:watch": "ptw -- -xvs tests/"
   }
 } 

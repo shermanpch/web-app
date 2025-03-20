@@ -1,3 +1,5 @@
+"""Configuration settings for the application."""
+
 import os
 from typing import List
 

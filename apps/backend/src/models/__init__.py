@@ -7,4 +7,5 @@ from .auth import (
     UserLogin,
     UserSignup,
 )
-from .divination import UserQuota
+from .divination import IChingTextRequest, IChingTextResponse
+from .quota import UserQuota

@@ -23,6 +23,23 @@ def get_supabase_client() -> Client:
     return create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
 
 
+def get_authenticated_client(access_token: str, refresh_token: str) -> Client:
+    """
+    Create a Supabase client using an existing user token.
+
+    Args:
+        access_token: User's access token from login
+        refresh_token: User's refresh token from login
+
+    Returns:
+        Authenticated Supabase client instance
+    """
+    logger.debug(f"Creating authenticated Supabase client...")
+    client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+    client.auth.set_session(access_token, refresh_token)  # Attach tokens to client
+    return client
+
+
 def get_supabase_admin_client() -> Client:
     """
     Create and return a Supabase client with admin privileges.
@@ -216,23 +233,4 @@ def delete_user(user_id: str) -> dict:
         return {"success": True, "message": f"User {user_id} deleted successfully"}
     except Exception as e:
         logger.error(f"Failed to delete user {user_id}: {str(e)}")
-        raise e
-
-
-def get_supabase_jwks() -> Dict[str, Any]:
-    """
-    Fetch the Supabase JWKS (JSON Web Key Set) for JWT verification.
-
-    Returns:
-        JWKS response as a dictionary
-    """
-    try:
-        url = _get_supabase_auth_url("jwks")
-        # Include the API key in headers for authorization
-        headers = {"apikey": settings.SUPABASE_KEY}
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        return response.json()
-    except Exception as e:
-        logger.error(f"Failed to fetch JWKS: {str(e)}")
         raise e
