@@ -1,7 +1,8 @@
 import os
 from typing import List
 
-from pydantic import BaseSettings
+from pydantic import ConfigDict
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -18,12 +19,16 @@ class Settings(BaseSettings):
         "http://localhost:8000",  # Backend local dev
     ]
 
-    # Database
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./app.db")
+    # Supabase
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
+    SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "")
+    SUPABASE_JWT_SECRET: str = os.getenv("SUPABASE_JWT_SECRET", "")
+    SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    # Testing
+    TEST_EMAIL: str = os.getenv("TEST_EMAIL", "test@example.com")
+
+    model_config = ConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 
 settings = Settings()

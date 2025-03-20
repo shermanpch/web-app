@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "python main.py",
-    "start": "python main.py"
+    "start": "python main.py",
+    "test:auth": "pytest -xvs tests/api/test_auth.py",
+    "test:watch": "ptw -- -xvs tests/"
   }
 } 

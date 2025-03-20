@@ -6,12 +6,8 @@ build-backend = "setuptools.build_meta"
 name = "backend"
 version = "0.1.0"
 description = "Backend for web-app"
-requires-python = ">=3.10"
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-]
+requires-python = ">=3.9"
+classifiers = ["Programming Language :: Python :: 3", "License :: OSI Approved :: MIT License", "Operating System :: OS Independent"]
 
 [tool.black]
 line-length = 88
@@ -19,5 +15,8 @@ line-length = 88
 [tool.isort]
 profile = "black"
 
-[tool.pytest]
-testpaths = ["tests"] 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

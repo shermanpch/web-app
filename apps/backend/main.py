@@ -1,5 +1,13 @@
+import os
+import sys
+
+# Add the parent directory to Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from src.api.router import router as api_router
+from src.config import settings
 
 app = FastAPI(
     title="Web App API",
@@ -10,32 +18,20 @@ app = FastAPI(
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Frontend URL
+    allow_origins=settings.CORS_ORIGINS,  # Frontend URLs
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
-@app.get("/api/health")
-async def health_check():
-    """Health check endpoint."""
-    return {"status": "ok", "message": "Backend is running"}
+# Include API router
+app.include_router(api_router)
 
 
-@app.get("/api/test")
-async def test_endpoint():
-    """Test endpoint."""
-    return {
-        "message": "Hello from the backend!",
-        "data": {
-            "items": [
-                {"id": 1, "name": "Item 1"},
-                {"id": 2, "name": "Item 2"},
-                {"id": 3, "name": "Item 3"},
-            ]
-        },
-    }
+@app.get("/")
+async def root():
+    """Root endpoint."""
+    return {"message": "Welcome to the Divination Web App API"}
 
 
 if __name__ == "__main__":
@@ -43,7 +39,7 @@ if __name__ == "__main__":
 
     uvicorn.run(
         "main:app",
-        host="0.0.0.0",  # Listen on all available interfaces
-        port=8000,
-        reload=True,  # Enable auto-reload for development
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=True,
     )
