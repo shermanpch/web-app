@@ -1,7 +1,9 @@
 """Supabase client utilities."""
 
 import logging
+from typing import Any, Dict
 
+import requests
 from supabase import Client, create_client
 
 from ..config import settings
@@ -21,9 +23,56 @@ def get_supabase_client() -> Client:
     return create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
 
 
+def get_supabase_admin_client() -> Client:
+    """
+    Create and return a Supabase client with admin privileges.
+
+    Returns:
+        Supabase client instance with admin privileges
+    """
+    logger.debug(
+        f"Creating Supabase admin client with URL: {settings.SUPABASE_URL[:20]}..."
+    )
+    return create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
+
+
+def _get_supabase_auth_url(endpoint: str) -> str:
+    """
+    Generate a Supabase Auth URL for the given endpoint.
+
+    Args:
+        endpoint: The auth endpoint path
+
+    Returns:
+        Full Supabase Auth URL
+    """
+    return f"{settings.SUPABASE_URL}/auth/v1/{endpoint}"
+
+
+def _get_auth_headers(token: str = None) -> Dict[str, str]:
+    """
+    Generate headers for Supabase Auth API requests.
+
+    Args:
+        token: Optional auth token for authenticated requests
+
+    Returns:
+        Headers dictionary
+    """
+    headers = {
+        "Content-Type": "application/json",
+        "apikey": settings.SUPABASE_KEY,
+    }
+
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    return headers
+
+
 def signup_user(email: str, password: str) -> dict:
     """
-    Register a new user.
+    Register a new user using Supabase REST API.
 
     Args:
         email: User email
@@ -32,12 +81,16 @@ def signup_user(email: str, password: str) -> dict:
     Returns:
         User registration response
     """
-    client = get_supabase_client()
     logger.info(f"Signing up user: {email}")
     try:
-        response = client.auth.sign_up({"email": email, "password": password})
+        url = _get_supabase_auth_url("signup")
+        payload = {"email": email, "password": password}
+
+        response = requests.post(url, json=payload, headers=_get_auth_headers())
+        response.raise_for_status()
+
         logger.info(f"Signup successful for: {email}")
-        return response
+        return response.json()
     except Exception as e:
         logger.error(f"Signup error for {email}: {str(e)}")
         # Check if this is a database error related to user_quotas
@@ -57,7 +110,7 @@ def signup_user(email: str, password: str) -> dict:
 
 def login_user(email: str, password: str) -> dict:
     """
-    Login a user.
+    Login a user using Supabase REST API.
 
     Args:
         email: User email
@@ -66,14 +119,16 @@ def login_user(email: str, password: str) -> dict:
     Returns:
         User login response
     """
-    client = get_supabase_client()
     logger.info(f"Logging in user: {email}")
     try:
-        response = client.auth.sign_in_with_password(
-            {"email": email, "password": password}
-        )
+        url = _get_supabase_auth_url("token?grant_type=password")
+        payload = {"email": email, "password": password}
+
+        response = requests.post(url, json=payload, headers=_get_auth_headers())
+        response.raise_for_status()
+
         logger.info(f"Login successful for: {email}")
-        return response
+        return response.json()
     except Exception as e:
         logger.error(f"Login error for {email}: {str(e)}")
         raise e
@@ -81,7 +136,7 @@ def login_user(email: str, password: str) -> dict:
 
 def reset_password(email: str) -> dict:
     """
-    Send password reset email.
+    Send password reset email using Supabase REST API.
 
     Args:
         email: User email
@@ -89,12 +144,16 @@ def reset_password(email: str) -> dict:
     Returns:
         Password reset response
     """
-    client = get_supabase_client()
     logger.info(f"Requesting password reset for: {email}")
     try:
-        response = client.auth.reset_password_for_email(email)
+        url = _get_supabase_auth_url("recover")
+        payload = {"email": email}
+
+        response = requests.post(url, json=payload, headers=_get_auth_headers())
+        response.raise_for_status()
+
         logger.info(f"Password reset email sent to: {email}")
-        return response
+        return {"success": True}
     except Exception as e:
         logger.error(f"Password reset error for {email}: {str(e)}")
         raise e
@@ -102,7 +161,7 @@ def reset_password(email: str) -> dict:
 
 def change_password(new_password: str, access_token: str, refresh_token: str) -> dict:
     """
-    Change user password.
+    Change user password using Supabase REST API.
 
     Args:
         new_password: New password
@@ -112,17 +171,19 @@ def change_password(new_password: str, access_token: str, refresh_token: str) ->
     Returns:
         Password change response
     """
-    client = get_supabase_client()
     logger.info("Attempting to change password")
     try:
-        logger.debug(f"Setting session with token: {access_token[:10]}...")
-        # Set the session with both tokens
-        client.auth.set_session(access_token, refresh_token)
+        url = _get_supabase_auth_url("user")
+        payload = {"password": new_password}
 
-        # Update the password
-        response = client.auth.update_user({"password": new_password})
+        # Use the access token for authentication
+        headers = _get_auth_headers(access_token)
+
+        response = requests.put(url, json=payload, headers=headers)
+        response.raise_for_status()
+
         logger.info("Password updated successfully")
-        return response
+        return response.json()
     except Exception as e:
         logger.error(f"Password change error: {str(e)}")
         raise e
@@ -145,9 +206,7 @@ def delete_user(user_id: str) -> dict:
     """
     # Create a special client with service role key for admin operations
     logger.info(f"Creating admin client with service role key for user deletion")
-    admin_client = create_client(
-        settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY
-    )
+    admin_client = get_supabase_admin_client()
 
     logger.info(f"Attempting to delete user with ID: {user_id}")
     try:
@@ -157,4 +216,23 @@ def delete_user(user_id: str) -> dict:
         return {"success": True, "message": f"User {user_id} deleted successfully"}
     except Exception as e:
         logger.error(f"Failed to delete user {user_id}: {str(e)}")
+        raise e
+
+
+def get_supabase_jwks() -> Dict[str, Any]:
+    """
+    Fetch the Supabase JWKS (JSON Web Key Set) for JWT verification.
+
+    Returns:
+        JWKS response as a dictionary
+    """
+    try:
+        url = _get_supabase_auth_url("jwks")
+        # Include the API key in headers for authorization
+        headers = {"apikey": settings.SUPABASE_KEY}
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        logger.error(f"Failed to fetch JWKS: {str(e)}")
         raise e

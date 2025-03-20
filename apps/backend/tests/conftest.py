@@ -67,7 +67,10 @@ def auth_headers(client, test_user):
 
     user_id = None
     if signup_response.status_code == 200:
-        user_id = signup_response.json()["data"]["user"]["id"]
+        # Extract user ID safely using get() with defaults
+        user_data = signup_response.json().get("data", {})
+        user = user_data.get("user", {})
+        user_id = user.get("id")
         logger.info(f"Created test user with ID: {user_id}")
     else:
         logger.error(f"Signup failed: {signup_response.json()}")
@@ -78,10 +81,12 @@ def auth_headers(client, test_user):
     if login_response.status_code != 200:
         logger.error(f"Login failed: {login_response.json()}")
 
+    # Extract token safely using get() with defaults
     data = login_response.json()
+    login_data = data.get("data", {})
+    session = login_data.get("session", {})
+    token = session.get("access_token", "")
 
-    # Extract the token
-    token = data["data"]["session"]["access_token"]
     logger.info(f"Got token: {token[:10]}...")
 
     # Return headers with the token

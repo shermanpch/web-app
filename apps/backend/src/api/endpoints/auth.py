@@ -66,7 +66,14 @@ async def register_user(user: UserSignup):
     """
     try:
         response = signup_user(user.email, user.password)
-        return {"status": "success", "data": response}
+        # Return the user and session data directly from the Supabase response
+        return {
+            "status": "success",
+            "data": {
+                "user": response.get("user", {}),
+                "session": response.get("session", None),
+            },
+        }
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -87,7 +94,19 @@ async def login(user: UserLogin):
     """
     try:
         response = login_user(user.email, user.password)
-        return {"status": "success", "data": response}
+        # Format response to match the expected structure
+        return {
+            "status": "success",
+            "data": {
+                "user": response.get("user", {}),
+                "session": {
+                    "access_token": response.get("access_token", ""),
+                    "refresh_token": response.get("refresh_token", ""),
+                    "expires_in": response.get("expires_in", 3600),
+                    "token_type": response.get("token_type", "bearer"),
+                },
+            },
+        }
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -107,7 +126,7 @@ async def request_password_reset(data: PasswordReset):
         Password reset response
     """
     try:
-        response = reset_password(data.email)
+        reset_password(data.email)
         return {"status": "success", "message": "Password reset email sent"}
     except Exception as e:
         raise HTTPException(
@@ -128,7 +147,7 @@ async def update_password(data: PasswordChange):
         Password change response
     """
     try:
-        response = change_password(
+        change_password(
             data.password,
             data.access_token,
             data.refresh_token,
@@ -166,7 +185,7 @@ async def remove_user(user_id: str, current_user: UserData = Depends(get_current
             detail="You can only delete your own account",
         )
     try:
-        result = delete_user(user_id)
+        delete_user(user_id)
         return {"status": "success", "message": "User deleted successfully"}
     except Exception as e:
         raise HTTPException(

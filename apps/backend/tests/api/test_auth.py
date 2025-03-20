@@ -32,19 +32,26 @@ class TestAuthentication:
             response = client.post("/api/auth/signup", json=test_user)
 
             if response.status_code == 200:
-                user_id = response.json()["data"]["user"]["id"]
+                # Extract user ID from the response
+                user_data = response.json().get("data", {})
+                user = user_data.get("user", {})
+                user_id = user.get("id")
                 logger.info(f"Created test user with ID: {user_id}")
 
             assert response.status_code == status.HTTP_200_OK
             assert response.json()["status"] == "success"
             assert "data" in response.json()
+            assert "user" in response.json()["data"]
         finally:
             # Clean up the test user
             if user_id:
                 # Get login token for deletion
                 login_response = client.post("/api/auth/login", json=test_user)
                 if login_response.status_code == 200:
-                    token = login_response.json()["data"]["session"]["access_token"]
+                    # Extract access token
+                    login_data = login_response.json().get("data", {})
+                    session = login_data.get("session", {})
+                    token = session.get("access_token")
                     self._cleanup_test_user(client, user_id, token)
 
     def test_login(self, client, test_user):
@@ -54,7 +61,10 @@ class TestAuthentication:
             # First sign up the user
             signup_response = client.post("/api/auth/signup", json=test_user)
             if signup_response.status_code == 200:
-                user_id = signup_response.json()["data"]["user"]["id"]
+                # Extract user ID
+                user_data = signup_response.json().get("data", {})
+                user = user_data.get("user", {})
+                user_id = user.get("id")
                 logger.info(f"Created test user with ID: {user_id}")
 
             # Then try to log in
@@ -68,7 +78,10 @@ class TestAuthentication:
         finally:
             # Clean up the test user
             if user_id and response.status_code == 200:
-                token = response.json()["data"]["session"]["access_token"]
+                # Extract access token
+                login_data = response.json().get("data", {})
+                session = login_data.get("session", {})
+                token = session.get("access_token")
                 self._cleanup_test_user(client, user_id, token)
 
     def test_get_current_user(self, client, auth_headers):
@@ -113,7 +126,10 @@ class TestAuthentication:
             # First sign up the user
             signup_response = client.post("/api/auth/signup", json=reset_password_user)
             if signup_response.status_code == 200:
-                user_id = signup_response.json()["data"]["user"]["id"]
+                # Extract user ID
+                user_data = signup_response.json().get("data", {})
+                user = user_data.get("user", {})
+                user_id = user.get("id")
                 logger.info(f"Created test user with ID: {user_id}")
 
             # Then request password reset
@@ -132,7 +148,10 @@ class TestAuthentication:
                     "/api/auth/login", json=reset_password_user
                 )
                 if login_response.status_code == 200:
-                    token = login_response.json()["data"]["session"]["access_token"]
+                    # Extract access token
+                    login_data = login_response.json().get("data", {})
+                    session = login_data.get("session", {})
+                    token = session.get("access_token")
                     self._cleanup_test_user(client, user_id, token)
 
     def test_password_change_flow(self, client, test_user):
@@ -143,7 +162,10 @@ class TestAuthentication:
             # Create user and get token
             signup_response = client.post("/api/auth/signup", json=test_user)
             if signup_response.status_code == 200:
-                user_id = signup_response.json()["data"]["user"]["id"]
+                # Extract user ID
+                user_data = signup_response.json().get("data", {})
+                user = user_data.get("user", {})
+                user_id = user.get("id")
                 logger.info(f"Created test user with ID: {user_id}")
 
             login_response = client.post("/api/auth/login", json=test_user)
@@ -151,11 +173,13 @@ class TestAuthentication:
                 logger.error(f"Login for password change failed: {login_response.text}")
 
             data = login_response.json()
-            token = data["data"]["session"]["access_token"]
+            # Extract access token
+            session = data.get("data", {}).get("session", {})
+            token = session.get("access_token")
 
             # Try to get refresh token
             try:
-                refresh_token = data["data"]["session"].get("refresh_token")
+                refresh_token = session.get("refresh_token")
                 if not refresh_token:
                     pytest.skip(
                         "No refresh token found in response - test cannot continue"
@@ -183,10 +207,13 @@ class TestAuthentication:
             new_login_response = client.post("/api/auth/login", json=new_credentials)
 
             assert new_login_response.status_code == status.HTTP_200_OK
+            assert "data" in new_login_response.json()
+            assert "session" in new_login_response.json()["data"]
             assert "access_token" in new_login_response.json()["data"]["session"]
 
             # Get new token for cleanup
-            token = new_login_response.json()["data"]["session"]["access_token"]
+            new_session = new_login_response.json().get("data", {}).get("session", {})
+            token = new_session.get("access_token")
         finally:
             # Clean up the test user
             self._cleanup_test_user(client, user_id, token)
@@ -216,8 +243,9 @@ class TestAuthentication:
         ), f"Failed to create user: {signup_response.text}"
 
         # Get user ID from response
-        user_data = signup_response.json()
-        user_id = user_data["data"]["user"]["id"]
+        user_data = signup_response.json().get("data", {})
+        user = user_data.get("user", {})
+        user_id = user.get("id")
         logger.info(f"Created test user with ID: {user_id}")
 
         # Login to get the token
@@ -227,8 +255,9 @@ class TestAuthentication:
         ), f"Failed to login: {login_response.text}"
 
         # Get token
-        token_data = login_response.json()
-        access_token = token_data["data"]["session"]["access_token"]
+        login_data = login_response.json().get("data", {})
+        session = login_data.get("session", {})
+        access_token = session.get("access_token")
 
         # Delete the user
         headers = {"Authorization": f"Bearer {access_token}"}
