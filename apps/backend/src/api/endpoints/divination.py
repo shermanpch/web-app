@@ -1,13 +1,18 @@
 """Divination API endpoints."""
 
+import logging
+
 from fastapi import APIRouter, HTTPException, status
 
+from ...auth.supabase import get_authenticated_client
 from ...divination.iching import get_iching_image_from_bucket, get_iching_text_from_db
 from ...divination.quota import get_user_quota_from_db
 from ...models.divination import IChingImage, IChingTextRequest, IChingTextResponse
 from ...models.quota import UserQuota
 
 router = APIRouter(prefix="/divination", tags=["divination"])
+
+logger = logging.getLogger(__name__)
 
 
 @router.get("/user-quota", response_model=UserQuota)
@@ -117,20 +122,36 @@ async def get_iching_image(
     """
     try:
         # Get the I Ching image using the provided tokens
-        iching_image = get_iching_image_from_bucket(
-            parent_coord,
-            child_coord,
-            access_token=access_token,
-            refresh_token=refresh_token,
+        logger.info(
+            f"API: Getting image for parent: {parent_coord}, child: {child_coord}"
         )
+        logger.debug(f"Using access token starting with: {access_token[:10]}...")
+        logger.debug(f"Using refresh token starting with: {refresh_token[:10]}...")
 
-        return iching_image
+        try:
+            iching_image = get_iching_image_from_bucket(
+                parent_coord,
+                child_coord,
+                access_token=access_token,
+                refresh_token=refresh_token,
+            )
+
+            logger.info(
+                f"API: Successfully retrieved image URL: {iching_image.image_url}"
+            )
+            return iching_image
+
+        except Exception as e:
+            logger.error(f"Detailed error in get_iching_image_from_bucket: {str(e)}")
+            # Re-raise with more details
+            raise Exception(f"Failed to get image from bucket: {str(e)}")
 
     except HTTPException:
         # Re-raise HTTP exceptions
         raise
     except Exception as e:
         # Log error and return a generic error message
+        logger.error(f"API error getting I Ching image: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve I Ching image: {str(e)}",

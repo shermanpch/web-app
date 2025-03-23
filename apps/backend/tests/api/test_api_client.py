@@ -6,53 +6,28 @@ import os
 import pytest
 from src.clients.api_client import IChingAPIClient
 from src.models.divination import IChingImage, IChingTextRequest
+from tests.api.base_test import BaseTest
 
-# Get the logger
-logger = logging.getLogger("api_client_tests")
+# Get the logger with hierarchical naming
+logger = logging.getLogger("tests.api.api_client")
 
 
-class TestIChingAPIClientIntegration:
+class TestIChingAPIClientIntegration(BaseTest):
     """Integration test suite for the IChingAPIClient."""
-
-    def _cleanup_test_user(self, client, user_id, token):
-        """Helper method to clean up test user."""
-        if user_id and token:
-            headers = {"Authorization": f"Bearer {token}"}
-            delete_response = client.delete(
-                f"/api/auth/users/{user_id}", headers=headers
-            )
-            logger.info(
-                f"Cleanup: Deleted user {user_id}, status: {delete_response.status_code}"
-            )
-            return delete_response
-        return None
 
     @pytest.mark.integration
     @pytest.mark.asyncio
-    async def test_get_iching_text_integration(self, client, test_user, auth_headers):
+    async def test_get_iching_text_integration(self, client, auth_tokens, user_cleanup):
         """Integration test for fetching I Ching text using the API client."""
-        # Extract bearer token from auth_headers
-        auth_token = auth_headers["Authorization"].replace("Bearer ", "")
-        logger.info(f"Using auth token: {auth_token[:10]}...")
+        # ARRANGE
+        self.logger.info("Testing API client get_iching_text integration")
 
-        # Get user ID for cleanup
-        user_response = client.get("/api/auth/me", headers=auth_headers)
-        user_id = (
-            user_response.json().get("id") if user_response.status_code == 200 else None
-        )
+        # Extract tokens and user ID
+        auth_token = auth_tokens["access_token"]
+        refresh_token = auth_tokens["refresh_token"]
+        user_id = auth_tokens["user_id"]
 
         try:
-            # Get a refresh token - do a login
-            login_response = client.post("/api/auth/login", json=test_user)
-            assert (
-                login_response.status_code == 200
-            ), f"Login failed: {login_response.text}"
-
-            # Extract refresh token
-            login_data = login_response.json()
-            refresh_token = login_data["data"]["session"]["refresh_token"]
-            logger.info(f"Using refresh token: {refresh_token[:10]}...")
-
             # Determine the base URL for the API
             base_url = os.environ.get("API_BASE_URL", "http://localhost:8000")
             # For the TestClient, we use an empty string as base_url
@@ -76,58 +51,58 @@ class TestIChingAPIClientIntegration:
                 child_coord=test_child_coord,
             )
 
-            # Test fetching I Ching text with a real API call
+            # ACT - Test fetching I Ching text with a real API call
             result = await api_client.get_iching_text(request)
 
+            # ASSERT
             # Verify the result structure
-            assert hasattr(result, "parent_coord")
-            assert hasattr(result, "child_coord")
-            assert hasattr(result, "parent_text")
-            assert hasattr(result, "child_text")
+            assert hasattr(
+                result, "parent_coord"
+            ), "Result missing parent_coord attribute"
+            assert hasattr(
+                result, "child_coord"
+            ), "Result missing child_coord attribute"
+            assert hasattr(
+                result, "parent_text"
+            ), "Result missing parent_text attribute"
+            assert hasattr(result, "child_text"), "Result missing child_text attribute"
 
             # Verify the coordinates match what we requested
-            assert result.parent_coord == test_parent_coord
-            assert result.child_coord == test_child_coord
+            assert (
+                result.parent_coord == test_parent_coord
+            ), f"Expected parent_coord {test_parent_coord}, got {result.parent_coord}"
+            assert (
+                result.child_coord == test_child_coord
+            ), f"Expected child_coord {test_child_coord}, got {result.child_coord}"
 
             # Log portions of the parent and child text
-            logger.info(f"Parent text excerpt: {result.parent_text[:100]}...")
-            logger.info(f"Child text excerpt: {result.child_text[:100]}...")
+            self.logger.info(f"Parent text excerpt: {result.parent_text[:100]}...")
+            self.logger.info(f"Child text excerpt: {result.child_text[:100]}...")
 
-            logger.info(
+            self.logger.info(
                 "API client get_iching_text integration test passed successfully!"
             )
 
         finally:
             # Clean up the test user
             if user_id:
-                self._cleanup_test_user(client, user_id, auth_token)
+                user_cleanup(client, user_id, auth_token)
 
     @pytest.mark.integration
     @pytest.mark.asyncio
-    async def test_get_iching_image_integration(self, client, test_user, auth_headers):
+    async def test_get_iching_image_integration(
+        self, client, auth_tokens, user_cleanup
+    ):
         """Integration test for fetching I Ching image using the API client."""
-        # Extract bearer token from auth_headers
-        auth_token = auth_headers["Authorization"].replace("Bearer ", "")
-        logger.info(f"Using auth token: {auth_token[:10]}...")
+        # ARRANGE
+        self.logger.info("Testing API client get_iching_image integration")
 
-        # Get user ID for cleanup
-        user_response = client.get("/api/auth/me", headers=auth_headers)
-        user_id = (
-            user_response.json().get("id") if user_response.status_code == 200 else None
-        )
+        # Extract tokens and user ID
+        auth_token = auth_tokens["access_token"]
+        refresh_token = auth_tokens["refresh_token"]
+        user_id = auth_tokens["user_id"]
 
         try:
-            # Get a refresh token - do a login
-            login_response = client.post("/api/auth/login", json=test_user)
-            assert (
-                login_response.status_code == 200
-            ), f"Login failed: {login_response.text}"
-
-            # Extract refresh token
-            login_data = login_response.json()
-            refresh_token = login_data["data"]["session"]["refresh_token"]
-            logger.info(f"Using refresh token: {refresh_token[:10]}...")
-
             # Determine the base URL for the API
             base_url = os.environ.get("API_BASE_URL", "http://localhost:8000")
             # For the TestClient, we use an empty string as base_url
@@ -145,41 +120,39 @@ class TestIChingAPIClientIntegration:
             test_parent_coord = "1-1"
             test_child_coord = "2"
 
-            # Test fetching I Ching image with a real API call
+            # ACT - Test fetching I Ching image with a real API call
             result = await api_client.get_iching_image(
-                test_parent_coord, test_child_coord
+                test_parent_coord,
+                test_child_coord,
             )
 
+            # ASSERT
             # Verify the result structure
-            assert isinstance(result, IChingImage)
-            assert hasattr(result, "parent_coord")
-            assert hasattr(result, "child_coord")
-            assert hasattr(result, "image_url")
+            assert isinstance(
+                result, IChingImage
+            ), "Result should be an IChingImage instance"
 
             # Verify the coordinates match what we requested
-            assert result.parent_coord == test_parent_coord
-            assert result.child_coord == test_child_coord
-
-            # Verify the image URL is valid
-            assert isinstance(result.image_url, str)
-            assert result.image_url.startswith("http")
-
-            # Verify the URL contains expected path components
             assert (
-                test_parent_coord in result.image_url
-                or test_parent_coord.replace("-", "/") in result.image_url
+                result.parent_coord == test_parent_coord
+            ), f"Expected parent_coord {test_parent_coord}, got {result.parent_coord}"
+            assert (
+                result.child_coord == test_child_coord
+            ), f"Expected child_coord {test_child_coord}, got {result.child_coord}"
+
+            # Verify the image URL is accessible using the standardized helper method
+            await self._verify_image_url_accessibility(result.image_url)
+
+            # Verify the image URL structure using the standardized helper method
+            self._verify_image_url_structure(
+                result.image_url, test_parent_coord, test_child_coord
             )
-            assert test_child_coord in result.image_url
-            assert "hexagram.jpg" in result.image_url
 
-            # Log the complete image URL
-            logger.info(f"Retrieved image URL: {result.image_url}")
-
-            logger.info(
+            self.logger.info(
                 "API client get_iching_image integration test passed successfully!"
             )
 
         finally:
             # Clean up the test user
             if user_id:
-                self._cleanup_test_user(client, user_id, auth_token)
+                user_cleanup(client, user_id, auth_token)

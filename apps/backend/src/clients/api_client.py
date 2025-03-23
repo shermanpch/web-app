@@ -79,10 +79,8 @@ class IChingAPIClient:
                 },
             )
             response.raise_for_status()
-            image_url = response.json()
-            return IChingImage(
-                parent_coord=parent_coord, child_coord=child_coord, image_url=image_url
-            )
+            data = response.json()
+            return IChingImage(**data)
 
     async def create_reading(self, reading, prediction: Optional[dict] = None):
         """

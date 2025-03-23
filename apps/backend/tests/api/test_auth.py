@@ -4,269 +4,225 @@ import logging
 
 import pytest
 from fastapi import status
+from tests.api.base_test import BaseTest
+from tests.conftest import assert_has_fields, assert_successful_response
 
-# Get the logger
-logger = logging.getLogger("auth_tests")
+# Get the logger with hierarchical naming
+logger = logging.getLogger("tests.api.auth")
 
 
-class TestAuthentication:
+class TestAuthentication(BaseTest):
     """Test suite for authentication endpoints."""
 
-    def _cleanup_test_user(self, client, user_id, token):
-        """Helper method to clean up test user."""
-        if user_id and token:
-            headers = {"Authorization": f"Bearer {token}"}
-            delete_response = client.delete(
-                f"/api/auth/users/{user_id}", headers=headers
-            )
-            logger.info(
-                f"Cleanup: Deleted user {user_id}, status: {delete_response.status_code}"
-            )
-            return delete_response
-        return None
-
-    def test_signup(self, client, test_user):
+    def test_signup(self, client, test_user, user_cleanup):
         """Test user signup."""
-        user_id = None
-        try:
-            response = client.post("/api/auth/signup", json=test_user)
+        # ARRANGE
+        self.logger.info("Testing user signup")
 
-            if response.status_code == 200:
-                # Extract user ID from the response
-                user_data = response.json().get("data", {})
-                user = user_data.get("user", {})
-                user_id = user.get("id")
-                logger.info(f"Created test user with ID: {user_id}")
+        # ACT
+        response = client.post("/api/auth/signup", json=test_user)
 
-            assert response.status_code == status.HTTP_200_OK
-            assert response.json()["status"] == "success"
-            assert "data" in response.json()
-            assert "user" in response.json()["data"]
-        finally:
-            # Clean up the test user
-            if user_id:
-                # Get login token for deletion
-                login_response = client.post("/api/auth/login", json=test_user)
-                if login_response.status_code == 200:
-                    # Extract access token
-                    login_data = login_response.json().get("data", {})
-                    session = login_data.get("session", {})
-                    token = session.get("access_token")
-                    self._cleanup_test_user(client, user_id, token)
+        # ASSERT
+        data = assert_successful_response(response)
+        assert_has_fields(data, ["data"])
+        assert_has_fields(data["data"], ["user"])
 
-    def test_login(self, client, test_user):
+        # Get user_id for cleanup
+        user_data = self._extract_user_data(response)
+        user_id = user_data.get("id")
+
+        # CLEANUP - Get token for deletion
+        if user_id:
+            login_response = client.post("/api/auth/login", json=test_user)
+            if login_response.status_code == 200:
+                tokens = self._extract_tokens(login_response)
+                user_cleanup(client, user_id, tokens["access_token"])
+
+    def test_login(self, client, test_user, user_cleanup):
         """Test user login."""
-        user_id = None
-        try:
-            # First sign up the user
-            signup_response = client.post("/api/auth/signup", json=test_user)
-            if signup_response.status_code == 200:
-                # Extract user ID
-                user_data = signup_response.json().get("data", {})
-                user = user_data.get("user", {})
-                user_id = user.get("id")
-                logger.info(f"Created test user with ID: {user_id}")
+        # ARRANGE
+        self.logger.info("Testing user login")
 
-            # Then try to log in
-            response = client.post("/api/auth/login", json=test_user)
+        # First sign up the user
+        signup_response = client.post("/api/auth/signup", json=test_user)
+        user_data = self._extract_user_data(signup_response)
+        user_id = user_data.get("id")
 
-            assert response.status_code == status.HTTP_200_OK
-            assert response.json()["status"] == "success"
-            assert "data" in response.json()
-            assert "session" in response.json()["data"]
-            assert "access_token" in response.json()["data"]["session"]
-        finally:
-            # Clean up the test user
-            if user_id and response.status_code == 200:
-                # Extract access token
-                login_data = response.json().get("data", {})
-                session = login_data.get("session", {})
-                token = session.get("access_token")
-                self._cleanup_test_user(client, user_id, token)
+        # ACT
+        response = client.post("/api/auth/login", json=test_user)
 
-    def test_get_current_user(self, client, auth_headers):
+        # ASSERT
+        data = assert_successful_response(response)
+        assert_has_fields(data, ["data"])
+        assert_has_fields(data["data"], ["session"])
+        assert_has_fields(data["data"]["session"], ["access_token", "refresh_token"])
+
+        # CLEANUP
+        if user_id:
+            tokens = self._extract_tokens(response)
+            user_cleanup(client, user_id, tokens["access_token"])
+
+    def test_get_current_user(self, client, auth_headers, user_cleanup):
         """Test getting current user info."""
+        # ARRANGE
+        self.logger.info("Testing get current user")
+
+        # ACT
         response = client.get("/api/auth/me", headers=auth_headers)
 
+        # ASSERT
         assert response.status_code == status.HTTP_200_OK
-        assert "id" in response.json()
-        assert "email" in response.json()
+        user_data = response.json()
+        assert_has_fields(user_data, ["id", "email"])
 
-        # Clean up the user after test
-        user_id = response.json()["id"]
-        self._cleanup_test_user(
-            client, user_id, auth_headers.get("Authorization").split(" ")[1]
-        )
+        # CLEANUP
+        user_id = user_data["id"]
+        auth_token = self._extract_auth_token(auth_headers)
+        user_cleanup(client, user_id, auth_token)
 
-    def test_refresh_token(self, client, auth_headers):
+    def test_refresh_token(self, client, auth_headers, user_cleanup):
         """Test refreshing token."""
-        # First get the user ID for cleanup
-        user_response = client.get("/api/auth/me", headers=auth_headers)
-        user_id = (
-            user_response.json()["id"] if user_response.status_code == 200 else None
+        # ARRANGE
+        self.logger.info("Testing token refresh")
+        user_id = self._get_user_id(client, auth_headers)
+
+        # ACT
+        response = client.post("/api/auth/refresh", headers=auth_headers)
+
+        # ASSERT
+        data = assert_successful_response(response)
+        assert data["message"] == "Token is valid"
+
+        # CLEANUP
+        auth_token = self._extract_auth_token(auth_headers)
+        user_cleanup(client, user_id, auth_token)
+
+    def test_reset_password(self, client, reset_password_user, user_cleanup):
+        """Test password reset request using specific email."""
+        # ARRANGE
+        self.logger.info("Testing password reset")
+
+        # Sign up the user
+        signup_response = client.post("/api/auth/signup", json=reset_password_user)
+        user_data = self._extract_user_data(signup_response)
+        user_id = user_data.get("id")
+
+        # ACT
+        response = client.post(
+            "/api/auth/reset-password", json={"email": reset_password_user["email"]}
         )
 
-        try:
-            response = client.post("/api/auth/refresh", headers=auth_headers)
+        # ASSERT
+        data = assert_successful_response(response)
+        assert "message" in data
 
-            assert response.status_code == status.HTTP_200_OK
-            assert response.json()["status"] == "success"
-            assert response.json()["message"] == "Token is valid"
-        finally:
-            # Clean up the user
-            if user_id:
-                self._cleanup_test_user(
-                    client, user_id, auth_headers.get("Authorization").split(" ")[1]
-                )
+        # CLEANUP
+        if user_id:
+            login_response = client.post("/api/auth/login", json=reset_password_user)
+            if login_response.status_code == 200:
+                tokens = self._extract_tokens(login_response)
+                user_cleanup(client, user_id, tokens["access_token"])
 
-    def test_reset_password(self, client, reset_password_user):
-        """Test password reset request using specific email."""
-        user_id = None
-        try:
-            # First sign up the user
-            signup_response = client.post("/api/auth/signup", json=reset_password_user)
-            if signup_response.status_code == 200:
-                # Extract user ID
-                user_data = signup_response.json().get("data", {})
-                user = user_data.get("user", {})
-                user_id = user.get("id")
-                logger.info(f"Created test user with ID: {user_id}")
-
-            # Then request password reset
-            response = client.post(
-                "/api/auth/reset-password", json={"email": reset_password_user["email"]}
-            )
-
-            assert response.status_code == status.HTTP_200_OK
-            assert response.json()["status"] == "success"
-            assert "message" in response.json()
-        finally:
-            # Clean up the test user
-            if user_id:
-                # Login to get token for deletion
-                login_response = client.post(
-                    "/api/auth/login", json=reset_password_user
-                )
-                if login_response.status_code == 200:
-                    # Extract access token
-                    login_data = login_response.json().get("data", {})
-                    session = login_data.get("session", {})
-                    token = session.get("access_token")
-                    self._cleanup_test_user(client, user_id, token)
-
-    def test_password_change_flow(self, client, test_user):
+    def test_password_change_flow(self, client, test_user, user_cleanup):
         """Test the entire password change flow."""
-        user_id = None
-        token = None
-        try:
-            # Create user and get token
-            signup_response = client.post("/api/auth/signup", json=test_user)
-            if signup_response.status_code == 200:
-                # Extract user ID
-                user_data = signup_response.json().get("data", {})
-                user = user_data.get("user", {})
-                user_id = user.get("id")
-                logger.info(f"Created test user with ID: {user_id}")
+        # ARRANGE
+        self.logger.info("Testing password change flow")
 
-            login_response = client.post("/api/auth/login", json=test_user)
-            if login_response.status_code != 200:
-                logger.error(f"Login for password change failed: {login_response.text}")
+        # Create user and get token
+        signup_response = client.post("/api/auth/signup", json=test_user)
+        user_data = self._extract_user_data(signup_response)
+        user_id = user_data.get("id")
 
-            data = login_response.json()
-            # Extract access token
-            session = data.get("data", {}).get("session", {})
-            token = session.get("access_token")
+        login_response = client.post("/api/auth/login", json=test_user)
+        tokens = self._extract_tokens(login_response)
+        access_token = tokens["access_token"]
+        refresh_token = tokens["refresh_token"]
 
-            # Try to get refresh token
-            try:
-                refresh_token = session.get("refresh_token")
-                if not refresh_token:
-                    pytest.skip(
-                        "No refresh token found in response - test cannot continue"
-                    )
-            except (KeyError, TypeError):
-                pytest.skip("No refresh token found in response - test cannot continue")
+        # Skip test if no refresh token found
+        if not refresh_token:
+            pytest.skip("No refresh token found in response - test cannot continue")
 
-            # Test: Change password
-            new_password = "NewPassword456!"
-            change_request = {
-                "password": new_password,
-                "access_token": token,
-                "refresh_token": refresh_token,
-            }
+        # ACT - Change password
+        new_password = "NewPassword456!"
+        change_request = {
+            "password": new_password,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+        }
 
-            change_response = client.post(
-                "/api/auth/change-password", json=change_request
-            )
+        change_response = client.post("/api/auth/change-password", json=change_request)
 
-            assert change_response.status_code == status.HTTP_200_OK
-            assert change_response.json()["status"] == "success"
+        # ASSERT - Password change successful
+        assert_successful_response(change_response)
 
-            # Verify: Login with new password
-            new_credentials = {"email": test_user["email"], "password": new_password}
-            new_login_response = client.post("/api/auth/login", json=new_credentials)
+        # Verify: Login with new password
+        new_credentials = {"email": test_user["email"], "password": new_password}
+        new_login_response = client.post("/api/auth/login", json=new_credentials)
 
-            assert new_login_response.status_code == status.HTTP_200_OK
-            assert "data" in new_login_response.json()
-            assert "session" in new_login_response.json()["data"]
-            assert "access_token" in new_login_response.json()["data"]["session"]
+        # ASSERT - Login with new password successful
+        data = assert_successful_response(new_login_response)
+        assert_has_fields(data, ["data"])
+        assert_has_fields(data["data"], ["session"])
+        assert_has_fields(data["data"]["session"], ["access_token"])
 
-            # Get new token for cleanup
-            new_session = new_login_response.json().get("data", {}).get("session", {})
-            token = new_session.get("access_token")
-        finally:
-            # Clean up the test user
-            self._cleanup_test_user(client, user_id, token)
+        # CLEANUP
+        if user_id:
+            new_tokens = self._extract_tokens(new_login_response)
+            user_cleanup(client, user_id, new_tokens["access_token"])
 
     def test_unauthorized_access(self, client):
         """Test access to protected endpoint without authentication."""
+        # ARRANGE & ACT
+        self.logger.info("Testing unauthorized access")
         response = client.get("/api/auth/me")
+
+        # ASSERT
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
     def test_invalid_credentials_login(self, client):
         """Test login with invalid credentials."""
+        # ARRANGE & ACT
+        self.logger.info("Testing invalid credentials")
         response = client.post(
             "/api/auth/login",
             json={"email": "nonexistent@example.com", "password": "WrongPassword123!"},
         )
+
+        # ASSERT
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_real_user_deletion(self, client, test_user):
         """Test actual user creation and deletion (integration test)."""
-        # Create a new user for testing deletion using the fixture
-        signup_data = test_user
+        # ARRANGE
+        self.logger.info("Testing user deletion")
 
         # Sign up the user
-        signup_response = client.post("/api/auth/signup", json=signup_data)
+        signup_response = client.post("/api/auth/signup", json=test_user)
         assert (
             signup_response.status_code == 200
         ), f"Failed to create user: {signup_response.text}"
 
         # Get user ID from response
-        user_data = signup_response.json().get("data", {})
-        user = user_data.get("user", {})
-        user_id = user.get("id")
-        logger.info(f"Created test user with ID: {user_id}")
+        user_data = self._extract_user_data(signup_response)
+        user_id = user_data.get("id")
 
         # Login to get the token
-        login_response = client.post("/api/auth/login", json=signup_data)
+        login_response = client.post("/api/auth/login", json=test_user)
         assert (
             login_response.status_code == 200
         ), f"Failed to login: {login_response.text}"
 
         # Get token
-        login_data = login_response.json().get("data", {})
-        session = login_data.get("session", {})
-        access_token = session.get("access_token")
+        tokens = self._extract_tokens(login_response)
+        access_token = tokens["access_token"]
 
-        # Delete the user
+        # ACT - Delete the user
         headers = {"Authorization": f"Bearer {access_token}"}
         delete_response = client.delete(f"/api/auth/users/{user_id}", headers=headers)
 
-        # Verify deletion was successful
-        assert delete_response.status_code == 200
-        assert delete_response.json()["status"] == "success"
+        # ASSERT - Deletion successful
+        data = assert_successful_response(delete_response)
 
         # Verify user is gone by trying to login
-        verify_login = client.post("/api/auth/login", json=signup_data)
+        verify_login = client.post("/api/auth/login", json=test_user)
         assert verify_login.status_code == 401, "User should no longer exist"
