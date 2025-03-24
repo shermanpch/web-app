@@ -220,3 +220,133 @@ class TestDivination(BaseTest):
             # Clean up the test user
             if user_id:
                 user_cleanup(client, user_id, auth_token)
+
+    def test_iching_coordinates_conversion(self, client):
+        """Test the I-Ching coordinates conversion logic."""
+        # ARRANGE
+        self.logger.info("Testing I-Ching coordinates conversion")
+
+        # Test numbers
+        test_first_number = 42
+        test_second_number = 17
+        test_third_number = 31
+
+        # Expected coordinates based on modulo arithmetic:
+        # first_cord = first % 8 = 42 % 8 = 2
+        # second_cord = second % 8 = 17 % 8 = 1
+        # So parent_coord should be "2-1"
+        # child_cord = third % 6 = 31 % 6 = 1
+        expected_parent_coord = "2-1"
+        expected_child_coord = "1"
+
+        # ACT
+        coordinates_response = client.post(
+            "/api/divination/iching-coordinates",
+            json={
+                "first_number": test_first_number,
+                "second_number": test_second_number,
+                "third_number": test_third_number,
+            },
+        )
+
+        # ASSERT
+        assert (
+            coordinates_response.status_code == 200
+        ), f"I-Ching coordinates conversion failed: {coordinates_response.text}"
+
+        # Verify response structure and content
+        coordinates_data = coordinates_response.json()
+        assert_has_fields(coordinates_data, ["parent_coord", "child_coord"])
+
+        # Verify coordinates match expected values
+        assert (
+            coordinates_data["parent_coord"] == expected_parent_coord
+        ), f"Expected parent_coord {expected_parent_coord}, got {coordinates_data['parent_coord']}"
+        assert (
+            coordinates_data["child_coord"] == expected_child_coord
+        ), f"Expected child_coord {expected_child_coord}, got {coordinates_data['child_coord']}"
+
+        self.logger.info("I-Ching coordinates conversion test passed successfully!")
+
+    def test_iching_reading_authenticated(self, client, auth_tokens, user_cleanup):
+        """Test retrieving complete I-Ching reading using authentication."""
+        # ARRANGE
+        self.logger.info("Testing complete I-Ching reading with authentication")
+
+        # Extract tokens and user ID
+        auth_token = auth_tokens["access_token"]
+        refresh_token = auth_tokens["refresh_token"]
+        user_id = auth_tokens["user_id"]
+
+        # Test data for I-Ching reading
+        test_first_number = 42
+        test_second_number = 17
+        test_third_number = 31
+        test_question = "What direction should I take in my career?"
+        test_language = "English"
+
+        try:
+            # Get the complete I-Ching reading
+            # The endpoint now handles getting text and image internally
+            reading_response = client.post(
+                "/api/divination/iching-reading",
+                json={
+                    "first_number": test_first_number,
+                    "second_number": test_second_number,
+                    "third_number": test_third_number,
+                    "question": test_question,
+                    "language": test_language,
+                    "access_token": auth_token,
+                    "refresh_token": refresh_token,
+                },
+            )
+
+            # ASSERT
+            assert (
+                reading_response.status_code == 200
+            ), f"I-Ching reading retrieval failed: {reading_response.text}"
+
+            # Verify response structure
+            reading_data = reading_response.json()
+            assert isinstance(reading_data, dict), "Response should be a JSON object"
+
+            # Check that all required fields are present
+            assert_has_fields(
+                reading_data,
+                [
+                    "hexagram_name",
+                    "summary",
+                    "interpretation",
+                    "line_change",
+                    "result",
+                    "advice",
+                    "image_path",
+                ],
+            )
+
+            # Check that line_change and result are properly structured
+            assert_has_fields(reading_data["line_change"], ["line", "interpretation"])
+            assert_has_fields(reading_data["result"], ["name", "interpretation"])
+
+            # Log the reading data for inspection
+            self.logger.info("I-Ching Reading Results:")
+            self.logger.info(f"Hexagram Name: {reading_data['hexagram_name']}")
+            self.logger.info(f"Summary: {reading_data['summary']}")
+            self.logger.info(
+                f"Interpretation: {reading_data['interpretation'][:100]}..."
+            )
+            self.logger.info(
+                f"Line Change: {reading_data['line_change']['line']} - {reading_data['line_change']['interpretation'][:50]}..."
+            )
+            self.logger.info(
+                f"Result Hexagram: {reading_data['result']['name']} - {reading_data['result']['interpretation'][:50]}..."
+            )
+            self.logger.info(f"Advice: {reading_data['advice'][:100]}...")
+            self.logger.info(f"Image Path: {reading_data['image_path']}")
+
+            self.logger.info("I-Ching reading test passed successfully!")
+
+        finally:
+            # Clean up the test user
+            if user_id:
+                user_cleanup(client, user_id, auth_token)

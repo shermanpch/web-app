@@ -36,3 +36,7 @@ yarn-error.log*
 # OS files
 .DS_Store
 Thumbs.db
+
+# Scraped data
+apps/backend/migrations/scripts/data/
+apps/backend/migrations/scripts/scrapers/.scraper_cache/

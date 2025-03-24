@@ -7,9 +7,6 @@ from .api.router import router as api_router
 # Config
 from .config import settings
 
-# Core
-from .core.oracle import Oracle
-
 # Models
 from .models.auth import UserData, UserLogin, UserSignup
 from .models.divination import (
@@ -23,6 +20,9 @@ from .models.users import UserQuotaRequest, UserQuotaResponse
 # Services
 from .services.auth import get_current_user
 from .services.auth.supabase import get_authenticated_client, get_supabase_client
+
+# Core
+from .services.core.oracle import Oracle
 from .services.divination.iching import (
     get_iching_image_from_bucket,
     get_iching_text_from_db,

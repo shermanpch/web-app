@@ -5,11 +5,16 @@ import logging
 from fastapi import APIRouter, HTTPException, status
 
 from ...models.divination import (
+    IChingCoordinatesRequest,
+    IChingCoordinatesResponse,
     IChingImageRequest,
     IChingImageResponse,
+    IChingReadingRequest,
+    IChingReadingResponse,
     IChingTextRequest,
     IChingTextResponse,
 )
+from ...services.core.oracle import Oracle
 from ...services.divination.iching import (
     get_iching_image_from_bucket,
     get_iching_text_from_db,
@@ -98,3 +103,39 @@ async def get_iching_image(request: IChingImageRequest):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve I Ching image: {str(e)}",
         )
+
+
+@router.post("/iching-coordinates", response_model=IChingCoordinatesResponse)
+async def get_iching_coordinates(request: IChingCoordinatesRequest):
+    first_number = request.first_number
+    second_number = request.second_number
+    third_number = request.third_number
+    oracle = Oracle()
+    oracle.input(first_number, second_number, third_number)
+    parent_coord, child_coord = oracle.convert_to_coordinates()
+    return IChingCoordinatesResponse(parent_coord=parent_coord, child_coord=child_coord)
+
+
+@router.post("/iching-reading", response_model=IChingReadingResponse)
+async def get_iching_reading(reading: IChingReadingRequest):
+    oracle = Oracle()
+    oracle.input(reading.first_number, reading.second_number, reading.third_number)
+    parent_coord, child_coord = oracle.convert_to_coordinates()
+
+    text_request = IChingTextRequest(
+        parent_coord=parent_coord,
+        child_coord=child_coord,
+        access_token=reading.access_token,
+        refresh_token=reading.refresh_token,
+    )
+
+    image_request = IChingImageRequest(
+        parent_coord=parent_coord,
+        child_coord=child_coord,
+        access_token=reading.access_token,
+        refresh_token=reading.refresh_token,
+    )
+
+    text = get_iching_text_from_db(text_request)
+    image = get_iching_image_from_bucket(image_request)
+    return oracle.get_initial_reading(reading, text, image)

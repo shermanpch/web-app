@@ -1,12 +1,14 @@
 """API client for interacting with the I Ching service endpoints."""
 
-from typing import Optional
-
 import httpx
 
 from ...models.divination import (
+    IChingCoordinatesRequest,
+    IChingCoordinatesResponse,
     IChingImageRequest,
     IChingImageResponse,
+    IChingReadingRequest,
+    IChingReadingResponse,
     IChingTextRequest,
     IChingTextResponse,
 )
@@ -21,8 +23,8 @@ class IChingAPIClient:
 
         Args:
             base_url (str): The base URL of the API
-            access_token (str): User's access token
-            refresh_token (str): User's refresh token
+            access_token (str): The access token for the API
+            refresh_token (str): The refresh token for the API
         """
         self.base_url = base_url
         self.access_token = access_token
@@ -85,29 +87,43 @@ class IChingAPIClient:
             data = response.json()
             return IChingImageResponse(**data)
 
-    async def create_reading(self, reading, prediction: Optional[dict] = None):
+    async def get_iching_coordinates(
+        self, request: IChingCoordinatesRequest
+    ) -> IChingCoordinatesResponse:
         """
-        Store a user reading in the database.
-
-        Args:
-            reading: UserReadingCreate object with reading details
-            prediction (dict, optional): The prediction data to store
-
-        Returns:
-            dict: The created reading record
-
-        Raises:
-            httpx.HTTPStatusError: If the request fails
+        Fetch I Ching reading from the API.
         """
-        # This is a placeholder for when you implement the readings API endpoint
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                f"{self.base_url}/api/readings",
-                json={"reading": reading.dict(), "prediction": prediction},
-                params={
-                    "access_token": self.access_token,
-                    "refresh_token": self.refresh_token,
+                f"{self.base_url}/api/divination/iching-coordinates",
+                json={
+                    "first_number": request.first_number,
+                    "second_number": request.second_number,
+                    "third_number": request.third_number,
                 },
             )
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+            return IChingCoordinatesResponse(**data)
+
+    async def get_iching_reading(
+        self, reading: IChingReadingRequest
+    ) -> IChingReadingResponse:
+        """
+        Fetch I Ching reading from the API.
+        """
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{self.base_url}/api/divination/iching-reading",
+                json={
+                    "first_number": reading.first_number,
+                    "second_number": reading.second_number,
+                    "third_number": reading.third_number,
+                    "question": reading.question,
+                    "access_token": reading.access_token,
+                    "refresh_token": reading.refresh_token,
+                },
+            )
+            response.raise_for_status()
+            data = response.json()
+            return IChingReadingResponse(**data)

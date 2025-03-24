@@ -10,6 +10,9 @@ pyjwt==2.8.0
 requests==2.32.3
 python-multipart==0.0.20
 psutil==6.0.0
+postgrest==0.19.3
+beautifulsoup4==4.12.3
+tqdm==4.66.5
 
 # Testing dependencies
 pytest==8.3.5
