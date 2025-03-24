@@ -69,7 +69,7 @@ async def register_user(user: UserSignup):
         User registration response
     """
     try:
-        response = signup_user(user.email, user.password)
+        response = await signup_user(user.email, user.password)
         session_data = response.get("session", {})
 
         return UserSessionResponse(
@@ -103,7 +103,7 @@ async def login(user: UserLogin):
         User login response with access token
     """
     try:
-        response = login_user(user.email, user.password)
+        response = await login_user(user.email, user.password)
         return UserSessionResponse(
             status="success",
             data=UserSessionData(
@@ -135,7 +135,7 @@ async def request_password_reset(data: PasswordReset):
         Password reset response
     """
     try:
-        reset_password(data.email)
+        await reset_password(data.email)
         return AuthResponse(status="success", message="Password reset email sent")
     except Exception as e:
         raise HTTPException(
@@ -156,7 +156,7 @@ async def update_password(data: PasswordChange):
         Password change response
     """
     try:
-        change_password(
+        await change_password(
             data.password,
             data.access_token,
             data.refresh_token,
@@ -194,7 +194,7 @@ async def remove_user(user_id: str, current_user: UserData = Depends(get_current
             detail="You can only delete your own account",
         )
     try:
-        delete_user(user_id)
+        await delete_user(user_id)
         return AuthResponse(status="success", message="User deleted successfully")
     except Exception as e:
         raise HTTPException(

@@ -4,7 +4,7 @@ import logging
 from typing import Any, Dict
 
 import requests
-from supabase import Client, create_client
+from supabase._async.client import AsyncClient, create_client
 
 from ...config import settings
 
@@ -12,7 +12,7 @@ from ...config import settings
 logger = logging.getLogger(__name__)
 
 
-def get_supabase_client() -> Client:
+async def get_supabase_client() -> AsyncClient:
     """
     Create and return a Supabase client.
 
@@ -20,10 +20,12 @@ def get_supabase_client() -> Client:
         Supabase client instance
     """
     logger.debug(f"Creating Supabase client with URL: {settings.SUPABASE_URL[:20]}...")
-    return create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+    return await create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
 
 
-def get_authenticated_client(access_token: str, refresh_token: str) -> Client:
+async def get_authenticated_client(
+    access_token: str, refresh_token: str
+) -> AsyncClient:
     """
     Create a Supabase client using an existing user token.
 
@@ -35,12 +37,14 @@ def get_authenticated_client(access_token: str, refresh_token: str) -> Client:
         Authenticated Supabase client instance
     """
     logger.debug(f"Creating authenticated Supabase client...")
-    client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
-    client.auth.set_session(access_token, refresh_token)  # Attach tokens to client
+    client = await create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+    await client.auth.set_session(
+        access_token, refresh_token
+    )  # Attach tokens to client
     return client
 
 
-def get_supabase_admin_client() -> Client:
+async def get_supabase_admin_client() -> AsyncClient:
     """
     Create and return a Supabase client with admin privileges.
 
@@ -50,7 +54,9 @@ def get_supabase_admin_client() -> Client:
     logger.debug(
         f"Creating Supabase admin client with URL: {settings.SUPABASE_URL[:20]}..."
     )
-    return create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
+    return await create_client(
+        settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY
+    )
 
 
 def _get_supabase_auth_url(endpoint: str) -> str:
@@ -87,7 +93,7 @@ def _get_auth_headers(token: str = None) -> Dict[str, str]:
     return headers
 
 
-def signup_user(email: str, password: str) -> dict:
+async def signup_user(email: str, password: str) -> dict:
     """
     Register a new user using Supabase REST API.
 
@@ -125,7 +131,7 @@ def signup_user(email: str, password: str) -> dict:
         raise e
 
 
-def login_user(email: str, password: str) -> dict:
+async def login_user(email: str, password: str) -> dict:
     """
     Login a user using Supabase REST API.
 
@@ -151,7 +157,7 @@ def login_user(email: str, password: str) -> dict:
         raise e
 
 
-def reset_password(email: str) -> dict:
+async def reset_password(email: str) -> dict:
     """
     Send password reset email using Supabase REST API.
 
@@ -176,7 +182,11 @@ def reset_password(email: str) -> dict:
         raise e
 
 
-def change_password(new_password: str, access_token: str, refresh_token: str) -> dict:
+async def change_password(
+    new_password: str,
+    access_token: str,
+    refresh_token: str,
+) -> dict:
     """
     Change user password using Supabase REST API.
 
@@ -206,7 +216,7 @@ def change_password(new_password: str, access_token: str, refresh_token: str) ->
         raise e
 
 
-def delete_user(user_id: str) -> dict:
+async def delete_user(user_id: str) -> dict:
     """
     Delete a user by user ID.
 
@@ -223,12 +233,12 @@ def delete_user(user_id: str) -> dict:
     """
     # Create a special client with service role key for admin operations
     logger.info(f"Creating admin client with service role key for user deletion")
-    admin_client = get_supabase_admin_client()
+    admin_client = await get_supabase_admin_client()
 
     logger.info(f"Attempting to delete user with ID: {user_id}")
     try:
         # Delete the user using admin API
-        response = admin_client.auth.admin.delete_user(user_id)
+        response = await admin_client.auth.admin.delete_user(user_id)
         logger.info(f"User {user_id} deleted successfully")
         return {"success": True, "message": f"User {user_id} deleted successfully"}
     except Exception as e:

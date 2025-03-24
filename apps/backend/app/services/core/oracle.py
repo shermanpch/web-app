@@ -1,6 +1,6 @@
 import os
 
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 from ...config import settings
 from ...models.divination import (
@@ -80,7 +80,7 @@ class Oracle:
 
         return self.parent_coord, self.child_coord
 
-    def get_initial_reading(
+    async def get_initial_reading(
         self,
         reading: IChingReadingRequest,
         text: IChingTextResponse,
@@ -108,9 +108,9 @@ class Oracle:
             language=reading.language,
         )
 
-        client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 
-        response = client.beta.chat.completions.parse(
+        response = await client.beta.chat.completions.parse(
             model=settings.OPENAI_MODEL,
             messages=[
                 {"role": "system", "content": system_prompt_with_text},
@@ -127,7 +127,7 @@ class Oracle:
         parsed_response.question = reading.question
         return parsed_response
 
-    def get_clarifying_reading(
+    async def get_clarifying_reading(
         self, request: IChingUpdateReadingRequest
     ) -> IChingUpdateReadingResponse:
         """
@@ -151,9 +151,9 @@ class Oracle:
             language=request.language,
         )
 
-        client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 
-        response = client.chat.completions.create(
+        response = await client.chat.completions.create(
             model=settings.OPENAI_MODEL,
             messages=[
                 {"role": "system", "content": system_prompt_with_text},

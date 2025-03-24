@@ -10,7 +10,9 @@ from ...services.auth.supabase import get_authenticated_client, get_supabase_cli
 logger = logging.getLogger(__name__)
 
 
-def get_user_quota_from_db(request: UserQuotaRequest) -> Optional[UserQuotaResponse]:
+async def get_user_quota_from_db(
+    request: UserQuotaRequest,
+) -> Optional[UserQuotaResponse]:
     """
     Fetch user quota information from the database.
 
@@ -29,15 +31,15 @@ def get_user_quota_from_db(request: UserQuotaRequest) -> Optional[UserQuotaRespo
         # Get Supabase client - use authenticated client if tokens provided
         if request.access_token and request.refresh_token:
             logger.debug("Using authenticated client with user tokens")
-            client = get_authenticated_client(
+            client = await get_authenticated_client(
                 request.access_token, request.refresh_token
             )
         else:
-            client = get_supabase_client()
+            client = await get_supabase_client()
 
         # Query the user_quotas table - ensure user_id is a string
         response = (
-            client.table("user_quotas")
+            await client.table("user_quotas")
             .select(
                 "user_id, membership_type, remaining_queries, created_at, updated_at"
             )
@@ -61,7 +63,7 @@ def get_user_quota_from_db(request: UserQuotaRequest) -> Optional[UserQuotaRespo
         raise Exception(f"Failed to retrieve user quota: {str(e)}")
 
 
-def create_user_quota(request: UserQuotaRequest) -> UserQuotaResponse:
+async def create_user_quota(request: UserQuotaRequest) -> UserQuotaResponse:
     """
     Create a new user quota in the database.
 
@@ -80,11 +82,11 @@ def create_user_quota(request: UserQuotaRequest) -> UserQuotaResponse:
         # Get Supabase client - use authenticated client if tokens provided
         if request.access_token and request.refresh_token:
             logger.debug("Using authenticated client with user tokens")
-            client = get_authenticated_client(
+            client = await get_authenticated_client(
                 request.access_token, request.refresh_token
             )
         else:
-            client = get_supabase_client()
+            client = await get_supabase_client()
 
         default_quota = {
             "user_id": str(request.user_id),
@@ -93,7 +95,9 @@ def create_user_quota(request: UserQuotaRequest) -> UserQuotaResponse:
         }
 
         # Insert the default quota
-        insert_response = client.table("user_quotas").insert(default_quota).execute()
+        insert_response = await (
+            client.table("user_quotas").insert(default_quota).execute()
+        )
 
         if insert_response.data and len(insert_response.data) > 0:
             logger.info(f"Created quota for user: {request.user_id}")

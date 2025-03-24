@@ -29,7 +29,7 @@ async def get_user_quota(request: UserQuotaRequest):
     """
     try:
         # Get existing quota and return it (could be None)
-        return get_user_quota_from_db(request)
+        return await get_user_quota_from_db(request)
     except Exception as e:
         # Log error and return a generic error message
         logger.error(f"Error retrieving user quota: {str(e)}")
@@ -55,7 +55,7 @@ async def create_quota(request: UserQuotaRequest):
     """
     try:
         # Attempt to create the quota
-        quota = create_user_quota(request)
+        quota = await create_user_quota(request)
         return quota
     except Exception as e:
         # Log error and return a detailed error message

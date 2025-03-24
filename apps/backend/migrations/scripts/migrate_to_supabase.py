@@ -28,7 +28,6 @@ import sys
 import threading
 import time
 from functools import wraps
-from pathlib import Path
 
 # Add the parent directory to the system path to import config
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))

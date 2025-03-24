@@ -48,7 +48,7 @@ async def get_iching_text(request: IChingTextRequest):
     """
     try:
         # Get the I Ching text using the request model
-        result = get_iching_text_from_db(request)
+        result = await get_iching_text_from_db(request)
         return result
 
     except HTTPException:
@@ -89,7 +89,7 @@ async def get_iching_image(request: IChingImageRequest):
         )
 
         try:
-            iching_image = get_iching_image_from_bucket(request)
+            iching_image = await get_iching_image_from_bucket(request)
             logger.info(
                 f"API: Successfully retrieved image URL: {iching_image.image_url}"
             )
@@ -134,7 +134,7 @@ async def get_iching_coordinates(request: IChingCoordinatesRequest):
             f"API: Converting numbers to I Ching coordinates: {request.first_number}, {request.second_number}, {request.third_number}"
         )
 
-        result = get_iching_coordinates_from_oracle(request)
+        result = await get_iching_coordinates_from_oracle(request)
 
         logger.info(
             f"API: Successfully generated coordinates: parent={result.parent_coord}, child={result.child_coord}"
@@ -181,7 +181,7 @@ async def get_iching_reading(request: IChingReadingRequest):
             f"Using numbers: {request.first_number}, {request.second_number}, {request.third_number} and language: {request.language}"
         )
 
-        result = get_iching_reading_from_oracle(request)
+        result = await get_iching_reading_from_oracle(request)
 
         logger.info(
             f"API: Successfully generated I Ching reading for hexagram: {result.hexagram_name}"
@@ -217,8 +217,9 @@ async def save_iching_reading(request: IChingSaveReadingRequest):
     try:
         logger.info(f"API: Saving I Ching reading for user: {request.user_id}")
 
-        # Save the reading to the database
-        result = save_iching_reading_to_db(request)
+        result = await save_iching_reading_to_db(request)
+
+        logger.info(f"API: Successfully saved I Ching reading with ID: {result.id}")
         return result
 
     except HTTPException:
@@ -261,7 +262,7 @@ async def update_iching_reading(request: IChingUpdateReadingRequest):
         )
 
         # Update the reading in the database
-        result = update_iching_reading_in_db(request)
+        result = await update_iching_reading_in_db(request)
         logger.info(f"Successfully processed update for reading id: {request.id}")
 
         return result

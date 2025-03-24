@@ -23,7 +23,7 @@ from ...services.core.oracle import Oracle
 logger = logging.getLogger(__name__)
 
 
-def get_iching_text_from_db(request: IChingTextRequest) -> IChingTextResponse:
+async def get_iching_text_from_db(request: IChingTextRequest) -> IChingTextResponse:
     """
     Fetch I Ching text for given parent and child coordinates.
 
@@ -44,14 +44,14 @@ def get_iching_text_from_db(request: IChingTextRequest) -> IChingTextResponse:
         # Get Supabase client - use authenticated client if tokens provided
         if request.access_token and request.refresh_token:
             logger.debug("Using authenticated client with user tokens")
-            client = get_authenticated_client(
+            client = await get_authenticated_client(
                 request.access_token, request.refresh_token
             )
         else:
-            client = get_supabase_client()
+            client = await get_supabase_client()
 
         # Query the iching_texts table
-        response = (
+        response = await (
             client.table("iching_texts")
             .select("parent_coord, child_coord, parent_text, child_text")
             .eq("parent_coord", request.parent_coord)
@@ -87,7 +87,9 @@ def get_iching_text_from_db(request: IChingTextRequest) -> IChingTextResponse:
         raise e
 
 
-def get_iching_image_from_bucket(request: IChingImageRequest) -> IChingImageResponse:
+async def get_iching_image_from_bucket(
+    request: IChingImageRequest,
+) -> IChingImageResponse:
     """
     Fetch I Ching hexagram image URL from storage bucket for given coordinates.
 
@@ -111,7 +113,7 @@ def get_iching_image_from_bucket(request: IChingImageRequest) -> IChingImageResp
 
         # We must use an authenticated client since the bucket requires authentication
         if request.access_token and request.refresh_token:
-            client = get_authenticated_client(
+            client = await get_authenticated_client(
                 request.access_token, request.refresh_token
             )
         else:
@@ -119,7 +121,7 @@ def get_iching_image_from_bucket(request: IChingImageRequest) -> IChingImageResp
 
         # Get a reference to the bucket and create a signed URL
         bucket = client.storage.from_(bucket_name)
-        signed_url_response = bucket.create_signed_url(image_path, 3600)
+        signed_url_response = await bucket.create_signed_url(image_path, 3600)
         image_url = signed_url_response["signedURL"]
 
         return IChingImageResponse(
@@ -133,7 +135,7 @@ def get_iching_image_from_bucket(request: IChingImageRequest) -> IChingImageResp
         raise e
 
 
-def get_iching_coordinates_from_oracle(
+async def get_iching_coordinates_from_oracle(
     request: IChingCoordinatesRequest,
 ) -> IChingCoordinatesResponse:
     """
@@ -154,7 +156,7 @@ def get_iching_coordinates_from_oracle(
     return IChingCoordinatesResponse(parent_coord=parent_coord, child_coord=child_coord)
 
 
-def get_iching_reading_from_oracle(
+async def get_iching_reading_from_oracle(
     reading: IChingReadingRequest,
 ) -> IChingReadingResponse:
     """
@@ -187,12 +189,12 @@ def get_iching_reading_from_oracle(
         refresh_token=reading.refresh_token,
     )
 
-    text = get_iching_text_from_db(text_request)
-    image = get_iching_image_from_bucket(image_request)
-    return oracle.get_initial_reading(reading, text, image)
+    text = await get_iching_text_from_db(text_request)
+    image = await get_iching_image_from_bucket(image_request)
+    return await oracle.get_initial_reading(reading, text, image)
 
 
-def save_iching_reading_to_db(
+async def save_iching_reading_to_db(
     request: IChingSaveReadingRequest,
 ) -> IChingSaveReadingResponse:
     """
@@ -214,7 +216,9 @@ def save_iching_reading_to_db(
         if not request.access_token or not request.refresh_token:
             raise ValueError("Authentication tokens required to save readings")
 
-        client = get_authenticated_client(request.access_token, request.refresh_token)
+        client = await get_authenticated_client(
+            request.access_token, request.refresh_token
+        )
 
         # Prepare reading data
         reading_data = {
@@ -236,7 +240,7 @@ def save_iching_reading_to_db(
             reading_data["clarifying_answer"] = request.clarifying_answer
 
         # Insert data into user_readings table
-        response = client.table("user_readings").insert(reading_data).execute()
+        response = await client.table("user_readings").insert(reading_data).execute()
 
         # Check if we have any data from the insert
         data = response.data
@@ -259,7 +263,7 @@ def save_iching_reading_to_db(
         raise e
 
 
-def update_iching_reading_in_db(
+async def update_iching_reading_in_db(
     request: IChingUpdateReadingRequest,
 ) -> IChingUpdateReadingResponse:
     """
@@ -285,11 +289,13 @@ def update_iching_reading_in_db(
             logger.error("Missing authentication tokens for update operation")
             raise ValueError("Authentication tokens required to update readings")
 
-        client = get_authenticated_client(request.access_token, request.refresh_token)
+        client = await get_authenticated_client(
+            request.access_token, request.refresh_token
+        )
 
         # Get the existing reading data
         logger.info(f"Fetching existing reading with id: {request.id}")
-        reading_response = (
+        reading_response = await (
             client.table("user_readings").select("*").eq("id", request.id).execute()
         )
 
@@ -300,7 +306,7 @@ def update_iching_reading_in_db(
 
         logger.info(f"Found existing reading, getting clarifying response")
         oracle = Oracle()
-        response = oracle.get_clarifying_reading(request)
+        response = await oracle.get_clarifying_reading(request)
 
         # Prepare update data
         logger.info("Preparing data for database update")
@@ -313,7 +319,7 @@ def update_iching_reading_in_db(
 
         # Update the record in the database
         logger.info(f"Updating reading with id: {response.id}")
-        db_response = (
+        db_response = await (
             client.table("user_readings")
             .update(update_data)
             .eq("id", response.id)
