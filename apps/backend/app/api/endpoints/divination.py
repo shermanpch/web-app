@@ -15,12 +15,15 @@ from ...models.divination import (
     IChingSaveReadingResponse,
     IChingTextRequest,
     IChingTextResponse,
+    IChingUpdateReadingRequest,
+    IChingUpdateReadingResponse,
 )
 from ...services.core.oracle import Oracle
 from ...services.divination.iching import (
     get_iching_image_from_bucket,
     get_iching_text_from_db,
     save_iching_reading_to_db,
+    update_iching_reading_in_db,
 )
 
 router = APIRouter(prefix="/divination", tags=["divination"])
@@ -175,4 +178,40 @@ async def save_iching_reading(request: IChingSaveReadingRequest):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to save I Ching reading: {str(e)}",
+        )
+
+
+async def update_iching_reading(
+    request: IChingUpdateReadingRequest,
+) -> IChingUpdateReadingResponse:
+    """
+    Update I Ching reading in user_readings table.
+
+    Args:
+        request: Request model containing reading data and auth tokens
+
+    Returns:
+        Confirmation of successful update with reading id
+
+    Raises:
+        HTTPException: If reading cannot be updated
+    """
+    try:
+        logger.info(
+            f"API: Updating I Ching reading for user: {request.user_id} and id: {request.id}"
+        )
+
+        # Update the reading in the database
+        result = update_iching_reading_in_db(request)
+        return result
+
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        # Log error and return a generic error message
+        logger.error(f"API error updating I Ching reading: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update I Ching reading: {str(e)}",
         )
