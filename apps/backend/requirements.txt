@@ -13,6 +13,7 @@ psutil==6.0.0
 postgrest==0.19.3
 beautifulsoup4==4.12.3
 tqdm==4.66.5
+openai==1.66.3
 
 # Testing dependencies
 pytest==8.3.5
