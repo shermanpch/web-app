@@ -1,3 +1,3 @@
 """User quota services."""
 
-from ...services.users.quota import get_user_quota_from_db
+from .quota import create_user_quota, get_user_quota_from_db
