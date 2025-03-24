@@ -8,6 +8,8 @@ from ...models.divination import (
     IChingReadingRequest,
     IChingReadingResponse,
     IChingTextResponse,
+    IChingUpdateReadingRequest,
+    IChingUpdateReadingResponse,
 )
 
 
@@ -84,6 +86,21 @@ class Oracle:
         text: IChingTextResponse,
         image: IChingImageResponse,
     ) -> IChingReadingResponse:
+        """
+        Generate an initial I Ching reading based on the provided text, image, and question.
+
+        This method combines the I Ching text associated with the parent and child coordinates
+        with the user's question to generate a complete reading through the LLM.
+
+        Args:
+            reading: IChingReadingRequest containing the user's question and input numbers
+            text: IChingTextResponse containing the parent and child hexagram texts
+            image: IChingImageResponse containing the hexagram image URL
+
+        Returns:
+            IChingReadingResponse: Complete reading response with prediction, image path,
+                                   and original request data
+        """
 
         system_prompt_with_text = self.system_prompt.format(
             parent_text=text.parent_text,
@@ -109,6 +126,43 @@ class Oracle:
         parsed_response.third_number = reading.third_number
         parsed_response.question = reading.question
         return parsed_response
+
+    def get_clarifying_reading(
+        self, request: IChingUpdateReadingRequest
+    ) -> IChingUpdateReadingResponse:
+        """
+        Generate a clarifying answer based on the original reading and clarifying question.
+
+        This method uses the existing prediction and the new clarifying question to
+        generate a more focused and specific answer through the LLM.
+
+        Args:
+            request: IChingUpdateReadingRequest containing the original reading data
+                    and new clarifying question
+
+        Returns:
+            IChingUpdateReadingResponse: The updated request object with the clarifying_answer field populated
+        """
+
+        system_prompt_with_text = self.clarification_prompt.format(
+            question=request.question,
+            initial_reading=request.prediction,
+            clarifying_question=request.clarifying_question,
+            language=request.language,
+        )
+
+        client = OpenAI(api_key=settings.OPENAI_API_KEY)
+
+        response = client.chat.completions.create(
+            model=settings.OPENAI_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt_with_text},
+                {"role": "user", "content": request.clarifying_question},
+            ],
+        )
+
+        request.clarifying_answer = response.choices[0].message.content
+        return request
 
     def _load_prompt(self, prompt_path):
         """

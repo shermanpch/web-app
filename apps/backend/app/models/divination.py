@@ -140,7 +140,7 @@ class IChingUpdateReadingRequest(BaseModel):
     third_number: int
     language: str = "English"
     prediction: IChingPrediction
-    clarifying_question: Optional[str] = None
+    clarifying_question: str
     clarifying_answer: Optional[str] = None
     access_token: str
     refresh_token: str
@@ -157,7 +157,5 @@ class IChingUpdateReadingResponse(BaseModel):
     third_number: int
     language: str = "English"
     prediction: IChingPrediction
-    clarifying_question: Optional[str] = None
-    clarifying_answer: Optional[str] = None
-    access_token: str
-    refresh_token: str
+    clarifying_question: str
+    clarifying_answer: str

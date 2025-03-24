@@ -161,7 +161,10 @@ class TestDivination(BaseTest):
 
     @pytest.mark.asyncio
     async def test_iching_image_retrieval_authenticated(
-        self, client, auth_tokens, user_cleanup
+        self,
+        client,
+        auth_tokens,
+        user_cleanup,
     ):
         """Test retrieving I-Ching image using access and refresh tokens."""
         # ARRANGE
@@ -393,10 +396,9 @@ class TestDivination(BaseTest):
             self.logger.info(
                 f"Retrieved real prediction for hexagram: {reading_data['hexagram_name']}"
             )
-
-            # Clarifying questions for our test
-            test_clarifying_question = None
-            test_clarifying_answer = None
+            self.logger.info(
+                f"Retrieved real prediction for line change: {reading_data['result']['name']}"
+            )
 
             # STEP 2: Now save this real prediction to the database
             self.logger.info("Saving the real prediction to database")
@@ -410,8 +412,6 @@ class TestDivination(BaseTest):
                     "third_number": test_third_number,
                     "language": test_language,
                     "prediction": reading_data,
-                    "clarifying_question": test_clarifying_question,
-                    "clarifying_answer": test_clarifying_answer,
                     "access_token": auth_token,
                     "refresh_token": refresh_token,
                 },
@@ -450,6 +450,158 @@ class TestDivination(BaseTest):
             self.logger.info(f"Success: {save_data['success']}")
             self.logger.info(f"Message: {save_data['message']}")
             self.logger.info("I-Ching reading save test passed successfully!")
+
+        finally:
+            # Do not clean up the test user to keep the reading in the database
+            pass
+
+    def test_update_iching_reading(self, client, auth_tokens, user_cleanup):
+        """Test updating I-Ching reading with a clarifying question."""
+        # ARRANGE
+        self.logger.info("Testing updating I-Ching reading with clarifying question")
+
+        # Extract tokens and user ID
+        auth_token = auth_tokens["access_token"]
+        refresh_token = auth_tokens["refresh_token"]
+        user_id = auth_tokens["user_id"]
+
+        # Test data for I-Ching reading
+        test_first_number = 38
+        test_second_number = 24
+        test_third_number = 16
+        test_question = "Should I take this job offer?"
+        test_language = "English"
+
+        try:
+            # STEP 1: First get a real prediction from the iching-reading endpoint
+            self.logger.info("Getting real prediction from I-Ching reading API")
+            reading_response = client.post(
+                "/api/divination/iching-reading",
+                json={
+                    "first_number": test_first_number,
+                    "second_number": test_second_number,
+                    "third_number": test_third_number,
+                    "question": test_question,
+                    "language": test_language,
+                    "access_token": auth_token,
+                    "refresh_token": refresh_token,
+                },
+            )
+
+            assert (
+                reading_response.status_code == 200
+            ), f"Failed to get I-Ching reading: {reading_response.text}"
+
+            # Get the real prediction data
+            reading_data = reading_response.json()
+            self.logger.info(
+                f"Retrieved real prediction for hexagram: {reading_data['hexagram_name']}"
+            )
+            self.logger.info(
+                f"Retrieved real prediction for line change: {reading_data['result']['name']}"
+            )
+
+            # STEP 2: Now save this real prediction to the database
+            self.logger.info("Saving the real prediction to database")
+            save_response = client.post(
+                "/api/divination/iching-reading/save",
+                json={
+                    "user_id": user_id,
+                    "question": test_question,
+                    "first_number": test_first_number,
+                    "second_number": test_second_number,
+                    "third_number": test_third_number,
+                    "language": test_language,
+                    "prediction": reading_data,
+                    "clarifying_question": None,
+                    "clarifying_answer": None,
+                    "access_token": auth_token,
+                    "refresh_token": refresh_token,
+                },
+            )
+
+            # Verify save was successful
+            assert (
+                save_response.status_code == 200
+            ), f"I-Ching reading save failed: {save_response.text}"
+
+            save_data = save_response.json()
+            reading_id = save_data["id"]
+            assert save_data["success"] is True, "Expected save to be successful"
+            self.logger.info(f"Successfully saved reading with ID: {reading_id}")
+
+            # STEP 3: Update the reading with a clarifying question
+            test_clarifying_question = (
+                "Can you give me more details about the job offer?"
+            )
+            self.logger.info(
+                f"Updating reading with clarifying question: '{test_clarifying_question}'"
+            )
+
+            update_response = client.post(
+                "/api/divination/iching-reading/update",
+                json={
+                    "id": reading_id,
+                    "user_id": user_id,
+                    "question": test_question,
+                    "first_number": test_first_number,
+                    "second_number": test_second_number,
+                    "third_number": test_third_number,
+                    "language": test_language,
+                    "prediction": reading_data,
+                    "clarifying_question": test_clarifying_question,
+                    "access_token": auth_token,
+                    "refresh_token": refresh_token,
+                },
+            )
+
+            # ASSERT
+            assert (
+                update_response.status_code == 200
+            ), f"I-Ching reading update failed: {update_response.text}"
+
+            # Verify response structure
+            update_data = update_response.json()
+            assert isinstance(update_data, dict), "Response should be a JSON object"
+
+            # Check that all required fields are present
+            assert_has_fields(
+                update_data,
+                [
+                    "id",
+                    "user_id",
+                    "question",
+                    "clarifying_question",
+                    "clarifying_answer",
+                    "prediction",
+                ],
+            )
+
+            # Verify the updated data matches what we sent
+            assert (
+                update_data["id"] == reading_id
+            ), f"Expected reading_id {reading_id}, got {update_data['id']}"
+            assert (
+                update_data["user_id"] == user_id
+            ), f"Expected user_id {user_id}, got {update_data['user_id']}"
+            assert (
+                update_data["clarifying_question"] == test_clarifying_question
+            ), "Clarifying question doesn't match"
+            assert (
+                update_data["clarifying_answer"] is not None
+            ), "Expected clarifying answer to be provided"
+
+            # Log the updated reading details
+            self.logger.info("I-Ching Reading Update Results:")
+            self.logger.info(f"Reading ID: {update_data['id']}")
+            self.logger.info(f"User ID: {update_data['user_id']}")
+            self.logger.info(
+                f"Clarifying Question: {update_data['clarifying_question']}"
+            )
+            self.logger.info(
+                f"Clarifying Answer: {update_data['clarifying_answer'][:100]}..."
+            )
+            self.logger.info("I-Ching reading update test passed successfully!")
 
         finally:
             # Do not clean up the test user to keep the reading in the database

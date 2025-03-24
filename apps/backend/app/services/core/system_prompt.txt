@@ -32,10 +32,14 @@ Use exactly **five** well-structured sentences that:
 5. Conclude with a strategic insight.  
 
 ### **3. Changing Lines (Strictly from Child Context)**  
-- **line_change**: List the changing line(s) and provide an interpretation **only using the Child Context**.
+- **line_change**: List the changing line(s) **exactly** as stated in the Child Context and provide an interpretation **only** from that same Child Context.
+  - **Do not invent or alter** any text not found in the Child Context.
+  - If the Child Context does not specify a particular changing line or its meaning, then indicate that no changing line information is provided.
 
-### **4. Resulting Hexagram  (Strictly from Child Context)**  
-- **result**: State the new hexagram after applying the changing lines, with its meaning based on the **Child Context**.
+### **4. Resulting Hexagram (Strictly from Child Context)**  
+- **result**: **Name and interpret** the new hexagram using **only** the Child Context.
+  - **Avoid any content** not explicitly included in the Child Context.
+  - If the Child Context does not include a resulting hexagram or its interpretation, state that such information is unavailable.
 
 ### **5. Practical Advice (Directly Answering the User's Question)**  
 - **advice**: Provide a **clear, specific, and practical** recommendation, avoiding philosophical detachment or vague generalities.  

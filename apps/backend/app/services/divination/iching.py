@@ -1,17 +1,23 @@
 """I Ching divination utilities."""
 
 import logging
-from datetime import datetime
 
 from ...models.divination import (
+    IChingCoordinatesRequest,
+    IChingCoordinatesResponse,
     IChingImageRequest,
     IChingImageResponse,
+    IChingReadingRequest,
+    IChingReadingResponse,
     IChingSaveReadingRequest,
     IChingSaveReadingResponse,
     IChingTextRequest,
     IChingTextResponse,
+    IChingUpdateReadingRequest,
+    IChingUpdateReadingResponse,
 )
 from ...services.auth.supabase import get_authenticated_client, get_supabase_client
+from ...services.core.oracle import Oracle
 
 # Create logger
 logger = logging.getLogger(__name__)
@@ -127,6 +133,65 @@ def get_iching_image_from_bucket(request: IChingImageRequest) -> IChingImageResp
         raise e
 
 
+def get_iching_coordinates_from_oracle(
+    request: IChingCoordinatesRequest,
+) -> IChingCoordinatesResponse:
+    """
+    Calculate I Ching hexagram coordinates based on input numbers.
+
+    Args:
+        request: IChingCoordinatesRequest containing first_number, second_number, and third_number
+
+    Returns:
+        IChingCoordinatesResponse with parent_coord and child_coord
+    """
+    first_number = request.first_number
+    second_number = request.second_number
+    third_number = request.third_number
+    oracle = Oracle()
+    oracle.input(first_number, second_number, third_number)
+    parent_coord, child_coord = oracle.convert_to_coordinates()
+    return IChingCoordinatesResponse(parent_coord=parent_coord, child_coord=child_coord)
+
+
+def get_iching_reading_from_oracle(
+    reading: IChingReadingRequest,
+) -> IChingReadingResponse:
+    """
+    Generate a complete I Ching reading including coordinates, text, and image.
+
+    Args:
+        reading: IChingReadingRequest containing input numbers and auth tokens
+
+    Returns:
+        IChingReadingResponse with complete reading details
+
+    Raises:
+        Exception: If text or image cannot be retrieved
+    """
+    oracle = Oracle()
+    oracle.input(reading.first_number, reading.second_number, reading.third_number)
+    parent_coord, child_coord = oracle.convert_to_coordinates()
+
+    text_request = IChingTextRequest(
+        parent_coord=parent_coord,
+        child_coord=child_coord,
+        access_token=reading.access_token,
+        refresh_token=reading.refresh_token,
+    )
+
+    image_request = IChingImageRequest(
+        parent_coord=parent_coord,
+        child_coord=child_coord,
+        access_token=reading.access_token,
+        refresh_token=reading.refresh_token,
+    )
+
+    text = get_iching_text_from_db(text_request)
+    image = get_iching_image_from_bucket(image_request)
+    return oracle.get_initial_reading(reading, text, image)
+
+
 def save_iching_reading_to_db(
     request: IChingSaveReadingRequest,
 ) -> IChingSaveReadingResponse:
@@ -191,4 +256,79 @@ def save_iching_reading_to_db(
 
     except Exception as e:
         logger.error(f"Error saving I Ching reading: {str(e)}")
+        raise e
+
+
+def update_iching_reading_in_db(
+    request: IChingUpdateReadingRequest,
+) -> IChingUpdateReadingResponse:
+    """
+    Update I Ching reading data in user_readings table in Supabase.
+
+    Args:
+        request: IChingUpdateReadingRequest containing reading id, user id, question,
+                numbers, prediction data, and optional clarifying question with auth tokens
+
+    Returns:
+        IChingUpdateReadingResponse with updated reading details
+
+    Raises:
+        ValueError: If auth tokens are missing
+        Exception: If reading cannot be updated or not found
+    """
+    logger.info(f"Updating I Ching reading for user: {request.user_id}")
+    logger.info(f"Updating I Ching reading with id: {request.id}")
+
+    try:
+        # Get authenticated client - authentication is required for database writes
+        if not request.access_token or not request.refresh_token:
+            logger.error("Missing authentication tokens for update operation")
+            raise ValueError("Authentication tokens required to update readings")
+
+        client = get_authenticated_client(request.access_token, request.refresh_token)
+
+        # Get the existing reading data
+        logger.info(f"Fetching existing reading with id: {request.id}")
+        reading_response = (
+            client.table("user_readings").select("*").eq("id", request.id).execute()
+        )
+
+        data = reading_response.data
+        if not data or len(data) == 0:
+            logger.warning(f"No reading found with id: {request.id}")
+            raise Exception("Reading not found")
+
+        logger.info(f"Found existing reading, getting clarifying response")
+        oracle = Oracle()
+        response = oracle.get_clarifying_reading(request)
+
+        # Prepare update data
+        logger.info("Preparing data for database update")
+        update_data = {
+            "question": response.question,
+            "prediction": response.prediction.model_dump(),
+            "clarifying_question": response.clarifying_question,
+            "clarifying_answer": response.clarifying_answer,
+        }
+
+        # Update the record in the database
+        logger.info(f"Updating reading with id: {response.id}")
+        db_response = (
+            client.table("user_readings")
+            .update(update_data)
+            .eq("id", response.id)
+            .eq("user_id", response.user_id)  # Ensure the user owns this reading
+            .execute()
+        )
+
+        # Check if update was successful
+        if not db_response.data or len(db_response.data) == 0:
+            logger.error(f"Failed to update reading with id: {response.id}")
+            raise Exception("Failed to update reading - no response data")
+
+        logger.info(f"Successfully updated reading with id: {response.id}")
+        return response
+
+    except Exception as e:
+        logger.error(f"Error updating I Ching reading: {str(e)}")
         raise e

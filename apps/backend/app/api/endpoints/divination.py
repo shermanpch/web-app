@@ -18,11 +18,13 @@ from ...models.divination import (
     IChingUpdateReadingRequest,
     IChingUpdateReadingResponse,
 )
-from ...services.core.oracle import Oracle
-from ...services.divination.iching import (  # update_iching_reading_in_db,
+from ...services.divination.iching import (
+    get_iching_coordinates_from_oracle,
     get_iching_image_from_bucket,
+    get_iching_reading_from_oracle,
     get_iching_text_from_db,
     save_iching_reading_to_db,
+    update_iching_reading_in_db,
 )
 
 router = APIRouter(prefix="/divination", tags=["divination"])
@@ -112,39 +114,90 @@ async def get_iching_image(request: IChingImageRequest):
 
 @router.post("/iching-coordinates", response_model=IChingCoordinatesResponse)
 async def get_iching_coordinates(request: IChingCoordinatesRequest):
-    first_number = request.first_number
-    second_number = request.second_number
-    third_number = request.third_number
-    oracle = Oracle()
-    oracle.input(first_number, second_number, third_number)
-    parent_coord, child_coord = oracle.convert_to_coordinates()
-    return IChingCoordinatesResponse(parent_coord=parent_coord, child_coord=child_coord)
+    """
+    Convert input numbers to I Ching coordinates.
+
+    This endpoint translates the three input numbers into hexagram coordinates
+    using modulo arithmetic to determine the parent and child coordinates.
+
+    Args:
+        request: Request model containing three numbers for coordinate calculation
+
+    Returns:
+        I Ching coordinates derived from the input numbers
+
+    Raises:
+        HTTPException: If coordinates cannot be generated
+    """
+    try:
+        logger.info(
+            f"API: Converting numbers to I Ching coordinates: {request.first_number}, {request.second_number}, {request.third_number}"
+        )
+
+        result = get_iching_coordinates_from_oracle(request)
+
+        logger.info(
+            f"API: Successfully generated coordinates: parent={result.parent_coord}, child={result.child_coord}"
+        )
+        return result
+
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        # Log error and return a generic error message
+        logger.error(f"API error generating I Ching coordinates: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate I Ching coordinates: {str(e)}",
+        )
 
 
 @router.post("/iching-reading", response_model=IChingReadingResponse)
-async def get_iching_reading(reading: IChingReadingRequest):
-    oracle = Oracle()
-    oracle.input(reading.first_number, reading.second_number, reading.third_number)
-    parent_coord, child_coord = oracle.convert_to_coordinates()
+async def get_iching_reading(request: IChingReadingRequest):
+    """
+    Generate a complete I Ching reading based on input numbers and question.
 
-    text_request = IChingTextRequest(
-        parent_coord=parent_coord,
-        child_coord=child_coord,
-        access_token=reading.access_token,
-        refresh_token=reading.refresh_token,
-    )
+    This endpoint orchestrates the full I Ching reading process:
+    1. Converts input numbers to coordinates
+    2. Retrieves the appropriate hexagram text
+    3. Obtains the hexagram image
+    4. Generates the reading interpretation using LLM
 
-    image_request = IChingImageRequest(
-        parent_coord=parent_coord,
-        child_coord=child_coord,
-        access_token=reading.access_token,
-        refresh_token=reading.refresh_token,
-    )
+    Args:
+        request: Request model containing numbers, question, language and auth tokens
 
-    text = get_iching_text_from_db(text_request)
-    image = get_iching_image_from_bucket(image_request)
+    Returns:
+        Complete I Ching reading with interpretation, advice, and image path
 
-    return oracle.get_initial_reading(reading, text, image)
+    Raises:
+        HTTPException: If reading cannot be generated
+    """
+    try:
+        logger.info(
+            f"API: Generating I Ching reading for question: '{request.question}'"
+        )
+        logger.info(
+            f"Using numbers: {request.first_number}, {request.second_number}, {request.third_number} and language: {request.language}"
+        )
+
+        result = get_iching_reading_from_oracle(request)
+
+        logger.info(
+            f"API: Successfully generated I Ching reading for hexagram: {result.hexagram_name}"
+        )
+        return result
+
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        # Log error and return a generic error message
+        logger.error(f"API error generating I Ching reading: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate I Ching reading: {str(e)}",
+        )
 
 
 @router.post("/iching-reading/save", response_model=IChingSaveReadingResponse)
@@ -180,37 +233,47 @@ async def save_iching_reading(request: IChingSaveReadingRequest):
         )
 
 
-# async def update_iching_reading(
-#     request: IChingUpdateReadingRequest,
-# ) -> IChingUpdateReadingResponse:
-#     """
-#     Update I Ching reading in user_readings table.
+@router.post("/iching-reading/update", response_model=IChingUpdateReadingResponse)
+async def update_iching_reading(request: IChingUpdateReadingRequest):
+    """
+    Update I Ching reading in user_readings table.
 
-#     Args:
-#         request: Request model containing reading data and auth tokens
+    This endpoint handles updating an existing I Ching reading with additional
+    information such as a clarifying question. It will generate a new answer
+    based on the original reading and the clarifying question.
 
-#     Returns:
-#         Confirmation of successful update with reading id
+    Args:
+        request: Request model containing reading id, user id, original reading data,
+                clarifying question, and auth tokens
 
-#     Raises:
-#         HTTPException: If reading cannot be updated
-#     """
-#     try:
-#         logger.info(
-#             f"API: Updating I Ching reading for user: {request.user_id} and id: {request.id}"
-#         )
+    Returns:
+        Updated reading with clarifying question and answer added
 
-#         # Update the reading in the database
-#         result = update_iching_reading_in_db(request)
-#         return result
+    Raises:
+        HTTPException: If reading cannot be updated or user is not authenticated
+    """
+    try:
+        logger.info(
+            f"API: Updating I Ching reading for user: {request.user_id} and id: {request.id}"
+        )
+        logger.debug(
+            f"Updating with clarifying question: {request.clarifying_question}"
+        )
 
-#     except HTTPException:
-#         # Re-raise HTTP exceptions
-#         raise
-#     except Exception as e:
-#         # Log error and return a generic error message
-#         logger.error(f"API error updating I Ching reading: {str(e)}")
-#         raise HTTPException(
-#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#             detail=f"Failed to update I Ching reading: {str(e)}",
-#         )
+        # Update the reading in the database
+        result = update_iching_reading_in_db(request)
+        logger.info(f"Successfully processed update for reading id: {request.id}")
+
+        return result
+
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        logger.warning(f"HTTP exception occurred during reading update")
+        raise
+    except Exception as e:
+        # Log error and return a generic error message
+        logger.error(f"API error updating I Ching reading: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update I Ching reading: {str(e)}",
+        )
