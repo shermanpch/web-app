@@ -4,10 +4,10 @@ import sys
 # Add the parent directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from app.api.router import router as api_router
+from app.config import settings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.api.router import router as api_router
-from src.config import settings
 
 app = FastAPI(
     title="Web App API",

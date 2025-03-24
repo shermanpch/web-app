@@ -1,29 +1,25 @@
 """I Ching divination utilities."""
 
 import logging
-from typing import Optional
 
-from ..auth.supabase import get_authenticated_client, get_supabase_client
-from ..models.divination import IChingImage, IChingTextResponse
+from ...models.divination import (
+    IChingImageRequest,
+    IChingImageResponse,
+    IChingTextRequest,
+    IChingTextResponse,
+)
+from ...services.auth.supabase import get_authenticated_client, get_supabase_client
 
 # Create logger
-logger = logging.getLogger("divination")
+logger = logging.getLogger(__name__)
 
 
-def get_iching_text_from_db(
-    parent_coord: str,
-    child_coord: str,
-    access_token: Optional[str] = None,
-    refresh_token: Optional[str] = None,
-) -> IChingTextResponse:
+def get_iching_text_from_db(request: IChingTextRequest) -> IChingTextResponse:
     """
     Fetch I Ching text for given parent and child coordinates.
 
     Args:
-        parent_coord: Parent hexagram coordinate
-        child_coord: Child hexagram coordinate
-        access_token: User's access token for authenticated requests (optional)
-        refresh_token: User's refresh token for authenticated requests (optional)
+        request: IChingTextRequest containing parent_coord, child_coord and auth tokens
 
     Returns:
         IChingTextResponse with parent and child text
@@ -32,14 +28,16 @@ def get_iching_text_from_db(
         Exception: If text cannot be retrieved
     """
     logger.info(
-        f"Fetching I Ching text for parent: {parent_coord}, child: {child_coord}"
+        f"Fetching I Ching text for parent: {request.parent_coord}, child: {request.child_coord}"
     )
 
     try:
         # Get Supabase client - use authenticated client if tokens provided
-        if access_token and refresh_token:
+        if request.access_token and request.refresh_token:
             logger.debug("Using authenticated client with user tokens")
-            client = get_authenticated_client(access_token, refresh_token)
+            client = get_authenticated_client(
+                request.access_token, request.refresh_token
+            )
         else:
             client = get_supabase_client()
 
@@ -47,8 +45,8 @@ def get_iching_text_from_db(
         response = (
             client.table("iching_texts")
             .select("parent_coord, child_coord, parent_text, child_text")
-            .eq("parent_coord", parent_coord)
-            .eq("child_coord", child_coord)
+            .eq("parent_coord", request.parent_coord)
+            .eq("child_coord", request.child_coord)
             .limit(1)
             .execute()
         )
@@ -57,11 +55,11 @@ def get_iching_text_from_db(
         data = response.data
         if not data or len(data) == 0:
             logger.warning(
-                f"No I Ching text found for parent: {parent_coord}, child: {child_coord}"
+                f"No I Ching text found for parent: {request.parent_coord}, child: {request.child_coord}"
             )
             return IChingTextResponse(
-                parent_coord=parent_coord,
-                child_coord=child_coord,
+                parent_coord=request.parent_coord,
+                child_coord=request.child_coord,
                 parent_text=None,
                 child_text=None,
             )
@@ -80,39 +78,33 @@ def get_iching_text_from_db(
         raise e
 
 
-def get_iching_image_from_bucket(
-    parent_coord: str,
-    child_coord: str,
-    access_token: Optional[str] = None,
-    refresh_token: Optional[str] = None,
-) -> IChingImage:
+def get_iching_image_from_bucket(request: IChingImageRequest) -> IChingImageResponse:
     """
     Fetch I Ching hexagram image URL from storage bucket for given coordinates.
 
     Args:
-        parent_coord: Parent hexagram coordinate (e.g. "0-1")
-        child_coord: Child hexagram coordinate (e.g. "1")
-        access_token: User's access token for authenticated requests (optional)
-        refresh_token: User's refresh token for authenticated requests (optional)
+        request: IChingImageRequest containing parent_coord, child_coord and auth tokens
 
     Returns:
-        IChingImage: Object containing coordinates and image URL
+        IChingImageResponse: Object containing coordinates and image URL
 
     Raises:
         Exception: If image URL cannot be retrieved
     """
     logger.info(
-        f"Fetching I Ching image for parent: {parent_coord}, child: {child_coord}"
+        f"Fetching I Ching image for parent: {request.parent_coord}, child: {request.child_coord}"
     )
 
     try:
         # Construct the image path in the bucket
-        image_path = f"{parent_coord}/{child_coord}/hexagram.jpg"
+        image_path = f"{request.parent_coord}/{request.child_coord}/hexagram.jpg"
         bucket_name = "iching-images"
 
         # We must use an authenticated client since the bucket requires authentication
-        if access_token and refresh_token:
-            client = get_authenticated_client(access_token, refresh_token)
+        if request.access_token and request.refresh_token:
+            client = get_authenticated_client(
+                request.access_token, request.refresh_token
+            )
         else:
             raise ValueError("Authentication tokens required to access I Ching images")
 
@@ -121,9 +113,9 @@ def get_iching_image_from_bucket(
         signed_url_response = bucket.create_signed_url(image_path, 3600)
         image_url = signed_url_response["signedURL"]
 
-        return IChingImage(
-            parent_coord=parent_coord,
-            child_coord=child_coord,
+        return IChingImageResponse(
+            parent_coord=request.parent_coord,
+            child_coord=request.child_coord,
             image_url=image_url,
         )
 

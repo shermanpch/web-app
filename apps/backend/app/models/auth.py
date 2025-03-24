@@ -1,7 +1,7 @@
 """Authentication models for the application."""
 
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
 
@@ -57,3 +57,41 @@ class PasswordChange(BaseModel):
     password: str
     access_token: str
     refresh_token: str
+
+
+class SessionData(BaseModel):
+    """User session data model."""
+
+    access_token: str
+    refresh_token: str
+    expires_in: int = 3600
+    token_type: str = "bearer"
+
+
+class AuthResponse(BaseModel):
+    """Base authentication response model."""
+
+    status: str
+    message: Optional[str] = None
+
+
+class UserSession(BaseModel):
+    """User session data structure."""
+
+    access_token: str
+    refresh_token: str
+    expires_in: int = 3600
+    token_type: str = "bearer"
+
+
+class UserSessionData(BaseModel):
+    """Data structure for user session response."""
+
+    user: Dict[str, Any]
+    session: UserSession
+
+
+class UserSessionResponse(AuthResponse):
+    """User authentication response with session."""
+
+    data: UserSessionData

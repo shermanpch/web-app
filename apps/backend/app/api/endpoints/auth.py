@@ -2,20 +2,24 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from ...auth.dependencies import get_current_user
-from ...auth.supabase import (
+from ...models.auth import (
+    AuthResponse,
+    PasswordChange,
+    PasswordReset,
+    UserData,
+    UserLogin,
+    UserSession,
+    UserSessionData,
+    UserSessionResponse,
+    UserSignup,
+)
+from ...services.auth.dependencies import get_current_user
+from ...services.auth.supabase import (
     change_password,
     delete_user,
     login_user,
     reset_password,
     signup_user,
-)
-from ...models.auth import (
-    PasswordChange,
-    PasswordReset,
-    UserData,
-    UserLogin,
-    UserSignup,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -35,7 +39,7 @@ async def get_current_user_info(current_user: UserData = Depends(get_current_use
     return current_user
 
 
-@router.post("/refresh")
+@router.post("/refresh", response_model=AuthResponse)
 async def refresh_token(current_user: UserData = Depends(get_current_user)):
     """
     Refresh user token.
@@ -50,10 +54,10 @@ async def refresh_token(current_user: UserData = Depends(get_current_user)):
     Returns:
         Success message
     """
-    return {"status": "success", "message": "Token is valid"}
+    return AuthResponse(status="success", message="Token is valid")
 
 
-@router.post("/signup")
+@router.post("/signup", response_model=UserSessionResponse)
 async def register_user(user: UserSignup):
     """
     Register a new user.
@@ -66,14 +70,20 @@ async def register_user(user: UserSignup):
     """
     try:
         response = signup_user(user.email, user.password)
-        # Return the user and session data directly from the Supabase response
-        return {
-            "status": "success",
-            "data": {
-                "user": response.get("user", {}),
-                "session": response.get("session", None),
-            },
-        }
+        session_data = response.get("session", {})
+
+        return UserSessionResponse(
+            status="success",
+            data=UserSessionData(
+                user=response.get("user", {}),
+                session=UserSession(
+                    access_token=session_data.get("access_token", ""),
+                    refresh_token=session_data.get("refresh_token", ""),
+                    expires_in=session_data.get("expires_in", 3600),
+                    token_type=session_data.get("token_type", "bearer"),
+                ),
+            ),
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -81,7 +91,7 @@ async def register_user(user: UserSignup):
         )
 
 
-@router.post("/login")
+@router.post("/login", response_model=UserSessionResponse)
 async def login(user: UserLogin):
     """
     Login a user.
@@ -94,19 +104,18 @@ async def login(user: UserLogin):
     """
     try:
         response = login_user(user.email, user.password)
-        # Format response to match the expected structure
-        return {
-            "status": "success",
-            "data": {
-                "user": response.get("user", {}),
-                "session": {
-                    "access_token": response.get("access_token", ""),
-                    "refresh_token": response.get("refresh_token", ""),
-                    "expires_in": response.get("expires_in", 3600),
-                    "token_type": response.get("token_type", "bearer"),
-                },
-            },
-        }
+        return UserSessionResponse(
+            status="success",
+            data=UserSessionData(
+                user=response.get("user", {}),
+                session=UserSession(
+                    access_token=response.get("access_token", ""),
+                    refresh_token=response.get("refresh_token", ""),
+                    expires_in=response.get("expires_in", 3600),
+                    token_type=response.get("token_type", "bearer"),
+                ),
+            ),
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -114,7 +123,7 @@ async def login(user: UserLogin):
         )
 
 
-@router.post("/reset-password")
+@router.post("/reset-password", response_model=AuthResponse)
 async def request_password_reset(data: PasswordReset):
     """
     Request password reset email.
@@ -127,7 +136,7 @@ async def request_password_reset(data: PasswordReset):
     """
     try:
         reset_password(data.email)
-        return {"status": "success", "message": "Password reset email sent"}
+        return AuthResponse(status="success", message="Password reset email sent")
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -135,7 +144,7 @@ async def request_password_reset(data: PasswordReset):
         )
 
 
-@router.post("/change-password")
+@router.post("/change-password", response_model=AuthResponse)
 async def update_password(data: PasswordChange):
     """
     Change user password.
@@ -152,7 +161,7 @@ async def update_password(data: PasswordChange):
             data.access_token,
             data.refresh_token,
         )
-        return {"status": "success", "message": "Password updated successfully"}
+        return AuthResponse(status="success", message="Password updated successfully")
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -160,7 +169,7 @@ async def update_password(data: PasswordChange):
         )
 
 
-@router.delete("/users/{user_id}")
+@router.delete("/users/{user_id}", response_model=AuthResponse)
 async def remove_user(user_id: str, current_user: UserData = Depends(get_current_user)):
     """
     Delete a user account.
@@ -186,7 +195,7 @@ async def remove_user(user_id: str, current_user: UserData = Depends(get_current
         )
     try:
         delete_user(user_id)
-        return {"status": "success", "message": "User deleted successfully"}
+        return AuthResponse(status="success", message="User deleted successfully")
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

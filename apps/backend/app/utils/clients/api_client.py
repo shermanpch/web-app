@@ -4,7 +4,12 @@ from typing import Optional
 
 import httpx
 
-from ..models.divination import IChingImage, IChingTextRequest, IChingTextResponse
+from ...models.divination import (
+    IChingImageRequest,
+    IChingImageResponse,
+    IChingTextRequest,
+    IChingTextResponse,
+)
 
 
 class IChingAPIClient:
@@ -42,10 +47,8 @@ class IChingAPIClient:
                 json={
                     "parent_coord": request.parent_coord,
                     "child_coord": request.child_coord,
-                },
-                params={
-                    "access_token": self.access_token,
-                    "refresh_token": self.refresh_token,
+                    "access_token": request.access_token,
+                    "refresh_token": request.refresh_token,
                 },
             )
             response.raise_for_status()
@@ -53,8 +56,8 @@ class IChingAPIClient:
             return IChingTextResponse(**data)
 
     async def get_iching_image(
-        self, parent_coord: str, child_coord: str
-    ) -> IChingImage:
+        self, request: IChingImageRequest
+    ) -> IChingImageResponse:
         """
         Fetch I Ching image URL from the API.
 
@@ -69,18 +72,18 @@ class IChingAPIClient:
             httpx.HTTPStatusError: If the request fails
         """
         async with httpx.AsyncClient() as client:
-            response = await client.get(
+            response = await client.post(
                 f"{self.base_url}/api/divination/iching-image",
-                params={
-                    "parent_coord": parent_coord,
-                    "child_coord": child_coord,
-                    "access_token": self.access_token,
-                    "refresh_token": self.refresh_token,
+                json={
+                    "parent_coord": request.parent_coord,
+                    "child_coord": request.child_coord,
+                    "access_token": request.access_token,
+                    "refresh_token": request.refresh_token,
                 },
             )
             response.raise_for_status()
             data = response.json()
-            return IChingImage(**data)
+            return IChingImageResponse(**data)
 
     async def create_reading(self, reading, prediction: Optional[dict] = None):
         """

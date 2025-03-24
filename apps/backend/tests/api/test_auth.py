@@ -7,8 +7,8 @@ from fastapi import status
 from tests.api.base_test import BaseTest
 from tests.conftest import assert_has_fields, assert_successful_response
 
-# Get the logger with hierarchical naming
-logger = logging.getLogger("tests.api.auth")
+# Get the logger with module name
+logger = logging.getLogger(__name__)
 
 
 class TestAuthentication(BaseTest):

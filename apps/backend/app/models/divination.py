@@ -10,7 +10,8 @@ class IChingTextRequest(BaseModel):
 
     parent_coord: str
     child_coord: str
-    access_token: Optional[str] = None
+    access_token: str
+    refresh_token: str
 
 
 class IChingTextResponse(BaseModel):
@@ -22,8 +23,17 @@ class IChingTextResponse(BaseModel):
     child_text: Optional[str] = None
 
 
-class IChingImage(BaseModel):
-    """I Ching image model."""
+class IChingImageRequest(BaseModel):
+    """I Ching image request model."""
+
+    parent_coord: str
+    child_coord: str
+    access_token: str
+    refresh_token: str
+
+
+class IChingImageResponse(BaseModel):
+    """I Ching image response model."""
 
     parent_coord: str
     child_coord: str

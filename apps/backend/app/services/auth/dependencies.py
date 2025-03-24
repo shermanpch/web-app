@@ -6,8 +6,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
 from pydantic import ValidationError
 
-from ..config import settings
-from ..models.auth import TokenPayload, UserData
+from ...config import settings
+from ...models.auth import TokenPayload, UserData
 
 security = HTTPBearer()
 

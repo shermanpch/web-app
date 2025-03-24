@@ -11,10 +11,8 @@ class BaseTest:
 
     def setup_method(self, method):
         """Set up test method."""
-        # Use hierarchical logger name based on class module and name
-        module_name = self.__class__.__module__.split(".")[-1]
-        class_name = self.__class__.__name__
-        self.logger = logging.getLogger(f"tests.{module_name}.{class_name}")
+        # Use __name__ pattern for logger with class name suffix
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def teardown_method(self, method):
         """Clean up after test method."""

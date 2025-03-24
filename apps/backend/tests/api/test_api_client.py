@@ -4,12 +4,17 @@ import logging
 import os
 
 import pytest
-from src.clients.api_client import IChingAPIClient
-from src.models.divination import IChingImage, IChingTextRequest
+from app.models.divination import (
+    IChingImageRequest,
+    IChingImageResponse,
+    IChingTextRequest,
+    IChingTextResponse,
+)
+from app.utils.clients.api_client import IChingAPIClient
 from tests.api.base_test import BaseTest
 
-# Get the logger with hierarchical naming
-logger = logging.getLogger("tests.api.api_client")
+# Get the logger with module name
+logger = logging.getLogger(__name__)
 
 
 class TestIChingAPIClientIntegration(BaseTest):
@@ -49,6 +54,8 @@ class TestIChingAPIClientIntegration(BaseTest):
             request = IChingTextRequest(
                 parent_coord=test_parent_coord,
                 child_coord=test_child_coord,
+                access_token=auth_token,
+                refresh_token=refresh_token,
             )
 
             # ACT - Test fetching I Ching text with a real API call
@@ -56,16 +63,9 @@ class TestIChingAPIClientIntegration(BaseTest):
 
             # ASSERT
             # Verify the result structure
-            assert hasattr(
-                result, "parent_coord"
-            ), "Result missing parent_coord attribute"
-            assert hasattr(
-                result, "child_coord"
-            ), "Result missing child_coord attribute"
-            assert hasattr(
-                result, "parent_text"
-            ), "Result missing parent_text attribute"
-            assert hasattr(result, "child_text"), "Result missing child_text attribute"
+            assert isinstance(
+                result, IChingTextResponse
+            ), "Result should be an IChingTextResponse instance"
 
             # Verify the coordinates match what we requested
             assert (
@@ -120,17 +120,20 @@ class TestIChingAPIClientIntegration(BaseTest):
             test_parent_coord = "1-1"
             test_child_coord = "2"
 
-            # ACT - Test fetching I Ching image with a real API call
-            result = await api_client.get_iching_image(
-                test_parent_coord,
-                test_child_coord,
+            request = IChingImageRequest(
+                parent_coord=test_parent_coord,
+                child_coord=test_child_coord,
+                access_token=auth_token,
+                refresh_token=refresh_token,
             )
+            # ACT - Test fetching I Ching image with a real API call
+            result = await api_client.get_iching_image(request)
 
             # ASSERT
             # Verify the result structure
             assert isinstance(
-                result, IChingImage
-            ), "Result should be an IChingImage instance"
+                result, IChingImageResponse
+            ), "Result should be an IChingImageResponse instance"
 
             # Verify the coordinates match what we requested
             assert (

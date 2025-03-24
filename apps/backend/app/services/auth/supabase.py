@@ -6,10 +6,10 @@ from typing import Any, Dict
 import requests
 from supabase import Client, create_client
 
-from ..config import settings
+from ...config import settings
 
 # Create logger
-logger = logging.getLogger("auth")
+logger = logging.getLogger(__name__)
 
 
 def get_supabase_client() -> Client:

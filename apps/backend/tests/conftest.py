@@ -20,8 +20,8 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)],
 )
 
-# Create test logger with hierarchical structure
-logger = logging.getLogger("tests")
+# Create test logger with module name
+logger = logging.getLogger(__name__)
 
 # Add file handler to the test logger
 file_handler = logging.FileHandler(log_dir / "test_run.log")
@@ -147,7 +147,7 @@ def reset_password_user():
     Returns:
         dict: User credentials with specific email
     """
-    from src.config import settings
+    from app.config import settings
 
     return {"email": settings.TEST_EMAIL, "password": "TestPassword123!"}
 
@@ -155,7 +155,7 @@ def reset_password_user():
 @pytest.fixture(scope="function")
 def test_logger(request):
     """
-    Set up a hierarchical logger for each test, following the module structure.
+    Set up a logger for each test, using the module name pattern.
 
     Args:
         request: Pytest request object
@@ -163,10 +163,9 @@ def test_logger(request):
     Returns:
         Logger: Logger configured for the current test
     """
-    # Create hierarchical logger name based on module path and test name
-    module_name = request.module.__name__
+    # Create logger name based on module path and test name
     test_name = request.node.name
-    logger_name = f"tests.{module_name.split('.')[-1]}.{test_name}"
+    logger_name = f"{request.module.__name__}.{test_name}"
 
     # Get or create logger
     test_logger = logging.getLogger(logger_name)

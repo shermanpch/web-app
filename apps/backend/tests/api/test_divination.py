@@ -6,8 +6,8 @@ import pytest
 from tests.api.base_test import BaseTest
 from tests.conftest import assert_has_fields
 
-# Get the logger with hierarchical naming
-logger = logging.getLogger("tests.api.divination")
+# Get the logger with module name
+logger = logging.getLogger(__name__)
 
 
 class TestDivination(BaseTest):
@@ -22,10 +22,14 @@ class TestDivination(BaseTest):
         test_parent_coord = "1-1"
         test_child_coord = "2"
 
-        # ACT - Make request without auth tokens
+        # ACT - Make request without auth tokens - this should trigger validation error
         iching_response = client.post(
             "/api/divination/iching-text",
-            json={"parent_coord": test_parent_coord, "child_coord": test_child_coord},
+            json={
+                "parent_coord": test_parent_coord,
+                "child_coord": test_child_coord,
+                # access_token and refresh_token are required but missing
+            },
         )
 
         # ASSERT
@@ -64,14 +68,15 @@ class TestDivination(BaseTest):
         test_child_coord = "2"
 
         try:
-            # ACT - Make the API request with tokens as query parameters
+            # ACT - Make the API request with tokens in the request body using the model
             iching_response = client.post(
                 "/api/divination/iching-text",
                 json={
                     "parent_coord": test_parent_coord,
                     "child_coord": test_child_coord,
+                    "access_token": auth_token,
+                    "refresh_token": refresh_token,
                 },
-                params={"access_token": auth_token, "refresh_token": refresh_token},
             )
 
             # ASSERT
@@ -125,12 +130,13 @@ class TestDivination(BaseTest):
         test_parent_coord = "1-1"
         test_child_coord = "2"
 
-        # ACT - Make request without auth tokens
-        iching_response = client.get(
+        # ACT - Make request without auth tokens - using POST with model structure
+        iching_response = client.post(
             "/api/divination/iching-image",
-            params={
+            json={
                 "parent_coord": test_parent_coord,
                 "child_coord": test_child_coord,
+                # access_token and refresh_token are required but missing
             },
         )
 
@@ -171,10 +177,10 @@ class TestDivination(BaseTest):
         test_child_coord = "2"
 
         try:
-            # ACT - Make the API request with tokens as query parameters
-            iching_response = client.get(
+            # ACT - Use POST with model structure - all parameters in the request body
+            iching_response = client.post(
                 "/api/divination/iching-image",
-                params={
+                json={
                     "parent_coord": test_parent_coord,
                     "child_coord": test_child_coord,
                     "access_token": auth_token,

@@ -9,5 +9,4 @@ from .auth import (
     UserSignup,
 )
 from .divination import IChingTextRequest, IChingTextResponse
-from .quota import UserQuota
-from .readings import UserReading, UserReadingCreate, UserReadingUpdate
+from .users import UserQuotaRequest, UserQuotaResponse
