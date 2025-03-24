@@ -4,6 +4,7 @@ import logging
 import os
 
 import pytest
+from app.config import settings
 from app.models.divination import (
     IChingImageRequest,
     IChingImageResponse,
@@ -33,8 +34,8 @@ class TestIChingAPIClientIntegration(BaseTest):
         user_id = auth_tokens["user_id"]
 
         try:
-            # Determine the base URL for the API
-            base_url = os.environ.get("API_BASE_URL", "http://localhost:8000")
+            # Determine the base URL for the API using settings
+            base_url = f"http://{settings.HOST}:{settings.PORT}"
             # For the TestClient, we use an empty string as base_url
             if isinstance(client.app, type):  # If client.app is a FastAPI class
                 base_url = ""
@@ -103,8 +104,8 @@ class TestIChingAPIClientIntegration(BaseTest):
         user_id = auth_tokens["user_id"]
 
         try:
-            # Determine the base URL for the API
-            base_url = os.environ.get("API_BASE_URL", "http://localhost:8000")
+            # Determine the base URL for the API using settings
+            base_url = f"http://{settings.HOST}:{settings.PORT}"
             # For the TestClient, we use an empty string as base_url
             if isinstance(client.app, type):  # If client.app is a FastAPI class
                 base_url = ""

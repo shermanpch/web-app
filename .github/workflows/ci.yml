@@ -68,20 +68,22 @@ jobs:
       - name: Start backend server for tests
         working-directory: ./apps/backend
         run: |
-          python main.py &> server.log &
+          python main.py &
           sleep 5 # Give the server a moment to start up
-          cat server.log
         env:
           # Add required environment variables for server
           HOST: "0.0.0.0"
           PORT: "8000"
-          # Add debug mode
-          LOG_LEVEL: "DEBUG"
           # Supabase configuration (using GitHub secrets)
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           SUPABASE_JWT_SECRET: ${{ secrets.SUPABASE_JWT_SECRET }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # Testing configuration
+          TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
+          # OpenAI configuration
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL || 'gpt-4o' }}
 
       - name: Run backend tests
         working-directory: ./apps/backend
