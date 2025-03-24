@@ -65,15 +65,23 @@ jobs:
         working-directory: ./apps/backend
         run: pip install -r requirements.txt
 
+      - name: Start backend server for tests
+        working-directory: ./apps/backend
+        run: |
+          python -m app.main &
+          sleep 5 # Give the server a moment to start up
+        env:
+          # Add required environment variables for server
+          HOST: "0.0.0.0"
+          PORT: "8000"
+
       - name: Run backend tests
         working-directory: ./apps/backend
         run: pytest
         env:
           # Add required environment variables for tests
-          DEBUG: "True"
           HOST: "0.0.0.0"
           PORT: "8000"
-          TESTING: "true"
           # Supabase configuration (using GitHub secrets)
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
