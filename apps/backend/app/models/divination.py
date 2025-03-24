@@ -127,3 +127,37 @@ class IChingSaveReadingResponse(BaseModel):
     created_at: str
     success: bool
     message: str
+
+
+class IChingUpdateReadingRequest(BaseModel):
+    """Request model for updating I Ching reading."""
+
+    id: str  # UUID but passed as string
+    user_id: str  # UUID but passed as string
+    question: str
+    first_number: int
+    second_number: int
+    third_number: int
+    language: str = "English"
+    prediction: IChingPrediction
+    clarifying_question: Optional[str] = None
+    clarifying_answer: Optional[str] = None
+    access_token: str
+    refresh_token: str
+
+
+class IChingUpdateReadingResponse(BaseModel):
+    """Response model for updating I Ching reading."""
+
+    id: str  # UUID but passed as string
+    user_id: str  # UUID but passed as string
+    question: str
+    first_number: int
+    second_number: int
+    third_number: int
+    language: str = "English"
+    prediction: IChingPrediction
+    clarifying_question: Optional[str] = None
+    clarifying_answer: Optional[str] = None
+    access_token: str
+    refresh_token: str

@@ -68,7 +68,7 @@ jobs:
       - name: Start backend server for tests
         working-directory: ./apps/backend
         run: |
-          python -m app.main &
+          python main.py &
           sleep 5 # Give the server a moment to start up
         env:
           # Add required environment variables for server
