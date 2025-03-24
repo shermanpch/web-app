@@ -350,3 +350,107 @@ class TestDivination(BaseTest):
             # Clean up the test user
             if user_id:
                 user_cleanup(client, user_id, auth_token)
+
+    def test_save_iching_reading(self, client, auth_tokens, user_cleanup):
+        """Test saving I-Ching reading to the user_readings table."""
+        # ARRANGE
+        self.logger.info("Testing saving I-Ching reading to database")
+
+        # Extract tokens and user ID
+        auth_token = auth_tokens["access_token"]
+        refresh_token = auth_tokens["refresh_token"]
+        user_id = auth_tokens["user_id"]
+
+        # Test data for I-Ching reading
+        test_first_number = 38
+        test_second_number = 24
+        test_third_number = 16
+        test_question = "How should I approach my current challenges?"
+        test_language = "English"
+
+        try:
+            # STEP 1: First get a real prediction from the iching-reading endpoint
+            self.logger.info("Getting real prediction from I-Ching reading API")
+            reading_response = client.post(
+                "/api/divination/iching-reading",
+                json={
+                    "first_number": test_first_number,
+                    "second_number": test_second_number,
+                    "third_number": test_third_number,
+                    "question": test_question,
+                    "language": test_language,
+                    "access_token": auth_token,
+                    "refresh_token": refresh_token,
+                },
+            )
+
+            assert (
+                reading_response.status_code == 200
+            ), f"Failed to get I-Ching reading: {reading_response.text}"
+
+            # Get the real prediction data
+            reading_data = reading_response.json()
+            self.logger.info(
+                f"Retrieved real prediction for hexagram: {reading_data['hexagram_name']}"
+            )
+
+            # Clarifying questions for our test
+            test_clarifying_question = None
+            test_clarifying_answer = None
+
+            # STEP 2: Now save this real prediction to the database
+            self.logger.info("Saving the real prediction to database")
+            save_response = client.post(
+                "/api/divination/iching-reading/save",
+                json={
+                    "user_id": user_id,
+                    "question": test_question,
+                    "first_number": test_first_number,
+                    "second_number": test_second_number,
+                    "third_number": test_third_number,
+                    "language": test_language,
+                    "prediction": reading_data,
+                    "clarifying_question": test_clarifying_question,
+                    "clarifying_answer": test_clarifying_answer,
+                    "access_token": auth_token,
+                    "refresh_token": refresh_token,
+                },
+            )
+
+            # ASSERT
+            assert (
+                save_response.status_code == 200
+            ), f"I-Ching reading save failed: {save_response.text}"
+
+            # Verify response structure
+            save_data = save_response.json()
+            assert isinstance(save_data, dict), "Response should be a JSON object"
+
+            # Check that all required fields are present
+            assert_has_fields(
+                save_data,
+                ["id", "user_id", "created_at", "success", "message"],
+            )
+
+            # Verify the saved data matches what we sent
+            assert (
+                save_data["user_id"] == user_id
+            ), f"Expected user_id {user_id}, got {save_data['user_id']}"
+            assert save_data["success"] is True, "Expected success to be True"
+
+            # Verify we got back a UUID
+            reading_id = save_data["id"]
+            assert len(reading_id) > 0, "Expected a non-empty reading ID"
+
+            # Log the reading details for inspection
+            self.logger.info("I-Ching Reading Save Results:")
+            self.logger.info(f"Reading ID: {reading_id}")
+            self.logger.info(f"User ID: {save_data['user_id']}")
+            self.logger.info(f"Created At: {save_data['created_at']}")
+            self.logger.info(f"Success: {save_data['success']}")
+            self.logger.info(f"Message: {save_data['message']}")
+            self.logger.info("I-Ching reading save test passed successfully!")
+
+        finally:
+            # Do not clean up the test user to keep the reading in the database
+            pass

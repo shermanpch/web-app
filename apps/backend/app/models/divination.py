@@ -69,6 +69,18 @@ class LineChange(BaseModel):
     interpretation: str
 
 
+class IChingPrediction(BaseModel):
+    """Structured I Ching prediction model."""
+
+    hexagram_name: str
+    summary: str
+    interpretation: str
+    line_change: LineChange
+    result: HexagramResult
+    advice: str
+    image_path: Optional[str] = None
+
+
 class IChingReadingRequest(BaseModel):
     """I Ching reading request model."""
 
@@ -81,18 +93,37 @@ class IChingReadingRequest(BaseModel):
     refresh_token: str
 
 
-class IChingReadingResponse(BaseModel):
+class IChingReadingResponse(IChingPrediction):
     """I Ching reading response model."""
 
-    first_number: Optional[int] = None
-    second_number: Optional[int] = None
-    third_number: Optional[int] = None
-    question: Optional[str] = None
-    language: Optional[str] = None
-    hexagram_name: str
-    summary: str
-    interpretation: str
-    line_change: LineChange
-    result: HexagramResult
-    advice: str
-    image_path: Optional[str] = None
+    first_number: int
+    second_number: int
+    third_number: int
+    question: str
+    language: str
+
+
+class IChingSaveReadingRequest(BaseModel):
+    """Request model for saving I Ching reading to database."""
+
+    user_id: str  # UUID but passed as string
+    question: str
+    first_number: int
+    second_number: int
+    third_number: int
+    language: str = "English"
+    prediction: Optional[IChingPrediction] = None
+    clarifying_question: Optional[str] = None
+    clarifying_answer: Optional[str] = None
+    access_token: str
+    refresh_token: str
+
+
+class IChingSaveReadingResponse(BaseModel):
+    """Response model for saved I Ching reading."""
+
+    id: str  # UUID but returned as string
+    user_id: str
+    created_at: str
+    success: bool
+    message: str

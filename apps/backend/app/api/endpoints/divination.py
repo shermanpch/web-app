@@ -11,6 +11,8 @@ from ...models.divination import (
     IChingImageResponse,
     IChingReadingRequest,
     IChingReadingResponse,
+    IChingSaveReadingRequest,
+    IChingSaveReadingResponse,
     IChingTextRequest,
     IChingTextResponse,
 )
@@ -18,6 +20,7 @@ from ...services.core.oracle import Oracle
 from ...services.divination.iching import (
     get_iching_image_from_bucket,
     get_iching_text_from_db,
+    save_iching_reading_to_db,
 )
 
 router = APIRouter(prefix="/divination", tags=["divination"])
@@ -138,4 +141,38 @@ async def get_iching_reading(reading: IChingReadingRequest):
 
     text = get_iching_text_from_db(text_request)
     image = get_iching_image_from_bucket(image_request)
+
     return oracle.get_initial_reading(reading, text, image)
+
+
+@router.post("/iching-reading/save", response_model=IChingSaveReadingResponse)
+async def save_iching_reading(request: IChingSaveReadingRequest):
+    """
+    Save I Ching reading to user_readings table.
+
+    Args:
+        request: Request model containing reading data and auth tokens
+
+    Returns:
+        Confirmation of successful save with reading id
+
+    Raises:
+        HTTPException: If reading cannot be saved
+    """
+    try:
+        logger.info(f"API: Saving I Ching reading for user: {request.user_id}")
+
+        # Save the reading to the database
+        result = save_iching_reading_to_db(request)
+        return result
+
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        # Log error and return a generic error message
+        logger.error(f"API error saving I Ching reading: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to save I Ching reading: {str(e)}",
+        )

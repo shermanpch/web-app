@@ -123,7 +123,7 @@ async def login(user: UserLogin):
         )
 
 
-@router.post("/reset-password", response_model=AuthResponse)
+@router.post("/password/reset", response_model=AuthResponse)
 async def request_password_reset(data: PasswordReset):
     """
     Request password reset email.
@@ -144,7 +144,7 @@ async def request_password_reset(data: PasswordReset):
         )
 
 
-@router.post("/change-password", response_model=AuthResponse)
+@router.post("/password/change", response_model=AuthResponse)
 async def update_password(data: PasswordChange):
     """
     Change user password.

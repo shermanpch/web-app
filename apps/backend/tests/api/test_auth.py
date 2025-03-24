@@ -109,7 +109,7 @@ class TestAuthentication(BaseTest):
 
         # ACT
         response = client.post(
-            "/api/auth/reset-password", json={"email": reset_password_user["email"]}
+            "/api/auth/password/reset", json={"email": reset_password_user["email"]}
         )
 
         # ASSERT
@@ -150,7 +150,7 @@ class TestAuthentication(BaseTest):
             "refresh_token": refresh_token,
         }
 
-        change_response = client.post("/api/auth/change-password", json=change_request)
+        change_response = client.post("/api/auth/password/change", json=change_request)
 
         # ASSERT - Password change successful
         assert_successful_response(change_response)

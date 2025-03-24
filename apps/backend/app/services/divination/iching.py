@@ -1,10 +1,13 @@
 """I Ching divination utilities."""
 
 import logging
+from datetime import datetime
 
 from ...models.divination import (
     IChingImageRequest,
     IChingImageResponse,
+    IChingSaveReadingRequest,
+    IChingSaveReadingResponse,
     IChingTextRequest,
     IChingTextResponse,
 )
@@ -121,4 +124,71 @@ def get_iching_image_from_bucket(request: IChingImageRequest) -> IChingImageResp
 
     except Exception as e:
         logger.error(f"Error fetching I Ching image: {str(e)}")
+        raise e
+
+
+def save_iching_reading_to_db(
+    request: IChingSaveReadingRequest,
+) -> IChingSaveReadingResponse:
+    """
+    Save I Ching reading data to user_readings table in Supabase.
+
+    Args:
+        request: IChingSaveReadingRequest containing reading data and auth tokens
+
+    Returns:
+        IChingSaveReadingResponse with database record details
+
+    Raises:
+        Exception: If reading cannot be saved
+    """
+    logger.info(f"Saving I Ching reading for user: {request.user_id}")
+
+    try:
+        # Get authenticated client - authentication is required for database writes
+        if not request.access_token or not request.refresh_token:
+            raise ValueError("Authentication tokens required to save readings")
+
+        client = get_authenticated_client(request.access_token, request.refresh_token)
+
+        # Prepare reading data
+        reading_data = {
+            "user_id": request.user_id,
+            "question": request.question,
+            "first_number": request.first_number,
+            "second_number": request.second_number,
+            "third_number": request.third_number,
+            "language": request.language,
+        }
+
+        # Add optional fields if provided
+        if request.prediction:
+            # Convert the IChingPrediction model to a dictionary for storage
+            reading_data["prediction"] = request.prediction.model_dump()
+        if request.clarifying_question:
+            reading_data["clarifying_question"] = request.clarifying_question
+        if request.clarifying_answer:
+            reading_data["clarifying_answer"] = request.clarifying_answer
+
+        # Insert data into user_readings table
+        response = client.table("user_readings").insert(reading_data).execute()
+
+        # Check if we have any data from the insert
+        data = response.data
+        if not data or len(data) == 0:
+            logger.warning(f"No data returned from user_readings insert")
+            raise Exception("Failed to save I Ching reading - no response data")
+
+        # Return success response with record details
+        record = data[0]
+        return IChingSaveReadingResponse(
+            id=str(record["id"]),
+            user_id=record["user_id"],
+            created_at=str(record["created_at"]),
+            success=True,
+            message="I Ching reading saved successfully",
+        )
+
+    except Exception as e:
+        logger.error(f"Error saving I Ching reading: {str(e)}")
         raise e
