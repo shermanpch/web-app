@@ -6,6 +6,7 @@ import { ThemeProvider } from '@theme/theme-provider';
 import Header from '@layout/header';
 import Footer from '@layout/footer';
 import { config } from '@config/index';
+import { AuthProvider } from '@/lib/auth/auth-context';
 
 // Load font only once for performance optimization
 const inter = Inter({ 
@@ -83,15 +84,17 @@ export default function RootLayout({
       className={inter.variable}
     >
       <body className="min-h-screen w-full overflow-x-hidden bg-white dark:bg-slate-900 transition-colors duration-500">
-        <ThemeProvider>
-          <div className="flex min-h-screen flex-col">
-            <Header />
-            <main className="flex-grow">
-              {children}
-            </main>
-            <Footer />
-          </div>
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <div className="flex min-h-screen flex-col">
+              <Header />
+              <main className="flex-grow">
+                {children}
+              </main>
+              <Footer />
+            </div>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

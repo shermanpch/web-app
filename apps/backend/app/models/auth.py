@@ -51,6 +51,19 @@ class PasswordReset(BaseModel):
     email: str
 
 
+class PasswordResetVerify(BaseModel):
+    """Password reset verification request model."""
+
+    email: str
+    token: str
+
+
+class RefreshToken(BaseModel):
+    """Refresh token request model."""
+
+    refresh_token: str
+
+
 class PasswordChange(BaseModel):
     """Password change request model."""
 
@@ -91,7 +104,9 @@ class UserSessionData(BaseModel):
     session: UserSession
 
 
-class UserSessionResponse(AuthResponse):
-    """User authentication response with session."""
+class UserSessionResponse(BaseModel):
+    """User session response model."""
 
-    data: UserSessionData
+    status: str
+    data: Optional[UserSessionData] = None
+    message: Optional[str] = None

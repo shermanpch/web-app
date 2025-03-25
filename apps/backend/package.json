@@ -7,5 +7,9 @@
     "start": "python main.py",
     "test:all": "pytest tests/",
     "test:debug": "pytest -xvs tests/"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "python": ">=3.10.0"
   }
 } 

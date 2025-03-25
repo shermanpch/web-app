@@ -1,11 +1,15 @@
 """Authentication API endpoints."""
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from ...models.auth import (
     AuthResponse,
     PasswordChange,
     PasswordReset,
+    PasswordResetVerify,
+    RefreshToken,
     UserData,
     UserLogin,
     UserSession,
@@ -18,11 +22,15 @@ from ...services.auth.supabase import (
     change_password,
     delete_user,
     login_user,
+    refresh_user_session,
     reset_password,
     signup_user,
+    verify_password_reset_token,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+logger = logging.getLogger(__name__)
 
 
 @router.get("/me", response_model=UserData)
@@ -39,22 +47,47 @@ async def get_current_user_info(current_user: UserData = Depends(get_current_use
     return current_user
 
 
-@router.post("/refresh", response_model=AuthResponse)
-async def refresh_token(current_user: UserData = Depends(get_current_user)):
+@router.post("/refresh", response_model=UserSessionResponse)
+async def refresh_session(token: RefreshToken):
     """
-    Refresh user token.
-
-    Note:
-        This endpoint doesn't actually refresh the token since that's handled by Supabase.
-        It simply verifies that the current token is valid and returns a success message.
+    Refresh a user session token.
 
     Args:
-        current_user: Current authenticated user
+        token: The refresh token
 
     Returns:
-        Success message
+        New session tokens
     """
-    return AuthResponse(status="success", message="Token is valid")
+    try:
+        response = await refresh_user_session(token.refresh_token)
+        return UserSessionResponse(
+            status="success",
+            data=UserSessionData(
+                user=response.get("user", {}),
+                session=UserSession(
+                    access_token=response.get("access_token", ""),
+                    refresh_token=response.get("refresh_token", ""),
+                    expires_in=response.get("expires_in", 3600),
+                    token_type=response.get("token_type", "bearer"),
+                ),
+            ),
+        )
+    except Exception as e:
+        # Log the actual error for debugging
+        logger.error(f"Token refresh error: {str(e)}")
+
+        # Check for common token refresh errors
+        error_msg = str(e).lower()
+        if "expired" in error_msg or "invalid" in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Your session has expired. Please log in again.",
+            )
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to refresh session. Please log in again.",
+        )
 
 
 @router.post("/signup", response_model=UserSessionResponse)
@@ -69,8 +102,10 @@ async def register_user(user: UserSignup):
         User registration response
     """
     try:
+        logger.info(f"Attempting to register new user with email: {user.email}")
         response = await signup_user(user.email, user.password)
         session_data = response.get("session", {})
+        logger.info(f"Successfully registered new user with email: {user.email}")
 
         return UserSessionResponse(
             status="success",
@@ -85,9 +120,28 @@ async def register_user(user: UserSignup):
             ),
         )
     except Exception as e:
+        error_str = str(e)
+
+        # Log the actual error for debugging
+        logger.error(f"Signup error for {user.email}: {error_str}")
+
+        # Determine the appropriate error message based on the exception
+        if (
+            "already registered" in error_str.lower()
+            or "already exists" in error_str.lower()
+        ):
+            error_message = "This email is already registered"
+            error_code = status.HTTP_409_CONFLICT
+        elif "password" in error_str.lower():
+            error_message = "Password does not meet requirements"
+            error_code = status.HTTP_400_BAD_REQUEST
+        else:
+            error_message = "Failed to create account"
+            error_code = status.HTTP_400_BAD_REQUEST
+
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
+            status_code=error_code,
+            detail=error_message,
         )
 
 
@@ -103,7 +157,9 @@ async def login(user: UserLogin):
         User login response with access token
     """
     try:
+        logger.info(f"Login attempt for user: {user.email}")
         response = await login_user(user.email, user.password)
+        logger.info(f"Successful login for user: {user.email}")
         return UserSessionResponse(
             status="success",
             data=UserSessionData(
@@ -117,9 +173,15 @@ async def login(user: UserLogin):
             ),
         )
     except Exception as e:
+        error_str = str(e)
+        error_message = "Invalid email or password"
+
+        # Log the actual error for debugging but don't expose it to clients
+        logger.error(f"Login error for {user.email}: {error_str}")
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
+            detail=error_message,
         )
 
 
@@ -135,12 +197,19 @@ async def request_password_reset(data: PasswordReset):
         Password reset response
     """
     try:
+        logger.info(f"Password reset requested for email: {data.email}")
         await reset_password(data.email)
+        logger.info(f"Password reset email sent for: {data.email}")
         return AuthResponse(status="success", message="Password reset email sent")
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
+        # Log the actual error for debugging
+        logger.error(f"Password reset error for {data.email}: {str(e)}")
+
+        # For security reasons, always return a generic success message
+        # This prevents email enumeration attacks
+        return AuthResponse(
+            status="success",
+            message="If an account with that email exists, a password reset link has been sent",
         )
 
 
@@ -156,16 +225,37 @@ async def update_password(data: PasswordChange):
         Password change response
     """
     try:
+        logger.info("Password change attempt")
+        # Don't log tokens, but do log that we're attempting the operation
+        logger.debug("Attempting password change with provided tokens")
+
         await change_password(
             data.password,
             data.access_token,
             data.refresh_token,
         )
+        logger.info("Password updated successfully")
         return AuthResponse(status="success", message="Password updated successfully")
     except Exception as e:
+        error_str = str(e)
+
+        # Log the actual error for debugging
+        logger.error(f"Password change error: {error_str}")
+
+        # Determine appropriate error message
+        if "token" in error_str.lower() or "expired" in error_str.lower():
+            error_message = "Password reset link has expired or is invalid"
+            error_code = status.HTTP_401_UNAUTHORIZED
+        elif "password" in error_str.lower():
+            error_message = "Password does not meet requirements"
+            error_code = status.HTTP_400_BAD_REQUEST
+        else:
+            error_message = "Failed to change password"
+            error_code = status.HTTP_400_BAD_REQUEST
+
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
+            status_code=error_code,
+            detail=error_message,
         )
 
 
@@ -189,15 +279,58 @@ async def remove_user(user_id: str, current_user: UserData = Depends(get_current
     """
     # Check if the user is trying to delete their own account or is an admin
     if current_user.id != user_id:
+        logger.warning(f"User {current_user.id} attempted to delete account {user_id}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only delete your own account",
         )
     try:
+        logger.info(f"Deleting user account: {user_id}")
         await delete_user(user_id)
+        logger.info(f"Successfully deleted user account: {user_id}")
         return AuthResponse(status="success", message="User deleted successfully")
     except Exception as e:
+        # Log the actual error for debugging
+        logger.error(f"Account deletion error for user {user_id}: {str(e)}")
+
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete account. Please try again later.",
+        )
+
+
+@router.post("/password/reset/verify", response_model=AuthResponse)
+async def verify_password_reset(verification: PasswordResetVerify):
+    """
+    Verify password reset token.
+
+    Args:
+        verification: Email and token for verification
+
+    Returns:
+        Success message if token is valid
+    """
+    try:
+        logger.info(f"Verifying password reset token for email: {verification.email}")
+        logger.debug("Attempting to verify with provided token")
+        await verify_password_reset_token(verification.email, verification.token)
+        logger.info(f"Password reset token valid for: {verification.email}")
+        return AuthResponse(
+            status="success",
+            message="Password reset token is valid",
+        )
+    except Exception as e:
+        # Log the actual error for debugging
+        logger.error(f"Password reset verification error: {str(e)}")
+
+        error_msg = str(e).lower()
+        if "expired" in error_msg or "invalid" in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="This password reset link has expired or is invalid. Please request a new one.",
+            )
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to verify password reset. Please try again or request a new link.",
         )

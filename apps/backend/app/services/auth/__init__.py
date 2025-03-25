@@ -8,6 +8,8 @@ from .supabase import (
     get_supabase_admin_client,
     get_supabase_client,
     login_user,
+    refresh_user_session,
     reset_password,
     signup_user,
+    verify_password_reset_token,
 )

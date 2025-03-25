@@ -80,18 +80,27 @@ class TestAuthentication(BaseTest):
         auth_token = self._extract_auth_token(auth_headers)
         user_cleanup(client, user_id, auth_token)
 
-    def test_refresh_token(self, client, auth_headers, user_cleanup):
+    def test_refresh_token(
+        self, client, auth_headers, auth_tokens, test_user, user_cleanup
+    ):
         """Test refreshing token."""
         # ARRANGE
         self.logger.info("Testing token refresh")
         user_id = self._get_user_id(client, auth_headers)
 
+        # Get refresh token directly from auth_tokens fixture
+        refresh_token = auth_tokens["refresh_token"]
+
         # ACT
-        response = client.post("/api/auth/refresh", headers=auth_headers)
+        response = client.post(
+            "/api/auth/refresh", json={"refresh_token": refresh_token}
+        )
 
         # ASSERT
         data = assert_successful_response(response)
-        assert data["message"] == "Token is valid"
+        assert_has_fields(data, ["data"])
+        assert_has_fields(data["data"], ["session"])
+        assert_has_fields(data["data"]["session"], ["access_token", "refresh_token"])
 
         # CLEANUP
         auth_token = self._extract_auth_token(auth_headers)
@@ -226,3 +235,43 @@ class TestAuthentication(BaseTest):
         # Verify user is gone by trying to login
         verify_login = client.post("/api/auth/login", json=test_user)
         assert verify_login.status_code == 401, "User should no longer exist"
+
+    def test_verify_password_reset_token(
+        self, client, reset_password_user, mocker, user_cleanup
+    ):
+        """Test password reset token verification."""
+        # ARRANGE
+        self.logger.info("Testing password reset token verification")
+
+        # Sign up the user
+        signup_response = client.post("/api/auth/signup", json=reset_password_user)
+        user_data = self._extract_user_data(signup_response)
+        user_id = user_data.get("id")
+
+        # Mock the verify_password_reset_token function since
+        # we can't actually get the real token from auth
+        mock_verify = mocker.patch(
+            "app.api.endpoints.auth.verify_password_reset_token", return_value=None
+        )
+
+        # ACT
+        test_token = "test_verification_token_123"
+        response = client.post(
+            "/api/auth/password/reset/verify",
+            json={"email": reset_password_user["email"], "token": test_token},
+        )
+
+        # ASSERT
+        data = assert_successful_response(response)
+        assert "message" in data
+        assert "valid" in data["message"].lower()
+
+        # Verify our mock was called with correct parameters
+        mock_verify.assert_called_once_with(reset_password_user["email"], test_token)
+
+        # CLEANUP
+        if user_id:
+            login_response = client.post("/api/auth/login", json=reset_password_user)
+            if login_response.status_code == 200:
+                tokens = self._extract_tokens(login_response)
+                user_cleanup(client, user_id, tokens["access_token"])

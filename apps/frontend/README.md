@@ -76,6 +76,19 @@ Replace the placeholder content in the components with your own:
 
 This project is available as open source under the terms of the MIT License.
 
+## Development
+
+### Coding Standards
+
+This project follows specific coding standards, particularly around import paths and module organization. 
+
+Please refer to [CODING_STANDARDS.md](./CODING_STANDARDS.md) for details on:
+- Import path conventions
+- TypeScript best practices
+- Component organization
+
+Following these standards ensures consistency across the codebase and improves maintainability.
+
 ---
 
 Happy coding! 🚀 

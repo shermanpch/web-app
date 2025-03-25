@@ -40,3 +40,12 @@ Thumbs.db
 # Scraped data
 apps/backend/migrations/scripts/data/
 apps/backend/migrations/scripts/scrapers/.scraper_cache/
+
+# Cursor
+.cursor
+
+# Playwright
+**/test-results/
+**/playwright-report/
+**/playwright/.cache/
+**/e2e/.auth/

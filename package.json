@@ -6,13 +6,19 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "npm run --prefix apps/frontend dev & npm run --prefix apps/backend dev",
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\" --names \"frontend,backend\" --prefix-colors \"blue,green\"",
+    "dev:frontend": "npm run --prefix apps/frontend dev",
+    "dev:backend": "npm run --prefix apps/backend dev",
     "build": "npm run --prefix apps/frontend build",
     "start": "npm run --prefix apps/frontend start",
     "lint": "npm run --prefix apps/frontend lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md,js,jsx,json}\"",
+    "test:e2e": "npm run --prefix apps/frontend test:e2e",
+    "test:e2e:ui": "npm run --prefix apps/frontend test:e2e:ui",
+    "test:backend": "npm run --prefix apps/backend test:all"
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
     "prettier": "^3.5.3"
   },
   "engines": {

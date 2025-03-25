@@ -116,18 +116,6 @@ async def signup_user(email: str, password: str) -> dict:
         return response.json()
     except Exception as e:
         logger.error(f"Signup error for {email}: {str(e)}")
-        # Check if this is a database error related to user_quotas
-        if "user_quotas" in str(e).lower():
-            # Try to get the user anyway
-            try:
-                # Return a simple success response
-                logger.warning(
-                    "Bypassing user_quotas error and returning simple response"
-                )
-                return {"user": {"email": email}, "session": None}
-            except Exception as inner_e:
-                logger.error(f"Error in error handler: {str(inner_e)}")
-                raise inner_e
         raise e
 
 
@@ -243,4 +231,65 @@ async def delete_user(user_id: str) -> dict:
         return {"success": True, "message": f"User {user_id} deleted successfully"}
     except Exception as e:
         logger.error(f"Failed to delete user {user_id}: {str(e)}")
+        raise e
+
+
+async def refresh_user_session(refresh_token: str) -> dict:
+    """
+    Refresh a user session using Supabase REST API.
+
+    Args:
+        refresh_token: User's refresh token from previous login
+
+    Returns:
+        New session tokens and user data
+
+    Raises:
+        Exception: If session refresh fails
+    """
+    logger.info("Attempting to refresh user session")
+    try:
+        url = _get_supabase_auth_url("token?grant_type=refresh_token")
+        payload = {"refresh_token": refresh_token}
+
+        response = requests.post(url, json=payload, headers=_get_auth_headers())
+        response.raise_for_status()
+
+        logger.info("User session refreshed successfully")
+        return response.json()
+    except Exception as e:
+        logger.error(f"Session refresh error: {str(e)}")
+        raise e
+
+
+async def verify_password_reset_token(email: str, token: str) -> dict:
+    """
+    Verify a password reset token using Supabase REST API.
+
+    Args:
+        email: User email
+        token: Password reset token from the email link
+
+    Returns:
+        Verification response
+
+    Raises:
+        Exception: If verification fails
+    """
+    logger.info(f"Verifying password reset token for email: {email}")
+    try:
+        url = _get_supabase_auth_url("verify")
+        payload = {
+            "type": "recovery",
+            "email": email,
+            "token": token,
+        }
+
+        response = requests.post(url, json=payload, headers=_get_auth_headers())
+        response.raise_for_status()
+
+        logger.info(f"Password reset token verified successfully for: {email}")
+        return response.json()
+    except Exception as e:
+        logger.error(f"Token verification error for {email}: {str(e)}")
         raise e

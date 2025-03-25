@@ -48,23 +48,6 @@ class BaseTest:
         ), f"Failed to get user info: {user_response.text}"
         return user_response.json().get("id")
 
-    def _get_refresh_token(self, client, credentials: Dict[str, str]) -> str:
-        """
-        Get refresh token by logging in.
-
-        Args:
-            client: FastAPI test client
-            credentials: User credentials (email and password)
-
-        Returns:
-            str: Refresh token
-        """
-        login_response = client.post("/api/auth/login", json=credentials)
-        assert login_response.status_code == 200, f"Login failed: {login_response.text}"
-
-        login_data = login_response.json()
-        return login_data["data"]["session"]["refresh_token"]
-
     def _extract_tokens(self, response) -> Dict[str, str]:
         """
         Extract access and refresh tokens from response.
@@ -94,22 +77,6 @@ class BaseTest:
         """
         data = response.json().get("data", {})
         return data.get("user", {})
-
-    def _assert_token_response(self, response) -> None:
-        """
-        Assert that a response contains valid tokens.
-
-        Args:
-            response: HTTP response object
-        """
-        data = response.json().get("data", {})
-        session = data.get("session", {})
-
-        assert "access_token" in session, "Missing access_token in response"
-        assert "refresh_token" in session, "Missing refresh_token in response"
-
-        assert session["access_token"], "Empty access_token in response"
-        assert session["refresh_token"], "Empty refresh_token in response"
 
     def _verify_image_url_structure(
         self, url: str, parent_coord: str, child_coord: str
