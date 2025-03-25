@@ -7,16 +7,14 @@ import { secureStorage } from './secure-storage';
 import { 
   User, 
   Session, 
-  AuthState,
-  NavigationState,
   ExtendedAuthState,
-  UserSessionData 
+  LoginCredentials
 } from '@/types/auth';
 
 // Auth context type that extends the auth state with methods
 interface AuthContextType extends ExtendedAuthState {
-  signUp: (email: string, password: string) => Promise<void>;
-  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (_credentials: LoginCredentials) => Promise<void>;
+  signIn: (_credentials: LoginCredentials) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -61,14 +59,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Sign up function
-  const signUp = async (email: string, password: string) => {
+  // Sign up function using LoginCredentials type
+  const signUp = async (credentials: LoginCredentials) => {
     try {
       // Set loading state
       setState(prev => ({ ...prev, isLoading: true }));
       
       // Call signup API
-      const response = await authApi.signup({ email, password });
+      const response = await authApi.signup(credentials);
       
       // Store session data securely
       const authData: StoredAuthData = {
@@ -96,14 +94,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Sign in function
-  const signIn = async (email: string, password: string) => {
+  // Sign in function using LoginCredentials type
+  const signIn = async (credentials: LoginCredentials) => {
     try {
       // Set loading state
       setState(prev => ({ ...prev, isLoading: true }));
       
       // Call login API
-      const response = await authApi.login({ email, password });
+      const response = await authApi.login(credentials);
       
       // Store session data securely
       const authData: StoredAuthData = {

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { LoginCredentials, AuthFormProps } from '@/types/auth';
+import { AuthFormProps } from '@/types/auth';
 
 export function AuthForm({ type, onSubmit }: AuthFormProps) {
   const [email, setEmail] = useState('');
@@ -81,7 +81,7 @@ export function AuthForm({ type, onSubmit }: AuthFormProps) {
         <div className="text-center text-sm mt-4">
           {type === 'login' ? (
             <p>
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link href="/signup" className="text-blue-600 hover:text-blue-800 dark:text-blue-400">
                 Sign up
               </Link>

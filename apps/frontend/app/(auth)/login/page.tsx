@@ -10,10 +10,10 @@ export default function LoginPage() {
   const { signIn } = useAuth();
   const [error, setError] = useState<string | null>(null);
   
-  const handleLogin = async ({ email, password }: LoginCredentials) => {
+  const handleLogin = async (credentials: LoginCredentials) => {
     try {
       setError(null);
-      await signIn(email, password);
+      await signIn(credentials);
       // After successful login, the user will be redirected to the dashboard
       // This happens in the auth context's signIn function
     } catch (err) {
