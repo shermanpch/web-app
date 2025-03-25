@@ -25,6 +25,8 @@ jobs:
         run: npm run lint
 
   build-frontend:
+    # Commenting out the build-frontend job as requested
+    if: false # Skip this job
     runs-on: ubuntu-latest
     needs: lint
     steps:
@@ -118,9 +120,21 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run frontend tests
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Build Frontend (needed for tests)
+        run: npm run build
+
+      - name: Start Frontend Server
+        run: |
+          npm run start &
+          sleep 10 # Give the server a moment to start up
         working-directory: ./apps/frontend
-        run: npm test || echo "No tests specified"
+
+      - name: Run Playwright tests
+        working-directory: ./apps/frontend
+        run: npx playwright test
 
   # Optional: Add security scanning
   security-scan:
