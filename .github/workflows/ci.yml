@@ -14,7 +14,7 @@ env:
   NEXT_PUBLIC_BACKEND_API_URL: "http://localhost:8000"
   ENVIRONMENT: "development"
 
-  # To check frontend health
+  # To ensure frontend use a different port
   FRONTEND_PORT: "3000"
 
   # Using GitHub secrets for sensitive data
@@ -108,7 +108,7 @@ jobs:
       - name: Start frontend server
         working-directory: ./apps/frontend
         run: |
-          npm run start &
+          PORT=${{ env.FRONTEND_PORT }} npm run start &
           
           # Health check to verify the server started successfully
           MAX_RETRIES=30
