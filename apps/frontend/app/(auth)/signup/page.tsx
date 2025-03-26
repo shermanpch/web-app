@@ -5,24 +5,33 @@ import { AuthForm } from '@/components/auth/auth-form';
 import { AuthLayout } from '@/components/auth/auth-layout';
 import { useAuth } from '@/lib/auth/auth-context';
 import { LoginCredentials } from '@/types/auth';
+import { SuspenseWrapper } from '@/components/ui/suspense-wrapper';
+import { usePageState } from '@/hooks/use-page-state';
 
-export default function SignupPage() {
+function SignupContent() {
   const { signUp } = useAuth();
-  const [error, setError] = useState<string | null>(null);
+  const { withLoadingState } = usePageState();
   
   const handleSignup = async (credentials: LoginCredentials) => {
-    try {
-      setError(null);
+    await withLoadingState(async () => {
       await signUp(credentials);
       // Navigation happens in the auth context
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred during signup. Please try again.');
-    }
+    });
   };
   
   return (
-    <AuthLayout title="Create Your Account" error={error}>
-      <AuthForm type="signup" onSubmit={handleSignup} />
+    <AuthForm type="signup" onSubmit={handleSignup} />
+  );
+}
+
+export default function SignupPage() {
+  const [_error, _setError] = useState<string | null>(null);
+  
+  return (
+    <AuthLayout title="Create Your Account" error={_error}>
+      <SuspenseWrapper>
+        <SignupContent />
+      </SuspenseWrapper>
     </AuthLayout>
   );
 } 

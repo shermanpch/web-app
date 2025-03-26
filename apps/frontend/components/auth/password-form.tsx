@@ -9,7 +9,7 @@ import { AlertCircle } from 'lucide-react';
 import { Panel } from '@/components/ui/panel';
 
 export interface PasswordFormProps {
-  onSubmit: (passwords: { password: string; confirmPassword: string }) => Promise<void>;
+  onSubmit: (_passwords: { password: string; confirmPassword: string }) => Promise<void>;
   submitText?: string;
 }
 

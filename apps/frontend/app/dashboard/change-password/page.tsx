@@ -74,7 +74,14 @@ export default function ChangePasswordPage() {
             Password changed successfully! Redirecting to dashboard...
           </div>
         ) : (
-          <PasswordForm onSubmit={handleSubmit} />
+          <>
+            {error && (
+              <div className="p-4 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-100 rounded-md mb-4">
+                {error}
+              </div>
+            )}
+            <PasswordForm onSubmit={handleSubmit} />
+          </>
         )}
       </div>
     </div>

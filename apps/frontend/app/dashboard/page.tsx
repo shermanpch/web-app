@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
 
 export default function DashboardPage() {
-  const { user, isAuthenticated, isLoading, signOut, navigationState } = useAuth();
+  const { user, isAuthenticated, isLoading, signOut } = useAuth();
   const router = useRouter();
 
   useEffect(() => {

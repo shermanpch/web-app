@@ -2,11 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Critical theme initializing styles */
+:root {
+  /* Default color-scheme */
+  color-scheme: light dark;
+}
+
+/* Media query-based default styling to prevent flash */
+@media (prefers-color-scheme: dark) {
+  html {
+    background-color: hsl(222.2 47.4% 11.2%);
+    color: hsl(210 40% 98%);
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  html {
+    background-color: hsl(0 0% 100%);
+    color: hsl(222.2 84% 4.9%);
+  }
+}
+
+/* Critical form styles that transition properly with theme changes */
+input, textarea, select {
+  background-color: hsl(var(--input-background));
+  color: hsl(var(--input-foreground));
+  border-color: hsl(var(--input-border));
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
 @layer base {
   :root {
     /* Core theme colors */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
+    
+    /* Form input colors */
+    --input-background: 0 0% 100%;
+    --input-foreground: 222.2 84% 4.9%;
+    --input-border: 214.3 31.8% 91.4%;
     
     /* Gradient colors */
     --gradient-start: 160 84% 39%;
@@ -30,6 +64,11 @@
   .dark {
     --background: 222.2 47.4% 11.2%;
     --foreground: 210 40% 98%;
+    
+    /* Form input colors for dark mode */
+    --input-background: 217.2 32.6% 17.5%;
+    --input-foreground: 210 40% 98%;
+    --input-border: 217.2 32.6% 17.5%;
     
     --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
