@@ -1,0 +1,16 @@
+[build]
+publish = "apps/frontend/.next"
+command = "npm run build"
+
+[[plugins]]
+package = "@netlify/plugin-nextjs"
+
+[dev]
+framework = "next"
+directory = "apps/frontend"
+targetPort = 3000
+autoLaunch = true
+
+[build.environment]
+NODE_VERSION = "18"
+NPM_FLAGS = "--version"

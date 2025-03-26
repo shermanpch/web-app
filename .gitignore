@@ -49,3 +49,6 @@ apps/backend/migrations/scripts/scrapers/.scraper_cache/
 **/playwright-report/
 **/playwright/.cache/
 **/e2e/.auth/
+
+# Local Netlify folder
+.netlify
