@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,37 +11,76 @@ import { Panel } from '@/components/ui/panel';
 export interface PasswordFormProps {
   onSubmit: (_passwords: { password: string; confirmPassword: string }) => Promise<void>;
   submitText?: string;
+  error?: string | null;
+  isLoading?: boolean;
 }
 
-export function PasswordForm({ onSubmit, submitText = 'Change Password' }: PasswordFormProps) {
+export function PasswordForm({ 
+  onSubmit, 
+  submitText = 'Change Password',
+  error: externalError,
+  isLoading: externalLoading
+}: PasswordFormProps) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [internalError, setInternalError] = useState<string | null>(null);
+  const [internalLoading, setInternalLoading] = useState(false);
+  
+  // Use external state if provided, otherwise use internal state
+  const error = externalError !== undefined ? externalError : internalError;
+  const isLoading = externalLoading !== undefined ? externalLoading : internalLoading;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+  // Password validation
+  const validatePassword = useCallback(() => {
+    if (!password) {
+      setInternalError('Password is required');
+      return false;
+    }
     
-    // Basic validation
     if (password.length < 8) {
-      setError('Password must be at least 8 characters long');
-      return;
+      setInternalError('Password must be at least 8 characters long');
+      return false;
+    }
+    
+    if (!/\d/.test(password)) {
+      setInternalError('Password must contain at least one number');
+      return false;
     }
     
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setInternalError('Passwords do not match');
+      return false;
+    }
+    
+    return true;
+  }, [password, confirmPassword]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setInternalError(null);
+    
+    // Validate input
+    if (!validatePassword()) {
       return;
     }
     
-    setIsLoading(true);
+    // Manage loading state
+    if (externalLoading === undefined) {
+      setInternalLoading(true);
+    }
 
     try {
       await onSubmit({ password, confirmPassword });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+      // Set error internally only if not handled externally
+      if (externalError === undefined) {
+        setInternalError(err instanceof Error ? err.message : 'An unexpected error occurred');
+      }
     } finally {
-      setIsLoading(false);
+      // Reset loading state
+      if (externalLoading === undefined) {
+        setInternalLoading(false);
+      }
     }
   };
 
@@ -65,6 +104,9 @@ export function PasswordForm({ onSubmit, submitText = 'Change Password' }: Passw
             onChange={(e) => setPassword(e.target.value)}
             disabled={isLoading}
             required
+            minLength={8}
+            aria-invalid={!!error}
+            aria-describedby={error ? "password-error" : undefined}
           />
         </div>
 
@@ -78,10 +120,18 @@ export function PasswordForm({ onSubmit, submitText = 'Change Password' }: Passw
             onChange={(e) => setConfirmPassword(e.target.value)}
             disabled={isLoading}
             required
+            minLength={8}
+            aria-invalid={!!error}
+            aria-describedby={error ? "password-error" : undefined}
           />
         </div>
 
-        <Button type="submit" className="w-full" disabled={isLoading}>
+        <Button 
+          type="submit" 
+          className="w-full" 
+          disabled={isLoading}
+          aria-busy={isLoading}
+        >
           {isLoading ? 'Processing...' : submitText}
         </Button>
       </form>

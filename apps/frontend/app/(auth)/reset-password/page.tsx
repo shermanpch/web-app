@@ -17,30 +17,34 @@ function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  const { withLoadingState, setError } = usePageState();
+  const { withLoadingState, setError, error, isLoading } = usePageState();
   
-  // Process token just once on component mount
+  // Extract and validate token on component mount
   useEffect(() => {
-    // Get token from either hash or query params
-    const hash = window.location.hash.substring(1);
-    const hashParams = new URLSearchParams(hash);
-    const hashToken = hashParams.get('access_token');
+    const extractToken = () => {
+      // Try to get token from hash fragment (SPA style)
+      const hash = window.location.hash.substring(1);
+      const hashParams = new URLSearchParams(hash);
+      const hashToken = hashParams.get('access_token');
+      
+      // Try to get token from query params (traditional style)
+      const queryToken = searchParams.get('token') || searchParams.get('access_token');
+      
+      return hashToken || queryToken || null;
+    };
     
-    const queryToken = searchParams.get('token') || searchParams.get('access_token');
-    
-    // Use the token from the appropriate source
-    const token = hashToken || queryToken;
+    const token = extractToken();
     
     if (token) {
       setAccessToken(token);
     } else {
-      setError('Missing access token. Please use the link from your email.');
+      setError('Missing reset token. Please use the link from your email.');
     }
   }, [searchParams, setError]);
 
   const handleResetPassword = async ({ password }: { password: string; confirmPassword: string }) => {
     if (!accessToken) {
-      setError('Missing access token. Please use the link from your email.');
+      setError('Missing reset token. Please use the link from your email.');
       return;
     }
 
@@ -77,13 +81,15 @@ function ResetPasswordContent() {
       {accessToken ? (
         <PasswordForm 
           onSubmit={handleResetPassword} 
-          submitText="Reset Password" 
+          submitText="Reset Password"
+          error={error}
+          isLoading={isLoading}
         />
       ) : (
         <Panel>
           <div className="p-4">
             <p className="text-center text-sm text-muted-foreground">
-              Invalid or missing access token. Please make sure you&apos;re using the correct link from your email.
+              Invalid or missing reset token. Please make sure you&apos;re using the correct link from your email.
             </p>
             <Button 
               className="w-full mt-4" 
@@ -99,10 +105,8 @@ function ResetPasswordContent() {
 }
 
 export default function ResetPasswordPage() {
-  const [_error, _setError] = useState<string | null>(null);
-  
   return (
-    <AuthLayout title="Reset Password" error={_error}>
+    <AuthLayout title="Reset Password">
       <SuspenseWrapper>
         <ResetPasswordContent />
       </SuspenseWrapper>

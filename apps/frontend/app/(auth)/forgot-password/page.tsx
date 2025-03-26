@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { Panel } from '@/components/ui/panel';
 import { AuthLayout } from '@/components/auth/auth-layout';
 import { authApi } from '@/lib/api/endpoints/auth';
@@ -17,7 +18,7 @@ function ForgotPasswordContent() {
   const [isSuccess, setIsSuccess] = useState(false);
   const router = useRouter();
   
-  const { isLoading, withLoadingState } = usePageState();
+  const { isLoading, withLoadingState, error } = usePageState();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +54,13 @@ function ForgotPasswordContent() {
           <p className="text-sm text-muted-foreground mb-4">
             Enter your email address and we&apos;ll send you a link to reset your password.
           </p>
+          
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
           
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -92,10 +100,8 @@ function ForgotPasswordContent() {
 }
 
 export default function ForgotPasswordPage() {
-  const [_error, _setError] = useState<string | null>(null);
-  
   return (
-    <AuthLayout title="Forgot Password" error={_error}>
+    <AuthLayout title="Forgot Password">
       <SuspenseWrapper variant="compact">
         <ForgotPasswordContent />
       </SuspenseWrapper>

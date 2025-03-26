@@ -54,6 +54,8 @@ export interface UserSessionResponse {
 export interface AuthFormProps {
   type: 'login' | 'signup';
   onSubmit: (data: LoginCredentials) => Promise<void>;
+  error?: string | null;
+  isLoading?: boolean;
 }
 
 export interface AuthLayoutProps {
