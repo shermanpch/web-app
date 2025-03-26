@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 
@@ -9,11 +10,20 @@ from app.config import settings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 app = FastAPI(
     title="Web App API",
     description="Backend API for Web App",
     version="0.1.0",
 )
+
+# Log CORS origins for debugging
+logger.info(f"Environment: {settings.ENVIRONMENT}")
+logger.info(f"Frontend URL: {settings.FRONTEND_URL}")
+logger.info(f"CORS Origins: {settings.cors_origins}")
 
 # CORS configuration
 app.add_middleware(
