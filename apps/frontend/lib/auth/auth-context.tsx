@@ -135,34 +135,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Sign out function
   const signOut = async () => {
     try {
-      // Set navigation state to allow unauthenticated redirect
-      setState(prev => ({ 
-        ...prev, 
+      // Immediately clear authentication state first to prevent UI flashes
+      setState({
+        user: null,
+        session: null,
+        isAuthenticated: false,
         isLoading: true,
         navigationState: {
-          allowUnauthenticatedAccess: true
+          allowUnauthenticatedAccess: false
         }
-      }));
+      });
       
-      // Client-side logout
-      await authApi.logout();
+      // Perform cleanup operations asynchronously
+      await Promise.all([
+        authApi.logout(),
+        secureStorage.clear()
+      ]);
       
-      // Clear stored data
-      secureStorage.clear();
-      
-      // Reset state but keep navigation state
+      // Final state update after cleanup
       setState({
         user: null,
         session: null,
         isAuthenticated: false,
         isLoading: false,
         navigationState: {
-          allowUnauthenticatedAccess: true
+          allowUnauthenticatedAccess: false
         }
       });
-      
-      // Redirect to home page
-      router.push('/');
     } catch (error) {
       console.error('Sign-out failed', error);
       setState(prev => ({ ...prev, isLoading: false }));
@@ -183,8 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Call change password API
       await authApi.changePassword(
         password,
-        state.session.access_token,
-        state.session.refresh_token
+        state.session.access_token
       );
       
       // Update loading state

@@ -11,19 +11,17 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Only redirect to login if:
-    // 1. Not authenticated and not loading
-    // 2. Not in the middle of a navigation operation that allows unauthenticated access
-    const allowUnauthenticatedAccess = navigationState?.allowUnauthenticatedAccess || false;
-    
-    if (!isAuthenticated && !isLoading && !allowUnauthenticatedAccess) {
-      router.push("/login");
+    // Only redirect to login if not authenticated and not loading
+    if (!isAuthenticated && !isLoading) {
+      router.replace("/login");
     }
-  }, [isAuthenticated, isLoading, navigationState, router]);
+  }, [isAuthenticated, isLoading, router]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     console.log("Logging out...");
-    signOut();
+    // Reset auth state and immediately navigate
+    await signOut();
+    router.replace("/");
   };
 
   const handleChangePassword = () => {
@@ -39,7 +37,13 @@ export default function DashboardPage() {
     );
   }
 
-  // If we get here, user should be authenticated
+  // If not authenticated, don't render anything - just return null
+  // The useEffect will handle the redirect
+  if (!isAuthenticated || !user) {
+    return null;
+  }
+
+  // Only render dashboard content if authenticated
   return (
     <div className="flex min-h-screen flex-col p-8">
       <div className="flex justify-between items-center mb-8 relative z-[200]">
@@ -63,7 +67,7 @@ export default function DashboardPage() {
       </div>
       
       <Panel className="max-w-2xl relative z-[150]">
-        <h2 className="text-xl font-semibold mb-4 text-[hsl(var(--foreground))]">Welcome, {user?.email || "User"}!</h2>
+        <h2 className="text-xl font-semibold mb-4 text-[hsl(var(--foreground))]">Welcome, {user.email || "User"}!</h2>
         <p className="text-[hsl(var(--muted-foreground))] mb-4">
           You have successfully logged in to the application.
         </p>

@@ -51,13 +51,6 @@ class PasswordReset(BaseModel):
     email: str
 
 
-class PasswordResetVerify(BaseModel):
-    """Password reset verification request model."""
-
-    email: str
-    token: str
-
-
 class RefreshToken(BaseModel):
     """Refresh token request model."""
 
@@ -69,7 +62,6 @@ class PasswordChange(BaseModel):
 
     password: str
     access_token: str
-    refresh_token: str
 
 
 class SessionData(BaseModel):

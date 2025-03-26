@@ -8,7 +8,6 @@ from ...models.auth import (
     AuthResponse,
     PasswordChange,
     PasswordReset,
-    PasswordResetVerify,
     RefreshToken,
     UserData,
     UserLogin,
@@ -25,7 +24,6 @@ from ...services.auth.supabase import (
     refresh_user_session,
     reset_password,
     signup_user,
-    verify_password_reset_token,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -139,10 +137,7 @@ async def register_user(user: UserSignup):
             error_message = "Failed to create account"
             error_code = status.HTTP_400_BAD_REQUEST
 
-        raise HTTPException(
-            status_code=error_code,
-            detail=error_message,
-        )
+        raise HTTPException(status_code=error_code, detail=error_message)
 
 
 @router.post("/login", response_model=UserSessionResponse)
@@ -219,21 +214,14 @@ async def update_password(data: PasswordChange):
     Change user password.
 
     Args:
-        data: Password change data
+        data: Password change data (password and access_token)
 
     Returns:
         Password change response
     """
     try:
         logger.info("Password change attempt")
-        # Don't log tokens, but do log that we're attempting the operation
-        logger.debug("Attempting password change with provided tokens")
-
-        await change_password(
-            data.password,
-            data.access_token,
-            data.refresh_token,
-        )
+        await change_password(data.password, data.access_token)
         logger.info("Password updated successfully")
         return AuthResponse(status="success", message="Password updated successfully")
     except Exception as e:
@@ -253,10 +241,7 @@ async def update_password(data: PasswordChange):
             error_message = "Failed to change password"
             error_code = status.HTTP_400_BAD_REQUEST
 
-        raise HTTPException(
-            status_code=error_code,
-            detail=error_message,
-        )
+        raise HTTPException(status_code=error_code, detail=error_message)
 
 
 @router.delete("/users/{user_id}", response_model=AuthResponse)
@@ -296,41 +281,4 @@ async def remove_user(user_id: str, current_user: UserData = Depends(get_current
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete account. Please try again later.",
-        )
-
-
-@router.post("/password/reset/verify", response_model=AuthResponse)
-async def verify_password_reset(verification: PasswordResetVerify):
-    """
-    Verify password reset token.
-
-    Args:
-        verification: Email and token for verification
-
-    Returns:
-        Success message if token is valid
-    """
-    try:
-        logger.info(f"Verifying password reset token for email: {verification.email}")
-        logger.debug("Attempting to verify with provided token")
-        await verify_password_reset_token(verification.email, verification.token)
-        logger.info(f"Password reset token valid for: {verification.email}")
-        return AuthResponse(
-            status="success",
-            message="Password reset token is valid",
-        )
-    except Exception as e:
-        # Log the actual error for debugging
-        logger.error(f"Password reset verification error: {str(e)}")
-
-        error_msg = str(e).lower()
-        if "expired" in error_msg or "invalid" in error_msg:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="This password reset link has expired or is invalid. Please request a new one.",
-            )
-
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Unable to verify password reset. Please try again or request a new link.",
         )

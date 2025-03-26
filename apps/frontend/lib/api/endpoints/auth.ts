@@ -100,11 +100,11 @@ export const authApi = {
   /**
    * Change user password 
    */
-  async changePassword(password: string, accessToken: string, refreshToken: string): Promise<void> {
+  async changePassword(password: string, accessToken: string): Promise<void> {
     try {
       await axios.post(
         `${API_BASE_URL}/api/auth/password/change`,
-        { password, access_token: accessToken, refresh_token: refreshToken },
+        { password, access_token: accessToken },
         {
           headers: {
             'Content-Type': 'application/json',
@@ -128,6 +128,77 @@ export const authApi = {
       // Generic error
       console.error('Password change error:', error);
       throw new Error('Failed to change password. Please try again later.');
+    }
+  },
+
+  /**
+   * Request a password reset email
+   */
+  async requestPasswordReset(email: string): Promise<void> {
+    try {
+      await axios.post(
+        `${API_BASE_URL}/api/auth/password/reset`,
+        { email },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    } catch (error: any) {
+      // Handle axios errors
+      if (error?.response?.data) {
+        // Extract backend error message
+        const errorData = error.response.data as ErrorResponse;
+        
+        // Create a more specific error with the backend message
+        const errorMessage = errorData.detail || 
+          (errorData.errors ? Object.values(errorData.errors).flat().join(', ') : 
+          'Failed to request password reset');
+          
+        throw new Error(errorMessage);
+      }
+      
+      // Generic error
+      console.error('Password reset request error:', error);
+      throw new Error('Failed to request password reset. Please try again later.');
+    }
+  },
+
+  /**
+   * Reset password using the Supabase token
+   */
+  async resetPassword(password: string, accessToken: string): Promise<void> {
+    try {
+      await axios.post(
+        `${API_BASE_URL}/api/auth/password/change`,
+        { 
+          password, 
+          access_token: accessToken
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    } catch (error: any) {
+      // Handle axios errors
+      if (error?.response?.data) {
+        // Extract backend error message
+        const errorData = error.response.data as ErrorResponse;
+        
+        // Create a more specific error with the backend message
+        const errorMessage = errorData.detail || 
+          (errorData.errors ? Object.values(errorData.errors).flat().join(', ') : 
+          'Failed to reset password');
+          
+        throw new Error(errorMessage);
+      }
+      
+      // Generic error
+      console.error('Password reset error:', error);
+      throw new Error('Failed to reset password. Please try again later.');
     }
   },
 };

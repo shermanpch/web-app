@@ -11,5 +11,4 @@ from .supabase import (
     refresh_user_session,
     reset_password,
     signup_user,
-    verify_password_reset_token,
 )

@@ -59,7 +59,7 @@ export function AuthForm({ type, onSubmit }: AuthFormProps) {
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Password</Label>
             {type === 'login' && (
-              <Link href="/reset-password" className="text-sm text-[hsl(var(--primary))] hover:text-[hsl(var(--primary)/80)] focus:outline-none">
+              <Link href="/forgot-password" className="text-sm text-[hsl(var(--primary))] hover:text-[hsl(var(--primary)/80)] focus:outline-none">
                 Forgot password?
               </Link>
             )}
