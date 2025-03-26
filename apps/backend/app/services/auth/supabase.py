@@ -146,7 +146,7 @@ async def login_user(email: str, password: str) -> dict:
 
 async def reset_password(email: str) -> dict:
     """
-    Send password reset email using Supabase REST API.
+    Request a password reset email through Supabase REST API.
 
     Args:
         email: User email
@@ -156,8 +156,8 @@ async def reset_password(email: str) -> dict:
     """
     logger.info(f"Requesting password reset for: {email}")
     try:
-        frontend_url = settings.FRONTEND_URL or "http://localhost:3000"
-        redirect_url = f"{frontend_url}/reset-password"
+        # Use the FRONTEND_URL setting directly
+        redirect_url = f"{settings.FRONTEND_URL}/reset-password"
         logger.info(f"Reset password will redirect to: {redirect_url}")
 
         url = _get_supabase_auth_url(f"recover?redirect_to={redirect_url}")
