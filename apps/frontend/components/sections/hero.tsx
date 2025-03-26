@@ -43,7 +43,7 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center py-20 mt-16 overflow-hidden bg-[hsl(var(--background))]">
+    <section className="relative min-h-screen flex items-center justify-center">
       <Container>
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight mb-6 gradient-text">

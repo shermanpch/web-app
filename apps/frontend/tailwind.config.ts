@@ -35,6 +35,11 @@ const config: Config = {
           900: '#0f172a',
         },
       },
+      spacing: {
+        100: '25rem',
+        128: '32rem',
+        160: '40rem',
+      },
       fontFamily: {
         sans: ['var(--font-inter)'],
       },
