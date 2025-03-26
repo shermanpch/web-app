@@ -4,7 +4,6 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@theme/theme-provider';
 import Header from '@layout/header';
-import Footer from '@layout/footer';
 import { config } from '@config/index';
 import { AuthProvider } from '@/lib/auth/auth-context';
 
@@ -81,20 +80,19 @@ export default function RootLayout({
     <html 
       lang="en" 
       suppressHydrationWarning 
-      className={inter.variable}
+      className={`${inter.variable} dark`}
     >
-      <body className="min-h-screen w-full overflow-x-hidden bg-white dark:bg-slate-900 transition-colors duration-500">
-        <AuthProvider>
-          <ThemeProvider>
-            <div className="flex min-h-screen flex-col">
+      <body className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))] font-sans min-h-screen w-full overflow-x-hidden">
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <AuthProvider>
+            <div className="flex min-h-screen flex-col bg-[hsl(var(--background))]">
               <Header />
               <main className="flex-grow">
                 {children}
               </main>
-              <Footer />
             </div>
-          </ThemeProvider>
-        </AuthProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

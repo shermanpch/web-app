@@ -11,7 +11,7 @@ interface ExamplePromptProps {
 const ExamplePrompt = memo(({ text, onClick }: ExamplePromptProps) => (
   <button 
     onClick={onClick}
-    className="px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors rounded-full bg-slate-200/50 dark:bg-slate-800/50 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 border border-slate-300/50 dark:border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+    className="px-4 py-2 text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors rounded-full bg-[hsl(var(--background))] hover:bg-[hsl(var(--muted))/20] border border-[hsl(var(--border))/30] shadow-sm focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))/30]"
   >
     {text}
   </button>
@@ -23,9 +23,9 @@ const Hero = () => {
   const [searchText, setSearchText] = useState('');
 
   const examplePrompts = [
-    "How to implement authentication in Express.js?",
-    "Best practices for React performance optimization",
-    "Building a REST API with Node.js and MongoDB"
+    "How to Integrate Stripe in Next.js",
+    "Guide to React Hooks",
+    "Tailwind CSS Responsive Design"
   ];
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,21 +43,21 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center py-20 mt-16 overflow-hidden bg-white dark:bg-slate-900 transition-colors duration-500">
+    <section className="relative min-h-screen flex items-center justify-center py-20 mt-16 overflow-hidden bg-[hsl(var(--background))]">
       <Container>
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight mb-6 bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 dark:from-emerald-400 dark:via-blue-400 dark:to-purple-500 text-transparent bg-clip-text transition-colors duration-500">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight mb-6 gradient-text">
             Your Technical Documentation Assistant
           </h1>
-          <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-12 max-w-3xl mx-auto transition-colors duration-500">
+          <p className="text-lg md:text-xl text-[hsl(var(--muted-foreground))] mb-12 max-w-3xl mx-auto">
             Access comprehensive technical documentation, code examples, and best practices all in one place. Let AI help you find exactly what you need.
           </p>
 
           {/* Search Demo */}
           <div className="w-full max-w-2xl mx-auto mb-8">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/10 via-blue-400/10 to-purple-500/10 rounded-xl blur-xl"></div>
-              <div className="relative bg-white/80 dark:bg-slate-900/90 backdrop-blur-sm rounded-xl border border-slate-200/50 dark:border-slate-700/50 p-2 transition-colors duration-500">
+              <div className="absolute inset-0 bg-gradient-to-r from-[hsl(var(--gradient-start))/20] via-[hsl(var(--gradient-middle))/20] to-[hsl(var(--gradient-end))/20] rounded-xl blur-[25px]"></div>
+              <div className="relative bg-[hsl(var(--background))/60] backdrop-blur-md rounded-xl shadow-lg p-2">
                 <form onSubmit={handleSearchSubmit} className="flex items-center">
                   <label htmlFor="search-input" className="sr-only">Search query</label>
                   <input
@@ -65,13 +65,13 @@ const Hero = () => {
                     type="text"
                     value={searchText}
                     onChange={handleSearchChange}
-                    className="w-full bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50 rounded-lg px-4 py-3 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 placeholder-slate-500 transition-colors duration-500"
-                    placeholder="Ask any technical question..."
+                    className="w-full bg-[hsl(var(--foreground))/5] rounded-xl px-4 py-3 text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))/50] placeholder-[hsl(var(--foreground))/60] border-none backdrop-blur-sm ring-1 ring-[hsl(var(--gradient-middle))/30] transition-all duration-200 hover:ring-[hsl(var(--gradient-middle))/50] gradient-glow"
+                    placeholder="Select a prompt below to view an example of output documentation..."
                   />
                   <button 
                     type="submit" 
                     aria-label="Search" 
-                    className="ml-2 p-3 rounded-lg transition-all duration-300 text-white bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500 hover:from-emerald-600 hover:via-blue-600 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="ml-2 p-3 rounded-xl text-white bg-gradient-to-r from-[hsl(var(--gradient-start))] via-[hsl(var(--gradient-middle))] to-[hsl(var(--gradient-end))] hover:opacity-90 hover:scale-105 transition-all duration-200 shadow-md focus:outline-none"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
@@ -84,7 +84,7 @@ const Hero = () => {
 
           {/* Example Prompts */}
           <div className="text-center mb-4">
-            <p className="text-sm text-slate-500 uppercase tracking-wider mb-4 transition-colors duration-500">TRY THESE EXAMPLES</p>
+            <p className="text-sm text-[hsl(var(--muted-foreground))] uppercase tracking-wider mb-4">SELECT A PROMPT</p>
             <div className="flex flex-wrap justify-center gap-3">
               {examplePrompts.map((prompt, index) => (
                 <ExamplePrompt 
@@ -99,8 +99,8 @@ const Hero = () => {
       </Container>
 
       {/* Background Gradient Effect */}
-      <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 -z-10 transition-colors duration-500"></div>
-      <div aria-hidden="true" className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-20 dark:opacity-100 -z-10 transition-opacity duration-500"></div>
+      <div aria-hidden="true" className="absolute inset-0 bg-[hsl(var(--background))] -z-10"></div>
+      <div aria-hidden="true" className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-20 dark:opacity-100 -z-10"></div>
     </section>
   );
 };

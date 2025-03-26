@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Panel } from "@/components/ui/panel";
 
 export default function DashboardPage() {
   const { user, isAuthenticated, isLoading, signOut, navigationState } = useAuth();
@@ -38,7 +39,7 @@ export default function DashboardPage() {
   return (
     <div className="flex min-h-screen flex-col p-8">
       <div className="flex justify-between items-center mb-8 relative z-[200]">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-[hsl(var(--foreground))]">Dashboard</h1>
         <Button 
           variant="destructive" 
           onClick={handleLogout} 
@@ -48,18 +49,18 @@ export default function DashboardPage() {
         </Button>
       </div>
       
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md p-6 max-w-2xl relative z-[150]">
-        <h2 className="text-xl font-semibold mb-4 text-slate-900 dark:text-white">Welcome, {user?.email || "User"}!</h2>
-        <p className="text-slate-600 dark:text-slate-300 mb-4">
+      <Panel className="max-w-2xl relative z-[150]">
+        <h2 className="text-xl font-semibold mb-4 text-[hsl(var(--foreground))]">Welcome, {user?.email || "User"}!</h2>
+        <p className="text-[hsl(var(--muted-foreground))] mb-4">
           You have successfully logged in to the application.
         </p>
-        <div className="p-4 bg-slate-100 dark:bg-slate-700 rounded-md">
-          <p className="text-sm font-medium text-slate-800 dark:text-slate-200 mb-2">User details:</p>
-          <pre className="text-xs text-slate-800 dark:text-slate-200 bg-slate-200 dark:bg-slate-600 p-3 rounded overflow-auto">
+        <div className="p-4 bg-[hsl(var(--muted))] rounded-md">
+          <p className="text-sm font-medium text-[hsl(var(--foreground))] mb-2">User details:</p>
+          <pre className="text-xs text-[hsl(var(--foreground))] bg-[hsl(var(--muted)/70)] p-3 rounded overflow-auto">
             {JSON.stringify(user, null, 2)}
           </pre>
         </div>
-      </div>
+      </Panel>
     </div>
   );
 } 

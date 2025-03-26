@@ -21,7 +21,7 @@ function ThemeToggleButton() {
     // SSR placeholder with same dimensions to avoid layout shift
     return (
       <button 
-        className="w-10 h-10 rounded-lg bg-slate-200/70 dark:bg-slate-800/50 flex items-center justify-center" 
+        className="w-10 h-10 rounded-lg bg-[hsl(var(--muted))] flex items-center justify-center" 
         aria-hidden="true"
         tabIndex={-1}
       >
@@ -35,7 +35,7 @@ function ThemeToggleButton() {
   return (
     <button
       onClick={handleToggle}
-      className="w-10 h-10 rounded-lg bg-slate-200/70 hover:bg-slate-300/80 dark:bg-slate-800/50 dark:hover:bg-slate-800/70 flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+      className="w-10 h-10 rounded-lg bg-[hsl(var(--muted))] hover:bg-[hsl(var(--muted-foreground/20))] flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
       aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
       title={isDark ? "Switch to light theme" : "Switch to dark theme"}
     >
@@ -46,7 +46,7 @@ function ThemeToggleButton() {
           viewBox="0 0 24 24"
           strokeWidth={2}
           stroke="currentColor"
-          className="w-5 h-5 text-slate-400 hover:text-slate-200"
+          className="w-5 h-5 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
         >
           <circle cx="12" cy="12" r="4"></circle>
           <path d="M12 2v2"></path>
@@ -65,7 +65,7 @@ function ThemeToggleButton() {
           viewBox="0 0 24 24"
           strokeWidth={2}
           stroke="currentColor"
-          className="w-5 h-5 text-slate-600 hover:text-slate-800"
+          className="w-5 h-5 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
         >
           <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
         </svg>

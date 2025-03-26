@@ -27,10 +27,10 @@ const Header = () => {
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 px-2 sm:px-4 py-2 sm:py-4">
+    <div className="fixed top-0 left-0 right-0 z-50 px-2 sm:px-4 py-2 sm:py-4 bg-[hsl(var(--background))]">
       <header className={`
-        max-w-7xl mx-auto bg-white/90 dark:bg-slate-900/90 backdrop-blur-lg 
-        border border-slate-200/20 dark:border-slate-700/20 rounded-xl sm:rounded-2xl 
+        max-w-7xl mx-auto bg-[hsl(var(--background)/90)] backdrop-blur-lg 
+        border border-[hsl(var(--border)/20)] rounded-xl sm:rounded-2xl 
         shadow-lg transition-all duration-300
         ${scrolled ? 'py-2' : 'py-3'}
       `}>
@@ -49,7 +49,7 @@ const Header = () => {
                     priority
                   />
                 </div>
-                <span className="text-lg sm:text-xl font-bold text-slate-800 dark:text-white">Company</span>
+                <span className="text-lg sm:text-xl font-bold text-[hsl(var(--foreground))]">Company</span>
               </Link>
             </div>
 
@@ -60,7 +60,7 @@ const Header = () => {
                   <Link 
                     key={index}
                     href={link.href} 
-                    className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 text-[hsl(var(--foreground)/80)] hover:bg-[hsl(var(--muted))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
                   >
                     {link.label}
                   </Link>
@@ -71,7 +71,7 @@ const Header = () => {
             {/* Mobile Menu Button */}
             <button 
               type="button"
-              className="md:hidden text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="md:hidden text-[hsl(var(--foreground)/80)] hover:bg-[hsl(var(--muted))] p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
               onClick={toggleMobileMenu}
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-menu"
@@ -85,10 +85,10 @@ const Header = () => {
             {/* Action Buttons */}
             <div className="hidden md:flex items-center space-x-2">
               <ThemeToggle />
-              <Link href="/login" className="hidden sm:block px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <Link href="/login" className="hidden sm:block px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 text-[hsl(var(--foreground)/80)] hover:bg-[hsl(var(--muted))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]">
                 Sign In
               </Link>
-              <Link href="/signup" className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 text-white bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500 hover:from-emerald-600 hover:via-blue-600 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <Link href="/signup" className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 text-white bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500 hover:from-emerald-600 hover:via-blue-600 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]">
                 Get Started
               </Link>
             </div>

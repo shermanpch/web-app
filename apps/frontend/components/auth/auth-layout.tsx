@@ -7,9 +7,9 @@ import { AuthLayoutProps } from '@/types/auth';
 
 export function AuthLayout({ children, title, error }: AuthLayoutProps) {
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 bg-white dark:bg-slate-900">
+    <div className="flex min-h-screen items-center justify-center p-4 bg-[hsl(var(--background))]">
       <div className="w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center mb-6 text-slate-900 dark:text-white">
+        <h1 className="text-2xl font-bold text-center mb-6 text-[hsl(var(--foreground))]">
           {title}
         </h1>
         

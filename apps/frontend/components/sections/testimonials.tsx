@@ -20,21 +20,21 @@ const TestimonialCard = memo(({
   url = '#'
 }: Omit<TestimonialProps, 'id'>) => {
   return (
-    <div className="h-64 backdrop-blur-lg rounded-xl border border-slate-300 dark:border-slate-700/30 transition-all duration-300 hover:translate-y-[-5px] hover:border-slate-400 dark:hover:border-slate-600 overflow-hidden flex flex-col bg-white/50 dark:bg-white/5 hover:bg-white/10">
+    <div className="h-64 backdrop-blur-lg rounded-xl border border-[hsl(var(--border))] transition-all duration-300 hover:translate-y-[-5px] hover:border-[hsl(var(--border))/80] overflow-hidden flex flex-col bg-[hsl(var(--card))] hover:bg-[hsl(var(--card))/90]">
       <div className="p-4 flex-grow flex flex-col">
-        <p className="text-slate-700 dark:text-slate-300 mb-4 line-clamp-5">{content}</p>
+        <p className="text-[hsl(var(--card-foreground))] mb-4 line-clamp-5">{content}</p>
         <div className="mt-auto pt-4">
-          <p className="font-medium text-slate-900 dark:text-slate-200">{author}</p>
-          <p className="text-sm text-slate-600 dark:text-slate-400">{role}</p>
+          <p className="font-medium text-[hsl(var(--foreground))]">{author}</p>
+          <p className="text-sm text-[hsl(var(--muted-foreground))]">{role}</p>
         </div>
       </div>
-      <div className="border-t border-slate-300 dark:border-slate-700/30 p-4">
+      <div className="border-t border-[hsl(var(--border))] p-4">
         <div className="flex justify-between items-center">
-          <p className="text-sm text-slate-600 dark:text-slate-400">via {source}</p>
+          <p className="text-sm text-[hsl(var(--muted-foreground))]">via {source}</p>
           <a 
             href={url} 
             aria-label={`View full testimonial from ${author}`}
-            className="text-slate-600 dark:text-slate-400 hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-emerald-400 hover:via-blue-500 hover:to-purple-500 transition-all duration-300 focus:outline-none focus:text-transparent focus:bg-clip-text focus:bg-gradient-to-r focus:from-emerald-400 focus:via-blue-500 focus:to-purple-500"
+            className="text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))] transition-colors focus:outline-none focus:text-[hsl(var(--primary))]"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -105,8 +105,8 @@ const Testimonials = () => {
     <section id="testimonials" className="py-20">
       <Container>
         <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-blue-500 to-purple-500">What Users Are Saying</h2>
-          <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4 gradient-text">What Users Are Saying</h2>
+          <p className="text-xl text-[hsl(var(--muted-foreground))] max-w-3xl mx-auto">
             Join hundreds of satisfied developers who have elevated their projects with our template.
           </p>
         </div>

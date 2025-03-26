@@ -14,11 +14,13 @@ const FeatureCard = ({ title, description, icon }: FeatureProps) => {
   return (
     <Card variant="default" padding="md" hover={true}>
       <CardContent>
-        <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400 mb-4">
-          {icon}
+        <div className="w-12 h-12 rounded-lg bg-[hsl(var(--primary))/10] flex items-center justify-center mb-4">
+          <div className="gradient-icon">
+            {icon}
+          </div>
         </div>
-        <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-200 mb-3">{title}</h3>
-        <p className="text-slate-700 dark:text-slate-400">{description}</p>
+        <h3 className="text-xl font-semibold text-[hsl(var(--foreground))] mb-3">{title}</h3>
+        <p className="text-[hsl(var(--muted-foreground))]">{description}</p>
       </CardContent>
     </Card>
   );
@@ -86,8 +88,8 @@ const Features = () => {
     <section id="features" className="py-20">
       <Container>
         <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-blue-500 to-purple-500">Powerful Features</h2>
-          <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4 gradient-text">Powerful Features</h2>
+          <p className="text-xl text-[hsl(var(--muted-foreground))] max-w-3xl mx-auto">
             Everything you need to build modern web applications with the latest best practices.
           </p>
         </div>

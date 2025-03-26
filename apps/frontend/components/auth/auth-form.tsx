@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { Panel } from '@/components/ui/panel';
 import { AuthFormProps } from '@/types/auth';
 
 export function AuthForm({ type, onSubmit }: AuthFormProps) {
@@ -32,7 +33,7 @@ export function AuthForm({ type, onSubmit }: AuthFormProps) {
   };
 
   return (
-    <div className="border rounded-lg p-6 shadow-sm bg-white dark:bg-slate-800">
+    <Panel>
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <Alert variant="destructive" className="mb-4">
@@ -58,7 +59,7 @@ export function AuthForm({ type, onSubmit }: AuthFormProps) {
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Password</Label>
             {type === 'login' && (
-              <Link href="/reset-password" className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400">
+              <Link href="/reset-password" className="text-sm text-[hsl(var(--primary))] hover:text-[hsl(var(--primary)/80)] focus:outline-none">
                 Forgot password?
               </Link>
             )}
@@ -82,20 +83,20 @@ export function AuthForm({ type, onSubmit }: AuthFormProps) {
           {type === 'login' ? (
             <p>
               Don&apos;t have an account?{' '}
-              <Link href="/signup" className="text-blue-600 hover:text-blue-800 dark:text-blue-400">
+              <Link href="/signup" className="text-[hsl(var(--primary))] hover:text-[hsl(var(--primary)/80)] focus:outline-none">
                 Sign up
               </Link>
             </p>
           ) : (
             <p>
               Already have an account?{' '}
-              <Link href="/login" className="text-blue-600 hover:text-blue-800 dark:text-blue-400">
+              <Link href="/login" className="text-[hsl(var(--primary))] hover:text-[hsl(var(--primary)/80)] focus:outline-none">
                 Sign in
               </Link>
             </p>
           )}
         </div>
       </form>
-    </div>
+    </Panel>
   );
 }
