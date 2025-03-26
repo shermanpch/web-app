@@ -60,4 +60,15 @@ export interface AuthLayoutProps {
   children: React.ReactNode;
   title: string;
   error?: string | null;
+}
+
+/**
+ * API error response structure
+ */
+export interface ErrorResponse {
+  status: string;
+  detail?: string;
+  errors?: Record<string, string[]>;
+  message?: string;
+  error_description?: string;
 } 

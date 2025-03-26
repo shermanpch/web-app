@@ -2,15 +2,9 @@ import axios from 'axios';
 import { 
   LoginCredentials, 
   SignUpCredentials, 
-  UserSessionResponse 
+  UserSessionResponse,
+  ErrorResponse
 } from '@/types/auth';
-
-// Define an error response structure
-interface ErrorResponse {
-  status: string;
-  detail?: string;
-  errors?: Record<string, string[]>;
-}
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -45,8 +39,6 @@ export const authApi = {
         throw new Error(errorMessage);
       }
       
-      // Generic error
-      console.error('Signup error:', error);
       throw new Error('Failed to create account. Please try again later.');
     }
   },
@@ -81,19 +73,15 @@ export const authApi = {
         throw new Error(errorMessage);
       }
       
-      // Generic error
-      console.error('Login error:', error);
       throw new Error('Failed to authenticate. Please try again later.');
     }
   },
   
   /**
    * Logout current user - client-side only implementation
-   * This method doesn't communicate with a backend endpoint
    */
   async logout(): Promise<void> {
     // This is a client-side only logout implementation
-    // No API call is made since there's no backend logout endpoint
     return Promise.resolve();
   },
   
@@ -125,8 +113,6 @@ export const authApi = {
         throw new Error(errorMessage);
       }
       
-      // Generic error
-      console.error('Password change error:', error);
       throw new Error('Failed to change password. Please try again later.');
     }
   },
@@ -159,8 +145,6 @@ export const authApi = {
         throw new Error(errorMessage);
       }
       
-      // Generic error
-      console.error('Password reset request error:', error);
       throw new Error('Failed to request password reset. Please try again later.');
     }
   },
@@ -174,7 +158,7 @@ export const authApi = {
         `${API_BASE_URL}/api/auth/password/change`,
         { 
           password, 
-          access_token: accessToken
+          access_token: accessToken 
         },
         {
           headers: {
@@ -189,15 +173,13 @@ export const authApi = {
         const errorData = error.response.data as ErrorResponse;
         
         // Create a more specific error with the backend message
-        const errorMessage = errorData.detail || 
+        const errorMessage = errorData.detail || errorData.message || 
           (errorData.errors ? Object.values(errorData.errors).flat().join(', ') : 
           'Failed to reset password');
           
         throw new Error(errorMessage);
       }
       
-      // Generic error
-      console.error('Password reset error:', error);
       throw new Error('Failed to reset password. Please try again later.');
     }
   },

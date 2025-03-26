@@ -33,6 +33,10 @@ class Settings(BaseSettings):
     # Testing
     TEST_EMAIL: str = os.getenv("TEST_EMAIL", "test@example.com")
 
+    # Frontend URL
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
+
+    # Settings
     model_config = ConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 

@@ -2,135 +2,100 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
-import { Panel } from '@/components/ui/panel';
+import { PasswordForm } from '@/components/auth/password-form';
 import { AuthLayout } from '@/components/auth/auth-layout';
 import { authApi } from '@/lib/api/endpoints/auth';
+import { Button } from '@/components/ui/button';
+import { CheckCircle2 } from 'lucide-react';
+import { Panel } from '@/components/ui/panel';
 
 export default function ResetPasswordPage() {
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const router = useRouter();
 
+  // Extract access_token from URL hash fragment
   useEffect(() => {
-    // Extract token from URL hash
-    if (typeof window !== 'undefined') {
+    const getHashParameters = () => {
       const hash = window.location.hash.substring(1);
-      const token = new URLSearchParams(hash).get('access_token');
+      const params = new URLSearchParams(hash);
       
-      if (!token) {
-        setError("Invalid or expired reset link");
-        setTimeout(() => {
-          router.push("/login");
-        }, 3000);
-      } else {
-        setAccessToken(token);
-      }
-    }
-  }, [router]);
+      return {
+        accessToken: params.get('access_token'),
+        refreshToken: params.get('refresh_token'),
+        type: params.get('type')
+      };
+    };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+    const { accessToken: token, type } = getHashParameters();
     
-    // Validate passwords match
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
+    // Only proceed if this is a recovery type and token exists
+    if (token && type === 'recovery') {
+      setAccessToken(token);
+    } else if (!token) {
+      setError('Missing access token. Please use the link from your email.');
+    } else if (type !== 'recovery') {
+      setError('Invalid token type. Please request a new password reset link.');
     }
+  }, []);
 
-    // Validate password requirements (e.g., length)
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
-      return;
-    }
-
+  const handleResetPassword = async ({ password }: { password: string; confirmPassword: string }) => {
     if (!accessToken) {
-      setError("Missing access token. Please try the reset link again.");
+      setError('Missing access token. Please use the link from your email.');
       return;
     }
-
-    setIsLoading(true);
 
     try {
       await authApi.resetPassword(password, accessToken);
-      
-      // Show success message
-      window.alert("Your password has been updated. Please log in with your new password.");
-      
-      router.push('/login');
-    } catch (err) {
-      console.error('Reset password error:', err);
-      
-      // Provide a more detailed error message
-      if (err instanceof Error) {
-        setError(err.message);
-      } else if (typeof err === 'object' && err !== null) {
-        setError(JSON.stringify(err));
-      } else {
-        setError('An unexpected error occurred during password reset');
-      }
-    } finally {
-      setIsLoading(false);
+      setSuccess(true);
+    } catch (err: any) {
+      setError(err instanceof Error ? err.message : 'An error occurred while resetting your password.');
     }
   };
 
   return (
     <AuthLayout title="Reset Password" error={error}>
-      <Panel>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="password">New Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading || !accessToken}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              disabled={isLoading || !accessToken}
-              required
-            />
-          </div>
-
-          <Button 
-            type="submit" 
-            className="w-full" 
-            disabled={isLoading || !accessToken}
-          >
-            {isLoading ? 'Resetting...' : 'Reset Password'}
-          </Button>
-
-          <div className="text-center text-sm mt-4">
-            <Button 
-              variant="link" 
-              onClick={() => router.push('/login')} 
-              className="text-[hsl(var(--primary))] hover:text-[hsl(var(--primary)/80)] focus:outline-none"
+      {success ? (
+        <Panel>
+          <div className="text-center space-y-4 py-4">
+            <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto" />
+            <h2 className="text-xl font-semibold">Password Reset Successful</h2>
+            <p className="mb-6">
+              Your password has been successfully reset.
+            </p>
+            <Button
+              onClick={() => router.push('/login')}
+              className="w-full"
             >
-              Back to Login
+              Go to Login
             </Button>
           </div>
-        </form>
-      </Panel>
+        </Panel>
+      ) : (
+        <>
+          {accessToken ? (
+            <PasswordForm 
+              onSubmit={handleResetPassword} 
+              submitText="Reset Password" 
+            />
+          ) : (
+            <Panel>
+              <div className="p-4">
+                <p className="text-center text-sm text-muted-foreground">
+                  Invalid or missing access token. Please make sure you're using the correct link from your email.
+                </p>
+                <Button 
+                  className="w-full mt-4" 
+                  onClick={() => router.push('/forgot-password')}
+                >
+                  Request New Link
+                </Button>
+              </div>
+            </Panel>
+          )}
+        </>
+      )}
     </AuthLayout>
   );
 } 

@@ -89,7 +89,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Redirect to login page after successful signup
       router.push('/login');
     } catch (error) {
-      console.error('Sign-up failed', error);
       setState(prev => ({ ...prev, isLoading: false }));
       throw error;
     }
@@ -126,7 +125,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Redirect to dashboard
       router.push('/dashboard');
     } catch (error) {
-      console.error('Sign-in failed', error);
       setState(prev => ({ ...prev, isLoading: false }));
       throw error;
     }
@@ -162,8 +160,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           allowUnauthenticatedAccess: false
         }
       });
+      
+      // Redirect to login page after signout
+      router.push('/login');
     } catch (error) {
-      console.error('Sign-out failed', error);
       setState(prev => ({ ...prev, isLoading: false }));
     }
   };
@@ -189,7 +189,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setState(prev => ({ ...prev, isLoading: false }));
       
     } catch (error) {
-      console.error('Password change failed', error);
       setState(prev => ({ ...prev, isLoading: false }));
       throw error;
     }

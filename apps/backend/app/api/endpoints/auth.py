@@ -226,12 +226,18 @@ async def update_password(data: PasswordChange):
         return AuthResponse(status="success", message="Password updated successfully")
     except Exception as e:
         error_str = str(e)
-
-        # Log the actual error for debugging
         logger.error(f"Password change error: {error_str}")
 
-        # Determine appropriate error message
-        if "token" in error_str.lower() or "expired" in error_str.lower():
+        # Check for specific Supabase error codes in the error message
+        if "same_password_error" in error_str:
+            error_message = (
+                "New password should be different from your current password"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=error_message
+            )
+        # Determine appropriate error message for other cases
+        elif "token" in error_str.lower() or "expired" in error_str.lower():
             error_message = "Password reset link has expired or is invalid"
             error_code = status.HTTP_401_UNAUTHORIZED
         elif "password" in error_str.lower():

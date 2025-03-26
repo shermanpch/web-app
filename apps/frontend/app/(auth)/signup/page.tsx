@@ -14,10 +14,8 @@ export default function SignupPage() {
     try {
       setError(null);
       await signUp(credentials);
-      // After successful signup, the user will be redirected to the login page
-      // This happens in the auth context's signUp function
+      // Navigation happens in the auth context
     } catch (err) {
-      // Display error from backend
       setError(err instanceof Error ? err.message : 'An error occurred during signup. Please try again.');
     }
   };

@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { Panel } from '@/components/ui/panel';
 import { AuthLayout } from '@/components/auth/auth-layout';
 import { authApi } from '@/lib/api/endpoints/auth';
@@ -15,6 +14,7 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -23,12 +23,18 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
 
     try {
+      // Request password reset
       await authApi.requestPasswordReset(email);
-      // Show success message
-      window.alert("If an account exists, a reset email has been sent.");
-      router.push('/login');
+      setIsSuccess(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+      // Provide a more detailed error message
+      if (err instanceof Error) {
+        setError(err.message);
+      } else if (typeof err === 'object' && err !== null) {
+        setError(JSON.stringify(err));
+      } else {
+        setError('An unexpected error occurred while requesting password reset');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -37,34 +43,63 @@ export default function ForgotPasswordPage() {
   return (
     <AuthLayout title="Forgot Password" error={error}>
       <Panel>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading}
-              required
-            />
-          </div>
-
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Sending...' : 'Send Reset Link'}
-          </Button>
-
-          <div className="text-center text-sm mt-4">
-            <Button 
-              variant="link" 
-              onClick={() => router.push('/login')} 
-              className="text-[hsl(var(--primary))] hover:text-[hsl(var(--primary)/80)] focus:outline-none"
+        {isSuccess ? (
+          <div className="text-center space-y-4 py-4">
+            <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto" />
+            <h2 className="text-xl font-semibold">Check Your Email</h2>
+            <p className="mb-4">
+              We've sent password reset instructions to <strong>{email}</strong>
+            </p>
+            <p className="text-sm text-muted-foreground mb-6">
+              Please check your email inbox and spam folder. The reset link is valid for 24 hours.
+            </p>
+            <Button
+              variant="outline" 
+              onClick={() => router.push('/login')}
+              className="w-full"
             >
-              Back to Login
+              Return to Login
             </Button>
           </div>
-        </form>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Enter your email address and we'll send you a link to reset your password.
+            </p>
+            
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
+                required
+              />
+            </div>
+
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isLoading}
+            >
+              {isLoading ? 'Sending...' : 'Send Reset Link'}
+            </Button>
+
+            <div className="text-center text-sm mt-4">
+              <Button 
+                variant="link" 
+                onClick={() => router.push('/login')} 
+                className="text-[hsl(var(--primary))] hover:text-[hsl(var(--primary)/80)] focus:outline-none"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Login
+              </Button>
+            </div>
+          </form>
+        )}
       </Panel>
     </AuthLayout>
   );

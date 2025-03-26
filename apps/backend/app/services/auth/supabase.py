@@ -140,6 +140,7 @@ async def login_user(email: str, password: str) -> dict:
         logger.info(f"Login successful for: {email}")
         return response.json()
     except Exception as e:
+        logger.error(f"Login error for {email}: {str(e)}")
         raise e
 
 
@@ -155,7 +156,11 @@ async def reset_password(email: str) -> dict:
     """
     logger.info(f"Requesting password reset for: {email}")
     try:
-        url = _get_supabase_auth_url("recover")
+        frontend_url = settings.FRONTEND_URL or "http://localhost:3000"
+        redirect_url = f"{frontend_url}/reset-password"
+        logger.info(f"Reset password will redirect to: {redirect_url}")
+
+        url = _get_supabase_auth_url(f"recover?redirect_to={redirect_url}")
         payload = {"email": email}
 
         response = requests.post(url, json=payload, headers=_get_auth_headers())
@@ -183,15 +188,32 @@ async def change_password(new_password: str, access_token: str) -> dict:
     try:
         url = _get_supabase_auth_url("user")
         payload = {"password": new_password}
-
-        # Use the access token for authentication
         headers = _get_auth_headers(access_token)
 
         response = requests.put(url, json=payload, headers=headers)
+
+        # Handle specific error codes before raising general errors
+        if response.status_code == 422:
+            error_body = response.json()
+            logger.error(f"Password change error response: {error_body}")
+
+            if error_body.get("error_code") == "same_password":
+                error_message = (
+                    "New password should be different from your current password"
+                )
+                raise ValueError(f"same_password_error: {error_message}")
+
+        if response.status_code != 200:
+            logger.error(f"Password change error response: {response.text}")
+
         response.raise_for_status()
 
         logger.info("Password updated successfully")
         return response.json()
+    except ValueError as e:
+        # Re-raise ValueError which may contain our custom error message
+        logger.error(f"Password change error: {str(e)}")
+        raise e
     except Exception as e:
         logger.error(f"Password change error: {str(e)}")
         raise e

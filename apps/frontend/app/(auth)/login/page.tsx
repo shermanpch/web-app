@@ -14,10 +14,8 @@ export default function LoginPage() {
     try {
       setError(null);
       await signIn(credentials);
-      // After successful login, the user will be redirected to the dashboard
-      // This happens in the auth context's signIn function
+      // Navigation happens in the auth context
     } catch (err) {
-      // Display error from backend
       setError(err instanceof Error ? err.message : 'An error occurred during login. Please try again.');
     }
   };
