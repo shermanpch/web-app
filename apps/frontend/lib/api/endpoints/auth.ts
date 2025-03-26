@@ -96,4 +96,38 @@ export const authApi = {
     // No API call is made since there's no backend logout endpoint
     return Promise.resolve();
   },
+  
+  /**
+   * Change user password 
+   */
+  async changePassword(password: string, accessToken: string, refreshToken: string): Promise<void> {
+    try {
+      await axios.post(
+        `${API_BASE_URL}/api/auth/password/change`,
+        { password, access_token: accessToken, refresh_token: refreshToken },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    } catch (error: any) {
+      // Handle axios errors
+      if (error?.response?.data) {
+        // Extract backend error message
+        const errorData = error.response.data as ErrorResponse;
+        
+        // Create a more specific error with the backend message
+        const errorMessage = errorData.detail || 
+          (errorData.errors ? Object.values(errorData.errors).flat().join(', ') : 
+          'Password change failed');
+          
+        throw new Error(errorMessage);
+      }
+      
+      // Generic error
+      console.error('Password change error:', error);
+      throw new Error('Failed to change password. Please try again later.');
+    }
+  },
 };

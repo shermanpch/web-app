@@ -16,6 +16,7 @@ interface AuthContextType extends ExtendedAuthState {
   signUp: (_credentials: LoginCredentials) => Promise<void>;
   signIn: (_credentials: LoginCredentials) => Promise<void>;
   signOut: () => Promise<void>;
+  changePassword: (_password: string) => Promise<void>;
 }
 
 // Create auth context
@@ -168,6 +169,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Change password function
+  const changePassword = async (password: string) => {
+    try {
+      // Set loading state
+      setState(prev => ({ ...prev, isLoading: true }));
+      
+      // Check if we have a session
+      if (!state.session) {
+        throw new Error('No active session. Please login again to change your password.');
+      }
+      
+      // Call change password API
+      await authApi.changePassword(
+        password,
+        state.session.access_token,
+        state.session.refresh_token
+      );
+      
+      // Update loading state
+      setState(prev => ({ ...prev, isLoading: false }));
+      
+    } catch (error) {
+      console.error('Password change failed', error);
+      setState(prev => ({ ...prev, isLoading: false }));
+      throw error;
+    }
+  };
+
   // Provide auth context
   return (
     <AuthContext.Provider
@@ -176,6 +205,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signUp,
         signIn,
         signOut,
+        changePassword,
       }}
     >
       {children}

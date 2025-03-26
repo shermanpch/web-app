@@ -26,6 +26,10 @@ export default function DashboardPage() {
     signOut();
   };
 
+  const handleChangePassword = () => {
+    router.push("/dashboard/change-password");
+  };
+
   // Show loading state while checking authentication
   if (isLoading) {
     return (
@@ -40,13 +44,22 @@ export default function DashboardPage() {
     <div className="flex min-h-screen flex-col p-8">
       <div className="flex justify-between items-center mb-8 relative z-[200]">
         <h1 className="text-3xl font-bold text-[hsl(var(--foreground))]">Dashboard</h1>
-        <Button 
-          variant="destructive" 
-          onClick={handleLogout} 
-          className="relative z-[200]"
-        >
-          Logout
-        </Button>
+        <div className="flex space-x-3">
+          <Button 
+            variant="outline" 
+            onClick={handleChangePassword} 
+            className="relative z-[200]"
+          >
+            Change Password
+          </Button>
+          <Button 
+            variant="destructive" 
+            onClick={handleLogout} 
+            className="relative z-[200]"
+          >
+            Logout
+          </Button>
+        </div>
       </div>
       
       <Panel className="max-w-2xl relative z-[150]">
