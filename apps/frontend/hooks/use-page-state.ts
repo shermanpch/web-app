@@ -50,7 +50,8 @@ export function usePageState<T = undefined>({
    */
   const withLoadingState = useCallback(async <R>(
     asyncOperation: () => Promise<R>,
-    errorMessage = 'An unexpected error occurred'
+    errorMessage = 'An unexpected error occurred',
+    rethrowError = true
   ): Promise<R | undefined> => {
     try {
       startLoading();
@@ -67,6 +68,11 @@ export function usePageState<T = undefined>({
         message = JSON.stringify(err);
       }
       setError(message);
+      
+      if (rethrowError) {
+        throw err;
+      }
+      
       return undefined;
     } finally {
       stopLoading();

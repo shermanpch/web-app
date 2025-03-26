@@ -16,7 +16,7 @@ function SignupContent() {
     await withLoadingState(async () => {
       await signUp(credentials);
       // Navigation happens in the auth context
-    });
+    }, 'Signup failed', true);
   };
   
   return (

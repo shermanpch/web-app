@@ -124,15 +124,9 @@ async def register_user(user: UserSignup):
         logger.error(f"Signup error for {user.email}: {error_str}")
 
         # Determine the appropriate error message based on the exception
-        if (
-            "already registered" in error_str.lower()
-            or "already exists" in error_str.lower()
-        ):
+        if "422 client error: unprocessable entity" in error_str.lower():
             error_message = "This email is already registered"
             error_code = status.HTTP_409_CONFLICT
-        elif "password" in error_str.lower():
-            error_message = "Password does not meet requirements"
-            error_code = status.HTTP_400_BAD_REQUEST
         else:
             error_message = "Failed to create account"
             error_code = status.HTTP_400_BAD_REQUEST
@@ -169,10 +163,11 @@ async def login(user: UserLogin):
         )
     except Exception as e:
         error_str = str(e)
-        error_message = "Invalid email or password"
 
-        # Log the actual error for debugging but don't expose it to clients
+        # Log the actual error for debugging
         logger.error(f"Login error for {user.email}: {error_str}")
+
+        error_message = "Invalid email or password"
 
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -200,8 +195,6 @@ async def request_password_reset(data: PasswordReset):
         # Log the actual error for debugging
         logger.error(f"Password reset error for {data.email}: {str(e)}")
 
-        # For security reasons, always return a generic success message
-        # This prevents email enumeration attacks
         return AuthResponse(
             status="success",
             message="If an account with that email exists, a password reset link has been sent",
@@ -234,15 +227,13 @@ async def update_password(data: PasswordChange):
                 "New password should be different from your current password"
             )
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=error_message
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=error_message,
             )
         # Determine appropriate error message for other cases
         elif "token" in error_str.lower() or "expired" in error_str.lower():
             error_message = "Password reset link has expired or is invalid"
             error_code = status.HTTP_401_UNAUTHORIZED
-        elif "password" in error_str.lower():
-            error_message = "Password does not meet requirements"
-            error_code = status.HTTP_400_BAD_REQUEST
         else:
             error_message = "Failed to change password"
             error_code = status.HTTP_400_BAD_REQUEST

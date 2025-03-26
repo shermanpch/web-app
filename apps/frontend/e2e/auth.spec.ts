@@ -8,14 +8,17 @@ import {
   changePassword
 } from './utils/helpers';
 
-// Generate unique test data for each run
-const testUser = {
+// Generate a base for test user data
+const generateTestUser = () => ({
   email: `test-${Math.random().toString(36).substring(2, 8)}@example.com`,
   password: `Test@${Math.random().toString(36).substring(2, 10)}`,
-};
+});
 
 test.describe('Authentication Flow', () => {
   test('complete auth flow: signup -> login -> logout', async ({ page }) => {
+    // Generate unique test user for this test
+    const testUser = generateTestUser();
+    
     // Step 1: Start from homepage and navigate to signup
     await navigateToSignup(page);
     
@@ -30,6 +33,9 @@ test.describe('Authentication Flow', () => {
   });
 
   test('password change flow: change password -> logout -> login with new password', async ({ page }) => {
+    // Generate unique test user for this test
+    const testUser = generateTestUser();
+    
     // Generate a new password for the test
     const newPassword = `NewTest@${Math.random().toString(36).substring(2, 10)}`;
     

@@ -25,7 +25,7 @@ function ForgotPasswordContent() {
     await withLoadingState(async () => {
       await authApi.requestPasswordReset(email);
       setIsSuccess(true);
-    });
+    }, 'Password reset request failed', true);
   };
 
   return (
