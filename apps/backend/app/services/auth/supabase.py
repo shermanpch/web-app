@@ -3,7 +3,7 @@
 import logging
 from typing import Any, Dict
 
-import requests
+import httpx
 from supabase._async.client import AsyncClient, create_client
 
 from ...config import settings
@@ -108,11 +108,12 @@ async def signup_user(email: str, password: str) -> dict:
         url = _get_supabase_auth_url("signup")
         payload = {"email": email, "password": password}
 
-        response = requests.post(url, json=payload, headers=_get_auth_headers())
-        response.raise_for_status()
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json=payload, headers=_get_auth_headers())
+            response.raise_for_status()
 
-        logger.info(f"Signup successful for: {email}")
-        return response.json()
+            logger.info(f"Signup successful for: {email}")
+            return response.json()
     except Exception as e:
         logger.error(f"Signup error for {email}: {str(e)}")
         raise e
@@ -134,11 +135,12 @@ async def login_user(email: str, password: str) -> dict:
         url = _get_supabase_auth_url("token?grant_type=password")
         payload = {"email": email, "password": password}
 
-        response = requests.post(url, json=payload, headers=_get_auth_headers())
-        response.raise_for_status()
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json=payload, headers=_get_auth_headers())
+            response.raise_for_status()
 
-        logger.info(f"Login successful for: {email}")
-        return response.json()
+            logger.info(f"Login successful for: {email}")
+            return response.json()
     except Exception as e:
         logger.error(f"Login error for {email}: {str(e)}")
         raise e
@@ -163,11 +165,12 @@ async def reset_password(email: str) -> dict:
         url = _get_supabase_auth_url(f"recover?redirect_to={redirect_url}")
         payload = {"email": email}
 
-        response = requests.post(url, json=payload, headers=_get_auth_headers())
-        response.raise_for_status()
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json=payload, headers=_get_auth_headers())
+            response.raise_for_status()
 
-        logger.info(f"Password reset email sent to: {email}")
-        return {"success": True}
+            logger.info(f"Password reset email sent to: {email}")
+            return {"success": True}
     except Exception as e:
         logger.error(f"Password reset error for {email}: {str(e)}")
         raise e
@@ -190,26 +193,27 @@ async def change_password(new_password: str, access_token: str) -> dict:
         payload = {"password": new_password}
         headers = _get_auth_headers(access_token)
 
-        response = requests.put(url, json=payload, headers=headers)
+        async with httpx.AsyncClient() as client:
+            response = await client.put(url, json=payload, headers=headers)
 
-        # Handle specific error codes before raising general errors
-        if response.status_code == 422:
-            error_body = response.json()
-            logger.error(f"Password change error response: {error_body}")
+            # Handle specific error codes before raising general errors
+            if response.status_code == 422:
+                error_body = response.json()
+                logger.error(f"Password change error response: {error_body}")
 
-            if error_body.get("error_code") == "same_password":
-                error_message = (
-                    "New password should be different from your current password"
-                )
-                raise ValueError(f"same_password_error: {error_message}")
+                if error_body.get("error_code") == "same_password":
+                    error_message = (
+                        "New password should be different from your current password"
+                    )
+                    raise ValueError(f"same_password_error: {error_message}")
 
-        if response.status_code != 200:
-            logger.error(f"Password change error response: {response.text}")
+            if response.status_code != 200:
+                logger.error(f"Password change error response: {response.text}")
 
-        response.raise_for_status()
+            response.raise_for_status()
 
-        logger.info("Password updated successfully")
-        return response.json()
+            logger.info("Password updated successfully")
+            return response.json()
     except ValueError as e:
         # Re-raise ValueError which may contain our custom error message
         logger.error(f"Password change error: {str(e)}")
@@ -267,11 +271,12 @@ async def refresh_user_session(refresh_token: str) -> dict:
         url = _get_supabase_auth_url("token?grant_type=refresh_token")
         payload = {"refresh_token": refresh_token}
 
-        response = requests.post(url, json=payload, headers=_get_auth_headers())
-        response.raise_for_status()
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json=payload, headers=_get_auth_headers())
+            response.raise_for_status()
 
-        logger.info("User session refreshed successfully")
-        return response.json()
+            logger.info("User session refreshed successfully")
+            return response.json()
     except Exception as e:
         logger.error(f"Session refresh error: {str(e)}")
         raise e
@@ -295,11 +300,12 @@ async def logout_user(access_token: str) -> dict:
         url = _get_supabase_auth_url("logout")
         headers = _get_auth_headers(access_token)
 
-        response = requests.post(url, headers=headers)
-        response.raise_for_status()
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, headers=headers)
+            response.raise_for_status()
 
-        logger.info("User logged out successfully")
-        return {"success": True}
+            logger.info("User logged out successfully")
+            return {"success": True}
     except Exception as e:
         logger.error(f"Logout error: {str(e)}")
         raise e
