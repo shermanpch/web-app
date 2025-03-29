@@ -6,10 +6,10 @@ export interface BaseComponentProps {
 
 // Testimonial interfaces
 export interface TestimonialProps {
-  id: string; 
-  content: string; 
-  author: string; 
-  role: string; 
+  id: string;
+  content: string;
+  author: string;
+  role: string;
   source: string;
 }
 
@@ -24,4 +24,4 @@ export interface FeatureProps {
 export interface NavLink {
   href: string;
   label: string;
-} 
+}

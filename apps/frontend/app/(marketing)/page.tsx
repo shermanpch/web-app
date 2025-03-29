@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Hero from '@sections/hero';
-import Features from '@sections/features';
-import Testimonials from '@sections/testimonials';
-import { ScrollReveal } from '@ui/scroll-reveal';
+import React from "react";
+import Hero from "@sections/hero";
+import Features from "@sections/features";
+import Testimonials from "@sections/testimonials";
+import { ScrollReveal } from "@ui/scroll-reveal";
 
 export default function Home() {
   return (
@@ -12,7 +12,7 @@ export default function Home() {
       <ScrollReveal>
         <Hero />
       </ScrollReveal>
-      
+
       <ScrollReveal delay={0.2} className="mb-128">
         <Features />
       </ScrollReveal>

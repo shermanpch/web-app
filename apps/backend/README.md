@@ -16,7 +16,7 @@ apps/backend/
 │   │   ├── router.py            # Main API router
 │   │   └── endpoints/           # Endpoint handlers by domain
 │   │       ├── auth.py          # Authentication endpoints
-│   │       ├── divination.py    # Divination endpoints 
+│   │       ├── divination.py    # Divination endpoints
 │   │       ├── health.py        # Health check endpoints
 │   │       └── user.py          # User endpoints
 │   ├── models/                  # Data models
@@ -58,8 +58,8 @@ This project follows a model-based API design approach:
 
 - **Model-Driven Development**: All API endpoints use Pydantic models for request and response handling
 - **Standardized Request/Response**: Request bodies contain all parameters (auth tokens, query parameters, etc.)
-- **HTTP Method Usage**: 
-  - POST for all operations that require a request body 
+- **HTTP Method Usage**:
+  - POST for all operations that require a request body
   - GET only for simple queries without complex parameters
 - **Error Handling**: Consistent error responses with appropriate HTTP status codes
 - **API Versioning**: API endpoints follow a consistent `/api/{domain}/{operation}` structure

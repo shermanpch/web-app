@@ -6,15 +6,18 @@
   },
   "rules": {
     "react/react-in-jsx-scope": "off",
-    "no-unused-vars": ["error", { 
-      "argsIgnorePattern": "^_",
-      "varsIgnorePattern": "^_",
-      "ignoreRestSiblings": true
-    }]
+    "no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "ignoreRestSiblings": true
+      }
+    ]
   },
   "settings": {
     "react": {
       "version": "detect"
     }
   }
-} 
+}

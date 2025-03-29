@@ -1,15 +1,15 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { authApi } from '../api/endpoints/auth';
-import { secureStorage } from './secure-storage';
-import { 
-  User, 
-  Session, 
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { authApi } from "../api/endpoints/auth";
+import { secureStorage } from "./secure-storage";
+import {
+  User,
+  Session,
   ExtendedAuthState,
-  LoginCredentials
-} from '@/types/auth';
+  LoginCredentials,
+} from "@/types/auth";
 
 // Auth context type that extends the auth state with methods
 interface AuthContextType extends ExtendedAuthState {
@@ -37,14 +37,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: false,
     isLoading: true,
     navigationState: {
-      allowUnauthenticatedAccess: false
-    }
+      allowUnauthenticatedAccess: false,
+    },
   });
 
   // Initialize auth state from storage
   useEffect(() => {
     const storedData = secureStorage.getAuthData<StoredAuthData>();
-    
+
     if (storedData) {
       setState({
         user: storedData.user,
@@ -52,11 +52,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: true,
         isLoading: false,
         navigationState: {
-          allowUnauthenticatedAccess: false
-        }
+          allowUnauthenticatedAccess: false,
+        },
       });
     } else {
-      setState(prev => ({ ...prev, isLoading: false }));
+      setState((prev) => ({ ...prev, isLoading: false }));
     }
   }, []);
 
@@ -64,32 +64,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (credentials: LoginCredentials) => {
     try {
       // Set loading state
-      setState(prev => ({ ...prev, isLoading: true }));
-      
+      setState((prev) => ({ ...prev, isLoading: true }));
+
       // Call signup API
       const response = await authApi.signup(credentials);
-      
+
       // Store session data securely
       const authData: StoredAuthData = {
         user: response.data.user as User,
         session: response.data.session,
       };
-      
+
       secureStorage.storeAuthData<StoredAuthData>(authData);
-      
+
       // Set navigationState to allow redirect without being authenticated
-      setState(prev => ({ 
+      setState((prev) => ({
         ...prev,
         isLoading: false,
         navigationState: {
-          allowUnauthenticatedAccess: true
-        }
+          allowUnauthenticatedAccess: true,
+        },
       }));
-      
+
       // Redirect to login page after successful signup
-      router.push('/login');
+      router.push("/login");
     } catch (error) {
-      setState(prev => ({ ...prev, isLoading: false }));
+      setState((prev) => ({ ...prev, isLoading: false }));
       throw error;
     }
   };
@@ -98,19 +98,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (credentials: LoginCredentials) => {
     try {
       // Set loading state
-      setState(prev => ({ ...prev, isLoading: true }));
-      
+      setState((prev) => ({ ...prev, isLoading: true }));
+
       // Call login API
       const response = await authApi.login(credentials);
-      
+
       // Store session data securely
       const authData: StoredAuthData = {
         user: response.data.user as User,
         session: response.data.session,
       };
-      
+
       secureStorage.storeAuthData<StoredAuthData>(authData);
-      
+
       // Update state
       setState({
         user: authData.user,
@@ -118,14 +118,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: true,
         isLoading: false,
         navigationState: {
-          allowUnauthenticatedAccess: false
-        }
+          allowUnauthenticatedAccess: false,
+        },
       });
-      
+
       // Redirect to dashboard
-      router.push('/dashboard');
+      router.push("/dashboard");
     } catch (error) {
-      setState(prev => ({ ...prev, isLoading: false }));
+      setState((prev) => ({ ...prev, isLoading: false }));
       throw error;
     }
   };
@@ -140,16 +140,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: false,
         isLoading: true,
         navigationState: {
-          allowUnauthenticatedAccess: false
-        }
+          allowUnauthenticatedAccess: false,
+        },
       });
-      
+
       // Perform cleanup operations asynchronously
-      await Promise.all([
-        authApi.logout(),
-        secureStorage.clear()
-      ]);
-      
+      await Promise.all([authApi.logout(), secureStorage.clear()]);
+
       // Final state update after cleanup
       setState({
         user: null,
@@ -157,14 +154,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: false,
         isLoading: false,
         navigationState: {
-          allowUnauthenticatedAccess: false
-        }
+          allowUnauthenticatedAccess: false,
+        },
       });
-      
+
       // Redirect to login page after signout
-      router.push('/login');
+      router.push("/login");
     } catch (error) {
-      setState(prev => ({ ...prev, isLoading: false }));
+      setState((prev) => ({ ...prev, isLoading: false }));
     }
   };
 
@@ -172,24 +169,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const changePassword = async (password: string) => {
     try {
       // Set loading state
-      setState(prev => ({ ...prev, isLoading: true }));
-      
+      setState((prev) => ({ ...prev, isLoading: true }));
+
       // Check if we have a session
       if (!state.session) {
-        throw new Error('No active session. Please login again to change your password.');
+        throw new Error(
+          "No active session. Please login again to change your password.",
+        );
       }
-      
+
       // Call change password API
-      await authApi.changePassword(
-        password,
-        state.session.access_token
-      );
-      
+      await authApi.changePassword(password, state.session.access_token);
+
       // Update loading state
-      setState(prev => ({ ...prev, isLoading: false }));
-      
+      setState((prev) => ({ ...prev, isLoading: false }));
     } catch (error) {
-      setState(prev => ({ ...prev, isLoading: false }));
+      setState((prev) => ({ ...prev, isLoading: false }));
       throw error;
     }
   };
@@ -213,10 +208,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 // Auth hook
 export function useAuth() {
   const context = useContext(AuthContext);
-  
+
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  
+
   return context;
 }

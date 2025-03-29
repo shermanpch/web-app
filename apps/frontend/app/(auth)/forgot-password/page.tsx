@@ -1,28 +1,28 @@
 "use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, ArrowLeft, CheckCircle2 } from 'lucide-react';
-import { Panel } from '@/components/ui/panel';
-import { AuthLayout } from '@/components/auth/auth-layout';
-import { authApi } from '@/lib/api/endpoints/auth';
-import { SuspenseWrapper } from '@/components/ui/suspense-wrapper';
-import { usePageState } from '@/hooks/use-page-state';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Panel } from "@/components/ui/panel";
+import { AuthLayout } from "@/components/auth/auth-layout";
+import { authApi } from "@/lib/api/endpoints/auth";
+import { SuspenseWrapper } from "@/components/ui/suspense-wrapper";
+import { usePageState } from "@/hooks/use-page-state";
 
 function ForgotPasswordContent() {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
   const router = useRouter();
-  
+
   const { isLoading, withLoadingState, error } = usePageState();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     await withLoadingState(async () => {
       await authApi.requestPasswordReset(email);
       setIsSuccess(true);
@@ -36,14 +36,16 @@ function ForgotPasswordContent() {
           <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto" />
           <h2 className="text-xl font-semibold">Check Your Email</h2>
           <p className="mb-4">
-            We&apos;ve sent password reset instructions to <strong>{email}</strong>
+            We&apos;ve sent password reset instructions to{" "}
+            <strong>{email}</strong>
           </p>
           <p className="text-sm text-muted-foreground mb-6">
-            Please check your email inbox and spam folder. The reset link is valid for 24 hours.
+            Please check your email inbox and spam folder. The reset link is
+            valid for 24 hours.
           </p>
           <Button
-            variant="outline" 
-            onClick={() => router.push('/login')}
+            variant="outline"
+            onClick={() => router.push("/login")}
             className="w-full"
           >
             Return to Login
@@ -52,16 +54,17 @@ function ForgotPasswordContent() {
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <p className="text-sm text-muted-foreground mb-4">
-            Enter your email address and we&apos;ll send you a link to reset your password.
+            Enter your email address and we&apos;ll send you a link to reset
+            your password.
           </p>
-          
+
           {error && (
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -75,18 +78,14 @@ function ForgotPasswordContent() {
             />
           </div>
 
-          <Button 
-            type="submit" 
-            className="w-full" 
-            disabled={isLoading}
-          >
-            {isLoading ? 'Sending...' : 'Send Reset Link'}
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Sending..." : "Send Reset Link"}
           </Button>
 
           <div className="text-center text-sm mt-4">
-            <Button 
-              variant="link" 
-              onClick={() => router.push('/login')} 
+            <Button
+              variant="link"
+              onClick={() => router.push("/login")}
               className="text-[hsl(var(--primary))] hover:text-[hsl(var(--primary)/80)] focus:outline-none"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -107,4 +106,4 @@ export default function ForgotPasswordPage() {
       </SuspenseWrapper>
     </AuthLayout>
   );
-} 
+}

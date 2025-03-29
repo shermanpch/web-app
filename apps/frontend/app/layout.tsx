@@ -1,74 +1,83 @@
-import React from 'react';
-import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
-import './globals.css';
-import { ThemeProvider } from '@theme/theme-provider';
-import Header from '@layout/header';
-import { config } from '@config/index';
-import { AuthProvider } from '@/lib/auth/auth-context';
-import Script from 'next/script';
+import React from "react";
+import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { ThemeProvider } from "@theme/theme-provider";
+import Header from "@layout/header";
+import { config } from "@config/index";
+import { AuthProvider } from "@/lib/auth/auth-context";
+import Script from "next/script";
 
 // Load font only once for performance optimization
-const inter = Inter({ 
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-inter',
-  display: 'swap', // Ensure text is visible during font loading
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-inter",
+  display: "swap", // Ensure text is visible during font loading
 });
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0f172a' }
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
   ],
-  width: 'device-width',
+  width: "device-width",
   initialScale: 1,
   maximumScale: 5,
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://example.com'),
+  metadataBase: new URL("https://example.com"),
   title: {
     template: `%s | ${config.siteName}`,
     default: config.siteName,
   },
   description: config.siteDescription,
-  keywords: ['documentation', 'technical', 'developer', 'code', 'examples', 'nextjs', 'react', 'javascript'],
-  authors: [{ name: 'Your Company', url: 'https://yourcompany.com' }],
-  creator: 'Your Company',
+  keywords: [
+    "documentation",
+    "technical",
+    "developer",
+    "code",
+    "examples",
+    "nextjs",
+    "react",
+    "javascript",
+  ],
+  authors: [{ name: "Your Company", url: "https://yourcompany.com" }],
+  creator: "Your Company",
   openGraph: {
-    type: 'website',
-    locale: 'en_US',
-    url: '/',
+    type: "website",
+    locale: "en_US",
+    url: "/",
     siteName: config.siteName,
     title: config.siteName,
     description: config.siteDescription,
-    images: [{
-      url: '/og-image.jpg',
-      width: 1200,
-      height: 630,
-      alt: config.siteName
-    }],
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: config.siteName,
+      },
+    ],
   },
   twitter: {
-    card: 'summary_large_image',
+    card: "summary_large_image",
     title: config.siteName,
     description: config.siteDescription,
-    images: ['/og-image.jpg'],
-    creator: '@yourcompany',
+    images: ["/og-image.jpg"],
+    creator: "@yourcompany",
   },
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.svg", type: "image/svg+xml" },
     ],
-    apple: [
-      { url: '/apple-touch-icon.png' },
-    ],
+    apple: [{ url: "/apple-touch-icon.png" }],
   },
-  manifest: '/site.webmanifest',
+  manifest: "/site.webmanifest",
   alternates: {
-    canonical: '/',
+    canonical: "/",
   },
 };
 
@@ -130,17 +139,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html 
-      lang="en" 
-      suppressHydrationWarning 
-      className={inter.variable}
-    >
+    <html lang="en" suppressHydrationWarning className={inter.variable}>
       <head>
         {/* Inline critical CSS to prevent theme flash */}
-        <style
-          dangerouslySetInnerHTML={{ __html: criticalCSS }}
-        />
-        
+        <style dangerouslySetInnerHTML={{ __html: criticalCSS }} />
+
         {/* Theme detection script - runs before any rendering */}
         <Script id="theme-detector" strategy="beforeInteractive">
           {`
@@ -201,14 +204,13 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
             <div className="flex min-h-screen flex-col bg-[hsl(var(--background))]">
-              <Header />
-              <main className="flex-grow">
-                {children}
-              </main>
+              {/* The Header will only be rendered for the root page, 
+                  not in the (auth) or (dashboard) route groups */}
+              {children}
             </div>
           </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
   );
-} 
+}

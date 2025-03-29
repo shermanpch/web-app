@@ -1,47 +1,44 @@
-'use client';
+"use client";
 
-import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/lib/utils";
 
-const cardVariants = cva(
-  "rounded-xl transition-all duration-300",
-  {
-    variants: {
-      variant: {
-        default: "bg-white/5 backdrop-blur-lg dark:bg-slate-900/50",
-        outlined: "bg-transparent",
-        elevated: "bg-white/10 backdrop-blur-lg shadow-lg dark:bg-slate-800/50",
-        filled: "bg-white dark:bg-slate-800",
-      },
-      padding: {
-        none: "p-0",
-        sm: "p-4",
-        md: "p-6",
-        lg: "p-8",
-      },
-      border: {
-        true: "border border-slate-300 dark:border-slate-700/30",
-        false: ""
-      },
-      hover: {
-        true: "hover:translate-y-[-5px] hover:bg-white/10 dark:hover:bg-white/10 hover:border-slate-400 dark:hover:border-slate-600",
-        false: ""
-      }
+const cardVariants = cva("rounded-xl transition-all duration-300", {
+  variants: {
+    variant: {
+      default: "bg-white/5 backdrop-blur-lg dark:bg-slate-900/50",
+      outlined: "bg-transparent",
+      elevated: "bg-white/10 backdrop-blur-lg shadow-lg dark:bg-slate-800/50",
+      filled: "bg-white dark:bg-slate-800",
     },
-    defaultVariants: {
-      variant: "default",
-      padding: "md",
-      border: true,
-      hover: true
+    padding: {
+      none: "p-0",
+      sm: "p-4",
+      md: "p-6",
+      lg: "p-8",
     },
-  }
-)
+    border: {
+      true: "border border-slate-300 dark:border-slate-700/30",
+      false: "",
+    },
+    hover: {
+      true: "hover:translate-y-[-5px] hover:bg-white/10 dark:hover:bg-white/10 hover:border-slate-400 dark:hover:border-slate-600",
+      false: "",
+    },
+  },
+  defaultVariants: {
+    variant: "default",
+    padding: "md",
+    border: true,
+    hover: true,
+  },
+});
 
-export interface CardProps 
+export interface CardProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof cardVariants> {
-  asChild?: boolean
+  asChild?: boolean;
 }
 
 const Card = React.forwardRef<HTMLDivElement, CardProps>(
@@ -49,13 +46,16 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
     return (
       <div
         ref={ref}
-        className={cn(cardVariants({ variant, padding, border, hover }), className)}
+        className={cn(
+          cardVariants({ variant, padding, border, hover }),
+          className,
+        )}
         {...props}
       />
-    )
-  }
-)
-Card.displayName = "Card"
+    );
+  },
+);
+Card.displayName = "Card";
 
 const CardHeader = React.forwardRef<
   HTMLDivElement,
@@ -66,8 +66,8 @@ const CardHeader = React.forwardRef<
     className={cn("flex flex-col space-y-1.5", className)}
     {...props}
   />
-))
-CardHeader.displayName = "CardHeader"
+));
+CardHeader.displayName = "CardHeader";
 
 const CardTitle = React.forwardRef<
   HTMLParagraphElement,
@@ -75,11 +75,14 @@ const CardTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h3
     ref={ref}
-    className={cn("text-xl font-semibold text-slate-900 dark:text-slate-200", className)}
+    className={cn(
+      "text-xl font-semibold text-slate-900 dark:text-slate-200",
+      className,
+    )}
     {...props}
   />
-))
-CardTitle.displayName = "CardTitle"
+));
+CardTitle.displayName = "CardTitle";
 
 const CardDescription = React.forwardRef<
   HTMLParagraphElement,
@@ -90,16 +93,16 @@ const CardDescription = React.forwardRef<
     className={cn("text-slate-700 dark:text-slate-400", className)}
     {...props}
   />
-))
-CardDescription.displayName = "CardDescription"
+));
+CardDescription.displayName = "CardDescription";
 
 const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
   <div ref={ref} className={cn("", className)} {...props} />
-))
-CardContent.displayName = "CardContent"
+));
+CardContent.displayName = "CardContent";
 
 const CardFooter = React.forwardRef<
   HTMLDivElement,
@@ -110,7 +113,14 @@ const CardFooter = React.forwardRef<
     className={cn("flex items-center pt-4", className)}
     {...props}
   />
-))
-CardFooter.displayName = "CardFooter"
+));
+CardFooter.displayName = "CardFooter";
 
-export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } 
+export {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+};

@@ -52,7 +52,7 @@ export interface UserSessionResponse {
 }
 
 export interface AuthFormProps {
-  type: 'login' | 'signup';
+  type: "login" | "signup";
   onSubmit: (data: LoginCredentials) => Promise<void>;
   error?: string | null;
   isLoading?: boolean;
@@ -73,4 +73,4 @@ export interface ErrorResponse {
   errors?: Record<string, string[]>;
   message?: string;
   error_description?: string;
-} 
+}

@@ -88,7 +88,7 @@ class IChingReadingRequest(BaseModel):
     second_number: int
     third_number: int
     question: str
-    language: str
+    language: str = "English"
     access_token: str
     refresh_token: str
 

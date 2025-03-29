@@ -1,7 +1,7 @@
-import { motion, useInView } from 'framer-motion';
-import { useRef } from 'react';
+import { motion, useInView } from "framer-motion";
+import { useRef } from "react";
 
-type Direction = 'up' | 'down' | 'left' | 'right';
+type Direction = "up" | "down" | "left" | "right";
 
 interface ScrollRevealProps {
   children: React.ReactNode;
@@ -17,12 +17,12 @@ type DirectionOffset = {
 
 export const ScrollReveal = ({
   children,
-  direction = 'up',
+  direction = "up",
   delay = 0,
-  className = '',
+  className = "",
 }: ScrollRevealProps) => {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: false, margin: '-100px' });
+  const isInView = useInView(ref, { once: false, margin: "-100px" });
 
   const directionOffset: Record<Direction, DirectionOffset> = {
     up: { y: 50 },
@@ -42,8 +42,8 @@ export const ScrollReveal = ({
       }}
       animate={{
         opacity: isInView ? 1 : 0,
-        x: isInView ? 0 : initialOffset.x ?? 0,
-        y: isInView ? 0 : initialOffset.y ?? 0,
+        x: isInView ? 0 : (initialOffset.x ?? 0),
+        y: isInView ? 0 : (initialOffset.y ?? 0),
       }}
       transition={{
         duration: 0.8,
@@ -55,4 +55,4 @@ export const ScrollReveal = ({
       {children}
     </motion.div>
   );
-}; 
+};

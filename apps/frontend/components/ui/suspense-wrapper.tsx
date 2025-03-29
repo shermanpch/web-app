@@ -1,7 +1,7 @@
-import { ReactNode, Suspense } from 'react';
-import { Panel } from '@/components/ui/panel';
+import { ReactNode, Suspense } from "react";
+import { Panel } from "@/components/ui/panel";
 
-export type LoadingSkeletonVariant = 'form' | 'compact' | 'detailed';
+export type LoadingSkeletonVariant = "form" | "compact" | "detailed";
 
 interface SuspenseWrapperProps {
   children: ReactNode;
@@ -28,7 +28,7 @@ export const LoadingSkeletons = {
       </div>
     </Panel>
   ),
-  
+
   /**
    * Compact form with just a heading, one input and a button
    */
@@ -43,7 +43,7 @@ export const LoadingSkeletons = {
       </div>
     </Panel>
   ),
-  
+
   /**
    * Detailed form with multiple sections, labels and inputs
    */
@@ -69,36 +69,32 @@ export const LoadingSkeletons = {
 
 /**
  * SuspenseWrapper - A reusable component for wrapping content in Suspense with standard loading skeletons
- * 
+ *
  * @example
  * // Basic usage with default form skeleton
  * <SuspenseWrapper>
  *   <YourComponent />
  * </SuspenseWrapper>
- * 
+ *
  * @example
  * // With a specific skeleton variant
  * <SuspenseWrapper variant="compact">
  *   <YourComponent />
  * </SuspenseWrapper>
- * 
+ *
  * @example
  * // With custom fallback
  * <SuspenseWrapper fallback={<YourCustomSkeleton />}>
  *   <YourComponent />
  * </SuspenseWrapper>
  */
-export function SuspenseWrapper({ 
-  children, 
-  variant = 'form',
-  fallback 
+export function SuspenseWrapper({
+  children,
+  variant = "form",
+  fallback,
 }: SuspenseWrapperProps) {
   // Use the provided fallback or select from predefined skeletons
   const fallbackComponent = fallback || LoadingSkeletons[variant];
-  
-  return (
-    <Suspense fallback={fallbackComponent}>
-      {children}
-    </Suspense>
-  );
-} 
+
+  return <Suspense fallback={fallbackComponent}>{children}</Suspense>;
+}

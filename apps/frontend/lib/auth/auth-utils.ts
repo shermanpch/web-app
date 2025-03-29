@@ -1,5 +1,5 @@
-import { secureStorage } from './secure-storage';
-import { Session, User } from '@/types/auth';
+import { secureStorage } from "./secure-storage";
+import { Session, User } from "@/types/auth";
 
 /**
  * Type for stored auth data
@@ -21,15 +21,15 @@ export function isAuthenticated(): boolean {
  */
 export function getAuthToken(): string | null {
   const authData = secureStorage.getAuthData<StoredAuthData>();
-  
+
   if (!authData) return null;
-  
+
   // Check if token is expiring soon
   if (secureStorage.isTokenExpiringSoon(authData.session.expires_in)) {
     // In a real application, you would refresh the token here
-    console.warn('Token is expiring soon, consider refreshing');
+    console.warn("Token is expiring soon, consider refreshing");
   }
-  
+
   return authData.session.access_token;
 }
 

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback } from "react";
 
 interface UsePageStateProps<T = undefined> {
   initialState?: T;
@@ -8,16 +8,16 @@ interface UsePageStateProps<T = undefined> {
 
 /**
  * A hook for managing common page state including loading, error and data
- * 
+ *
  * @example
  * // Basic usage
- * const { 
- *   data, setData, 
- *   error, setError, 
- *   isLoading, startLoading, stopLoading, 
+ * const {
+ *   data, setData,
+ *   error, setError,
+ *   isLoading, startLoading, stopLoading,
  *   withLoadingState
  * } = usePageState<UserData>();
- * 
+ *
  * // Use the withLoadingState helper for async operations
  * const handleSubmit = async () => {
  *   await withLoadingState(async () => {
@@ -29,7 +29,7 @@ interface UsePageStateProps<T = undefined> {
 export function usePageState<T = undefined>({
   initialState,
   initialError = null,
-  initialLoading = false
+  initialLoading = false,
 }: UsePageStateProps<T> = {}) {
   const [data, setData] = useState<T | undefined>(initialState);
   const [error, setError] = useState<string | null>(initialError);
@@ -47,47 +47,50 @@ export function usePageState<T = undefined>({
   /**
    * Utility to wrap async operations with loading state management
    * Handles starting/stopping loading and error management
-   * 
+   *
    * @param asyncOperation The async function to execute
    * @param errorMessage Default error message to show if the error is not an instance of Error
    * @param propagateError Whether to re-throw the error after setting it in state (default: false)
    * @returns The result of the async operation, or undefined if it fails
    */
-  const withLoadingState = useCallback(async <R>(
-    asyncOperation: () => Promise<R>,
-    errorMessage = 'An unexpected error occurred',
-    propagateError = false
-  ): Promise<R | undefined> => {
-    try {
-      startLoading();
-      clearError();
-      const result = await asyncOperation();
-      return result;
-    } catch (err) {
-      // Format the error message
-      let message = errorMessage;
-      if (err instanceof Error) {
-        message = err.message;
-      } else if (typeof err === 'string') {
-        message = err;
-      } else if (typeof err === 'object' && err !== null) {
-        message = JSON.stringify(err);
+  const withLoadingState = useCallback(
+    async <R>(
+      asyncOperation: () => Promise<R>,
+      errorMessage = "An unexpected error occurred",
+      propagateError = false,
+    ): Promise<R | undefined> => {
+      try {
+        startLoading();
+        clearError();
+        const result = await asyncOperation();
+        return result;
+      } catch (err) {
+        // Format the error message
+        let message = errorMessage;
+        if (err instanceof Error) {
+          message = err.message;
+        } else if (typeof err === "string") {
+          message = err;
+        } else if (typeof err === "object" && err !== null) {
+          message = JSON.stringify(err);
+        }
+
+        // Set error state and log to console
+        setError(message);
+        console.error("Operation failed:", err);
+
+        // Re-throw the error if propagation is enabled
+        if (propagateError) {
+          throw err;
+        }
+
+        return undefined;
+      } finally {
+        stopLoading();
       }
-      
-      // Set error state and log to console
-      setError(message);
-      console.error("Operation failed:", err);
-      
-      // Re-throw the error if propagation is enabled
-      if (propagateError) {
-        throw err;
-      }
-      
-      return undefined;
-    } finally {
-      stopLoading();
-    }
-  }, [startLoading, clearError, stopLoading]);
+    },
+    [startLoading, clearError, stopLoading],
+  );
 
   return {
     data,
@@ -99,6 +102,6 @@ export function usePageState<T = undefined>({
     startLoading,
     stopLoading,
     reset,
-    withLoadingState
+    withLoadingState,
   };
-} 
+}

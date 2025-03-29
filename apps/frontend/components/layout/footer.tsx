@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
 const Footer = () => {
   // Empty footer component
   return null;
 };
 
-export default Footer; 
+export default Footer;

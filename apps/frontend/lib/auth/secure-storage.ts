@@ -1,15 +1,15 @@
 /**
  * Production-ready secure storage utility for authentication tokens
- * 
+ *
  * This module provides a secure way to handle authentication data in the browser
  * with strong encryption, tampering detection, and automatic token refresh.
  */
 
 // Import a proper encryption library
-import CryptoJS from 'crypto-js';
+import CryptoJS from "crypto-js";
 
 // Constants
-const STORAGE_PREFIX = 'app_secure_';
+const STORAGE_PREFIX = "app_secure_";
 const TOKEN_STORAGE_KEY = `${STORAGE_PREFIX}auth`;
 const TOKEN_EXPIRY_BUFFER = 5 * 60; // 5 minutes in seconds
 
@@ -21,9 +21,9 @@ function getEncryptionKey(): string {
     navigator.language,
     window.screen.colorDepth,
     window.screen.availWidth,
-    window.screen.availHeight
-  ].join('|');
-  
+    window.screen.availHeight,
+  ].join("|");
+
   // Create a hash of browser info as the encryption key
   return CryptoJS.SHA256(browserInfo).toString();
 }
@@ -36,8 +36,8 @@ function encrypt(data: string): string {
     const key = getEncryptionKey();
     return CryptoJS.AES.encrypt(data, key).toString();
   } catch (e) {
-    console.error('Encryption error', e);
-    throw new Error('Failed to encrypt data');
+    console.error("Encryption error", e);
+    throw new Error("Failed to encrypt data");
   }
 }
 
@@ -50,8 +50,8 @@ function decrypt(data: string): string {
     const bytes = CryptoJS.AES.decrypt(data, key);
     return bytes.toString(CryptoJS.enc.Utf8);
   } catch (e) {
-    console.error('Decryption error', e);
-    throw new Error('Failed to decrypt data');
+    console.error("Decryption error", e);
+    throw new Error("Failed to decrypt data");
   }
 }
 
@@ -64,17 +64,18 @@ function isStorageCompromised(): boolean {
     // Check for suspicious entries that might indicate XSS
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && (
-        key.includes('<script>') || 
-        key.includes('javascript:') ||
-        key.includes('onerror=') ||
-        key.includes('onclick=')
-      )) {
-        console.warn('Potential XSS attack detected in localStorage');
+      if (
+        key &&
+        (key.includes("<script>") ||
+          key.includes("javascript:") ||
+          key.includes("onerror=") ||
+          key.includes("onclick="))
+      ) {
+        console.warn("Potential XSS attack detected in localStorage");
         return true;
       }
     }
-    
+
     // Verify integrity of our storage
     const rawData = localStorage.getItem(TOKEN_STORAGE_KEY);
     if (rawData) {
@@ -82,15 +83,15 @@ function isStorageCompromised(): boolean {
         // Try to decrypt - if it fails, storage may have been tampered with
         decrypt(rawData);
       } catch {
-        console.warn('Auth data integrity check failed');
+        console.warn("Auth data integrity check failed");
         return true;
       }
     }
-    
+
     return false;
   } catch (e) {
     // If we can't access storage, consider it compromised
-    console.error('Storage access error', e);
+    console.error("Storage access error", e);
     return true;
   }
 }
@@ -105,21 +106,24 @@ export const secureStorage = {
   storeAuthData<T>(data: T): boolean {
     try {
       if (isStorageCompromised()) {
-        console.warn('Storage compromised - clearing auth data');
+        console.warn("Storage compromised - clearing auth data");
         this.clear();
         return false;
       }
-      
+
       const serialized = JSON.stringify(data);
       const encrypted = encrypt(serialized);
       localStorage.setItem(TOKEN_STORAGE_KEY, encrypted);
-      
+
       // Set storage timestamp for additional security
-      localStorage.setItem(`${TOKEN_STORAGE_KEY}_timestamp`, Date.now().toString());
-      
+      localStorage.setItem(
+        `${TOKEN_STORAGE_KEY}_timestamp`,
+        Date.now().toString(),
+      );
+
       return true;
     } catch (e) {
-      console.error('Failed to store auth data', e);
+      console.error("Failed to store auth data", e);
       return false;
     }
   },
@@ -130,31 +134,33 @@ export const secureStorage = {
   getAuthData<T>(): T | null {
     try {
       if (isStorageCompromised()) {
-        console.warn('Storage compromised during data retrieval - clearing auth data');
+        console.warn(
+          "Storage compromised during data retrieval - clearing auth data",
+        );
         this.clear();
         return null;
       }
-      
+
       // Check timestamp for stale data
       const timestamp = localStorage.getItem(`${TOKEN_STORAGE_KEY}_timestamp`);
       if (timestamp) {
         const storedTime = parseInt(timestamp, 10);
         const maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
-        
+
         if (Date.now() - storedTime > maxAge) {
-          console.warn('Auth data expired (older than 30 days)');
+          console.warn("Auth data expired (older than 30 days)");
           this.clear();
           return null;
         }
       }
-      
+
       const encrypted = localStorage.getItem(TOKEN_STORAGE_KEY);
       if (!encrypted) return null;
-      
+
       const serialized = decrypt(encrypted);
       return JSON.parse(serialized) as T;
     } catch (e) {
-      console.error('Failed to retrieve auth data', e);
+      console.error("Failed to retrieve auth data", e);
       this.clear(); // Clear on errors for security
       return null;
     }
@@ -175,9 +181,9 @@ export const secureStorage = {
           keysToRemove.push(key);
         }
       }
-      keysToRemove.forEach(key => localStorage.removeItem(key));
+      keysToRemove.forEach((key) => localStorage.removeItem(key));
     } catch (e) {
-      console.error('Failed to clear auth data', e);
+      console.error("Failed to clear auth data", e);
     }
   },
 
@@ -191,12 +197,12 @@ export const secureStorage = {
       return false;
     }
   },
-  
+
   /**
    * Check if a token is about to expire
    * @param expiresIn Expiration time in seconds
    */
   isTokenExpiringSoon(expiresIn: number): boolean {
     return expiresIn <= TOKEN_EXPIRY_BUFFER;
-  }
-}; 
+  },
+};

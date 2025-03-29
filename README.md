@@ -27,11 +27,13 @@ web-app/
 #### Using Local Environment
 
 1. Install root dependencies:
+
    ```
    npm install
    ```
 
 2. Install backend dependencies:
+
    ```
    cd apps/backend
    pip install -r requirements.txt
@@ -39,12 +41,14 @@ web-app/
    ```
 
 3. Set up Supabase environment variables:
+
    ```
    # In apps/frontend directory
    cp .env.local.example .env.local
    ```
-   
+
    Then edit `.env.local` with your Supabase credentials:
+
    ```
    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
@@ -108,12 +112,14 @@ Supabase recovery tokens have some special characteristics:
 If you encounter issues with the password reset flow:
 
 1. **"Invalid or expired reset link" error**:
+
    - Ensure your Supabase environment variables are correctly set in `.env.local`
    - Check that your Supabase project has Email Auth enabled in the Authentication settings
    - Verify that the redirect URL in Supabase matches your application URL followed by `/reset-password`
    - The reset link is valid for 24 hours by default
 
 2. **Recovery token handling**:
+
    - The app expects the recovery token in the URL hash parameter format: `#access_token=xxx&type=recovery`
    - The recovery token must be processed by Supabase's client to obtain a valid session
    - Use `supabase.auth.onAuthStateChange()` to listen for when the session is ready
@@ -140,4 +146,4 @@ For password reset to work properly, configure these settings in Supabase:
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request 
+5. Open a Pull Request

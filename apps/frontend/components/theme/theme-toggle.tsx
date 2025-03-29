@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useTheme } from 'next-themes';
-import { useEffect, useState, memo } from 'react';
+import { useTheme } from "next-themes";
+import { useEffect, useState, memo } from "react";
 
 function ThemeToggleButton() {
   const [mounted, setMounted] = useState(false);
@@ -14,14 +14,14 @@ function ThemeToggleButton() {
 
   // Handle toggle for keyboard users
   const handleToggle = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+    setTheme(theme === "dark" ? "light" : "dark");
   };
 
   if (!mounted) {
     // SSR placeholder with same dimensions to avoid layout shift
     return (
-      <button 
-        className="w-10 h-10 rounded-lg bg-[hsl(var(--muted))] flex items-center justify-center" 
+      <button
+        className="w-10 h-10 rounded-lg bg-[hsl(var(--muted))] flex items-center justify-center"
         aria-hidden="true"
         tabIndex={-1}
       >
@@ -30,7 +30,7 @@ function ThemeToggleButton() {
     );
   }
 
-  const isDark = theme === 'dark';
+  const isDark = theme === "dark";
 
   return (
     <button
@@ -75,4 +75,4 @@ function ThemeToggleButton() {
 }
 
 // Memoize to prevent unnecessary re-renders
-export const ThemeToggle = memo(ThemeToggleButton); 
+export const ThemeToggle = memo(ThemeToggleButton);

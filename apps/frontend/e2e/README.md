@@ -46,6 +46,7 @@ npx playwright test e2e/auth.spec.ts --headed --slowmo=1000
 ```
 
 The `--debug` flag will:
+
 - Pause at each step allowing you to inspect the page
 - Open the browser's DevTools
 - Slow down execution
@@ -59,4 +60,4 @@ The `--debug` flag will:
 
 - The tests generate random credentials for each run
 - Tests expect the application to be running on `http://localhost:3000` (specified in `playwright.config.ts`)
-- Make sure the application is running before executing tests 
+- Make sure the application is running before executing tests

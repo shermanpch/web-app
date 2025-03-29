@@ -1,69 +1,73 @@
 "use client";
 
-import React, { useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
-import { Panel } from '@/components/ui/panel';
+import React, { useState, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { Panel } from "@/components/ui/panel";
 
 export interface PasswordFormProps {
-  onSubmit: (_passwords: { password: string; confirmPassword: string }) => Promise<void>;
+  onSubmit: (_passwords: {
+    password: string;
+    confirmPassword: string;
+  }) => Promise<void>;
   submitText?: string;
   error?: string | null;
   isLoading?: boolean;
 }
 
-export function PasswordForm({ 
-  onSubmit, 
-  submitText = 'Change Password',
+export function PasswordForm({
+  onSubmit,
+  submitText = "Change Password",
   error: externalError,
-  isLoading: externalLoading
+  isLoading: externalLoading,
 }: PasswordFormProps) {
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [internalError, setInternalError] = useState<string | null>(null);
   const [internalLoading, setInternalLoading] = useState(false);
-  
+
   // Use external state if provided, otherwise use internal state
   const error = externalError !== undefined ? externalError : internalError;
-  const isLoading = externalLoading !== undefined ? externalLoading : internalLoading;
+  const isLoading =
+    externalLoading !== undefined ? externalLoading : internalLoading;
 
   // Password validation
   const validatePassword = useCallback(() => {
     if (!password) {
-      setInternalError('Password is required');
+      setInternalError("Password is required");
       return false;
     }
-    
+
     if (password.length < 8) {
-      setInternalError('Password must be at least 8 characters long');
+      setInternalError("Password must be at least 8 characters long");
       return false;
     }
-    
+
     if (!/\d/.test(password)) {
-      setInternalError('Password must contain at least one number');
+      setInternalError("Password must contain at least one number");
       return false;
     }
-    
+
     if (password !== confirmPassword) {
-      setInternalError('Passwords do not match');
+      setInternalError("Passwords do not match");
       return false;
     }
-    
+
     return true;
   }, [password, confirmPassword]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setInternalError(null);
-    
+
     // Validate input
     if (!validatePassword()) {
       return;
     }
-    
+
     // Manage loading state
     if (externalLoading === undefined) {
       setInternalLoading(true);
@@ -74,7 +78,9 @@ export function PasswordForm({
     } catch (err) {
       // Set error internally only if not handled externally
       if (externalError === undefined) {
-        setInternalError(err instanceof Error ? err.message : 'An unexpected error occurred');
+        setInternalError(
+          err instanceof Error ? err.message : "An unexpected error occurred",
+        );
       }
     } finally {
       // Reset loading state
@@ -126,15 +132,15 @@ export function PasswordForm({
           />
         </div>
 
-        <Button 
-          type="submit" 
-          className="w-full" 
+        <Button
+          type="submit"
+          className="w-full"
           disabled={isLoading}
           aria-busy={isLoading}
         >
-          {isLoading ? 'Processing...' : submitText}
+          {isLoading ? "Processing..." : submitText}
         </Button>
       </form>
     </Panel>
   );
-} 
+}
