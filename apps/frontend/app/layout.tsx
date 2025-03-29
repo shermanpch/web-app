@@ -3,7 +3,6 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@theme/theme-provider";
-import Header from "@layout/header";
 import { config } from "@config/index";
 import { AuthProvider } from "@/lib/auth/auth-context";
 import Script from "next/script";
