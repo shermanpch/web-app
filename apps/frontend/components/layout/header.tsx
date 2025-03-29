@@ -9,6 +9,7 @@ import { navLinks } from "@config/index";
 
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -55,7 +56,7 @@ const Header = () => {
               </Link>
             </div>
 
-            {/* Navigation */}
+            {/* Navigation - Desktop */}
             <nav className="flex-1 justify-center hidden md:flex">
               <div className="flex items-center space-x-6 mx-auto">
                 {navLinks.map((link, index) => (
@@ -70,7 +71,7 @@ const Header = () => {
               </div>
             </nav>
 
-            {/* Action Buttons */}
+            {/* Action Buttons - Desktop */}
             <div className="hidden md:flex items-center space-x-2">
               <ThemeToggle />
               <Link
@@ -86,7 +87,73 @@ const Header = () => {
                 Get Started
               </Link>
             </div>
+
+            {/* Mobile Menu Button */}
+            <div className="flex items-center md:hidden">
+              <ThemeToggle />
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="ml-2 p-2 rounded-lg hover:bg-[hsl(var(--muted))] focus:outline-none"
+                aria-label="Toggle menu"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6 text-[hsl(var(--foreground))]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  {mobileMenuOpen ? (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  ) : (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
+                  )}
+                </svg>
+              </button>
+            </div>
           </div>
+
+          {/* Mobile Menu Dropdown */}
+          {mobileMenuOpen && (
+            <div className="md:hidden pt-2 pb-4 px-2 space-y-3 border-t border-[hsl(var(--border)/20)] mt-2">
+              {navLinks.map((link, index) => (
+                <Link
+                  key={index}
+                  href={link.href}
+                  className="block px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 text-[hsl(var(--foreground)/80)] hover:bg-[hsl(var(--muted))]"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <div className="flex flex-col space-y-2 pt-2 border-t border-[hsl(var(--border)/20)]">
+                <Link
+                  href="/login"
+                  className="block px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 text-[hsl(var(--foreground)/80)] hover:bg-[hsl(var(--muted))]"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/signup"
+                  className="block px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 text-white bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Get Started
+                </Link>
+              </div>
+            </div>
+          )}
         </Container>
       </header>
     </div>
