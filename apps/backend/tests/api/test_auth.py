@@ -27,6 +27,12 @@ class TestAuthentication(BaseTest):
         assert_has_fields(data, ["data"])
         assert_has_fields(data["data"], ["user"])
 
+        # Check for cookies in response
+        assert "Set-Cookie" in response.headers, "Response should set cookies"
+        cookies = response.cookies
+        assert "auth_token" in cookies, "Response should set auth_token cookie"
+        assert "refresh_token" in cookies, "Response should set refresh_token cookie"
+
         # Get user_id for cleanup
         user_data = self._extract_user_data(response)
         user_id = user_data.get("id")
@@ -35,8 +41,12 @@ class TestAuthentication(BaseTest):
         if user_id:
             login_response = client.post("/api/auth/login", json=test_user)
             if login_response.status_code == 200:
-                tokens = self._extract_tokens(login_response)
-                user_cleanup(client, user_id, tokens["access_token"])
+                tokens = self._extract_tokens_from_cookies(login_response)
+                cookies = {
+                    "auth_token": tokens["access_token"],
+                    "refresh_token": tokens["refresh_token"],
+                }
+                user_cleanup(client, user_id, cookies)
 
     def test_login(self, client, test_user, user_cleanup):
         """Test user login."""
@@ -54,21 +64,34 @@ class TestAuthentication(BaseTest):
         # ASSERT
         data = assert_successful_response(response)
         assert_has_fields(data, ["data"])
-        assert_has_fields(data["data"], ["session"])
-        assert_has_fields(data["data"]["session"], ["access_token", "refresh_token"])
+        assert_has_fields(data["data"], ["user"])
+
+        # Check for cookies in response
+        assert "Set-Cookie" in response.headers, "Response should set cookies"
+        cookies = response.cookies
+        assert "auth_token" in cookies, "Response should set auth_token cookie"
+        assert "refresh_token" in cookies, "Response should set refresh_token cookie"
 
         # CLEANUP
         if user_id:
-            tokens = self._extract_tokens(response)
-            user_cleanup(client, user_id, tokens["access_token"])
+            tokens = self._extract_tokens_from_cookies(response)
+            cookies = {
+                "auth_token": tokens["access_token"],
+                "refresh_token": tokens["refresh_token"],
+            }
+            user_cleanup(client, user_id, cookies)
 
-    def test_get_current_user(self, client, auth_headers, user_cleanup):
+    def test_get_current_user(self, client, auth_cookies, user_cleanup):
         """Test getting current user info."""
         # ARRANGE
         self.logger.info("Testing get current user")
 
+        # Set cookies on the client instance instead of per-request
+        client.cookies.set("auth_token", auth_cookies["auth_token"])
+        client.cookies.set("refresh_token", auth_cookies["refresh_token"])
+
         # ACT
-        response = client.get("/api/auth/me", headers=auth_headers)
+        response = client.get("/api/auth/me")
 
         # ASSERT
         assert response.status_code == status.HTTP_200_OK
@@ -77,34 +100,41 @@ class TestAuthentication(BaseTest):
 
         # CLEANUP
         user_id = user_data["id"]
-        auth_token = self._extract_auth_token(auth_headers)
-        user_cleanup(client, user_id, auth_token)
+        user_cleanup(client, user_id, auth_cookies)
 
     def test_refresh_token(
-        self, client, auth_headers, auth_tokens, test_user, user_cleanup
+        self,
+        client,
+        auth_tokens,
+        auth_cookies,
+        test_user,
+        user_cleanup,
     ):
-        """Test refreshing token."""
+        """Test refreshing token using cookie-based authentication."""
         # ARRANGE
         self.logger.info("Testing token refresh")
-        user_id = self._get_user_id(client, auth_headers)
+        user_id = self._get_user_id(client, auth_cookies)
 
-        # Get refresh token directly from auth_tokens fixture
-        refresh_token = auth_tokens["refresh_token"]
+        # Set cookies on the client instance instead of per-request
+        client.cookies.set("auth_token", auth_cookies["auth_token"])
+        client.cookies.set("refresh_token", auth_cookies["refresh_token"])
 
-        # ACT
-        response = client.post(
-            "/api/auth/refresh", json={"refresh_token": refresh_token}
-        )
+        # ACT - Send refresh request with cookies only, no JSON body
+        response = client.post("/api/auth/refresh")
 
         # ASSERT
         data = assert_successful_response(response)
         assert_has_fields(data, ["data"])
-        assert_has_fields(data["data"], ["session"])
-        assert_has_fields(data["data"]["session"], ["access_token", "refresh_token"])
+        assert_has_fields(data["data"], ["user"])
+
+        # Check for cookies in response
+        assert "Set-Cookie" in response.headers, "Response should set cookies"
+        cookies = response.cookies
+        assert "auth_token" in cookies, "Response should set auth_token cookie"
+        assert "refresh_token" in cookies, "Response should set refresh_token cookie"
 
         # CLEANUP
-        auth_token = self._extract_auth_token(auth_headers)
-        user_cleanup(client, user_id, auth_token)
+        user_cleanup(client, user_id, auth_cookies)
 
     def test_reset_password(self, client, reset_password_user, user_cleanup):
         """Test password reset request using specific email."""
@@ -129,8 +159,12 @@ class TestAuthentication(BaseTest):
         if user_id:
             login_response = client.post("/api/auth/login", json=reset_password_user)
             if login_response.status_code == 200:
-                tokens = self._extract_tokens(login_response)
-                user_cleanup(client, user_id, tokens["access_token"])
+                tokens = self._extract_tokens_from_cookies(login_response)
+                cookies = {
+                    "auth_token": tokens["access_token"],
+                    "refresh_token": tokens["refresh_token"],
+                }
+                user_cleanup(client, user_id, cookies)
 
     def test_password_change_flow(self, client, test_user, user_cleanup):
         """Test the entire password change flow."""
@@ -143,23 +177,22 @@ class TestAuthentication(BaseTest):
         user_id = user_data.get("id")
 
         login_response = client.post("/api/auth/login", json=test_user)
-        tokens = self._extract_tokens(login_response)
-        access_token = tokens["access_token"]
-        refresh_token = tokens["refresh_token"]
+        tokens = self._extract_tokens_from_cookies(login_response)
 
-        # Skip test if no refresh token found
-        if not refresh_token:
-            pytest.skip("No refresh token found in response - test cannot continue")
+        # Set cookies on the client instance instead of per-request
+        client.cookies.set("auth_token", tokens["access_token"])
+        client.cookies.set("refresh_token", tokens["refresh_token"])
 
         # ACT - Change password
         new_password = "NewPassword456!"
         change_request = {
             "password": new_password,
-            "access_token": access_token,
-            "refresh_token": refresh_token,
         }
 
-        change_response = client.post("/api/auth/password/change", json=change_request)
+        change_response = client.post(
+            "/api/auth/password/change",
+            json=change_request,
+        )
 
         # ASSERT - Password change successful
         assert_successful_response(change_response)
@@ -171,22 +204,35 @@ class TestAuthentication(BaseTest):
         # ASSERT - Login with new password successful
         data = assert_successful_response(new_login_response)
         assert_has_fields(data, ["data"])
-        assert_has_fields(data["data"], ["session"])
-        assert_has_fields(data["data"]["session"], ["access_token"])
+        assert_has_fields(data["data"], ["user"])
+
+        # Check for cookies in response
+        assert "Set-Cookie" in new_login_response.headers, "Response should set cookies"
+        cookies = new_login_response.cookies
+        assert "auth_token" in cookies, "Response should set auth_token cookie"
+        assert "refresh_token" in cookies, "Response should set refresh_token cookie"
 
         # CLEANUP
         if user_id:
-            new_tokens = self._extract_tokens(new_login_response)
-            user_cleanup(client, user_id, new_tokens["access_token"])
+            new_tokens = self._extract_tokens_from_cookies(new_login_response)
+            new_cookies = {
+                "auth_token": new_tokens["access_token"],
+                "refresh_token": new_tokens["refresh_token"],
+            }
+            user_cleanup(client, user_id, new_cookies)
 
     def test_unauthorized_access(self, client):
         """Test access to protected endpoint without authentication."""
         # ARRANGE & ACT
         self.logger.info("Testing unauthorized access")
+
+        # Create a fresh client or clear cookies to ensure no auth is present
+        client.cookies.clear()
+
         response = client.get("/api/auth/me")
 
         # ASSERT
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_invalid_credentials_login(self, client):
         """Test login with invalid credentials."""
@@ -221,13 +267,13 @@ class TestAuthentication(BaseTest):
             login_response.status_code == 200
         ), f"Failed to login: {login_response.text}"
 
-        # Get token
-        tokens = self._extract_tokens(login_response)
-        access_token = tokens["access_token"]
+        # Get token and set cookies on client instance
+        tokens = self._extract_tokens_from_cookies(login_response)
+        client.cookies.set("auth_token", tokens["access_token"])
+        client.cookies.set("refresh_token", tokens["refresh_token"])
 
         # ACT - Delete the user
-        headers = {"Authorization": f"Bearer {access_token}"}
-        delete_response = client.delete(f"/api/auth/users/{user_id}", headers=headers)
+        delete_response = client.delete(f"/api/auth/users/{user_id}")
 
         # ASSERT - Deletion successful
         data = assert_successful_response(delete_response)

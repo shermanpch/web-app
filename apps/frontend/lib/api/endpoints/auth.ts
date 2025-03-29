@@ -22,6 +22,7 @@ export const authApi = {
           headers: {
             "Content-Type": "application/json",
           },
+          withCredentials: true,
         },
       );
 
@@ -58,6 +59,7 @@ export const authApi = {
           headers: {
             "Content-Type": "application/json",
           },
+          withCredentials: true,
         },
       );
 
@@ -83,27 +85,36 @@ export const authApi = {
   },
 
   /**
-   * Logout current user - client-side only implementation
+   * Logout current user by calling the server logout endpoint
    */
   async logout(): Promise<void> {
-    // This is a client-side only logout implementation
-    return Promise.resolve();
+    try {
+      await axios.post(
+        `${API_BASE_URL}/api/auth/logout`,
+        {},
+        { withCredentials: true },
+      );
+    } catch (error) {
+      console.error("Error during server logout:", error);
+      // Still resolve the promise to allow client-side logout to complete
+    }
   },
 
   /**
    * Change user password
    */
-  async changePassword(password: string, accessToken: string): Promise<void> {
+  async changePassword(password: string, accessToken?: string): Promise<void> {
     try {
-      await axios.post(
-        `${API_BASE_URL}/api/auth/password/change`,
-        { password, access_token: accessToken },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
+      const payload = accessToken
+        ? { password, access_token: accessToken }
+        : { password };
+
+      await axios.post(`${API_BASE_URL}/api/auth/password/change`, payload, {
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        withCredentials: true,
+      });
     } catch (error: any) {
       // Handle axios errors
       if (error?.response?.data) {
@@ -136,6 +147,7 @@ export const authApi = {
           headers: {
             "Content-Type": "application/json",
           },
+          withCredentials: true,
         },
       );
     } catch (error: any) {
@@ -175,6 +187,7 @@ export const authApi = {
           headers: {
             "Content-Type": "application/json",
           },
+          withCredentials: true,
         },
       );
     } catch (error: any) {
@@ -195,6 +208,21 @@ export const authApi = {
       }
 
       throw new Error("Failed to reset password. Please try again later.");
+    }
+  },
+
+  /**
+   * Get current user information using auth cookie
+   */
+  async getCurrentUser() {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/auth/me`, {
+        withCredentials: true,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching current user:", error);
+      return null;
     }
   },
 };

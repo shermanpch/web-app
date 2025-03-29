@@ -4,20 +4,22 @@ import logging
 from typing import Optional
 
 from ...models.users import UserQuotaRequest, UserQuotaResponse
-from ...services.auth.supabase import get_authenticated_client, get_supabase_client
+from ...services.auth.supabase import get_authenticated_client
 
 # Create logger
 logger = logging.getLogger(__name__)
 
 
 async def get_user_quota_from_db(
-    request: UserQuotaRequest,
+    request: UserQuotaRequest, access_token: str, refresh_token: str
 ) -> Optional[UserQuotaResponse]:
     """
     Fetch user quota information from the database.
 
     Args:
-        request: UserQuotaRequest containing user_id and auth tokens
+        request: UserQuotaRequest containing user_id
+        access_token: User's access token
+        refresh_token: User's refresh token
 
     Returns:
         UserQuotaResponse object with user quota information, or None if not found
@@ -28,14 +30,9 @@ async def get_user_quota_from_db(
     logger.info(f"Fetching quota information for user: {request.user_id}")
 
     try:
-        # Get Supabase client - use authenticated client if tokens provided
-        if request.access_token and request.refresh_token:
-            logger.debug("Using authenticated client with user tokens")
-            client = await get_authenticated_client(
-                request.access_token, request.refresh_token
-            )
-        else:
-            client = await get_supabase_client()
+        # Get authenticated Supabase client with user tokens
+        logger.debug("Using authenticated client with user tokens")
+        client = await get_authenticated_client(access_token, refresh_token)
 
         # Query the user_quotas table - ensure user_id is a string
         response = (
@@ -63,12 +60,16 @@ async def get_user_quota_from_db(
         raise Exception(f"Failed to retrieve user quota: {str(e)}")
 
 
-async def create_user_quota(request: UserQuotaRequest) -> UserQuotaResponse:
+async def create_user_quota(
+    request: UserQuotaRequest, access_token: str, refresh_token: str
+) -> UserQuotaResponse:
     """
     Create a new user quota in the database.
 
     Args:
-        request: UserQuotaRequest containing user_id and auth tokens
+        request: UserQuotaRequest containing user_id
+        access_token: User's access token
+        refresh_token: User's refresh token
 
     Returns:
         UserQuotaResponse object with the created user quota information
@@ -79,14 +80,9 @@ async def create_user_quota(request: UserQuotaRequest) -> UserQuotaResponse:
     logger.info(f"Creating new quota for user: {request.user_id}")
 
     try:
-        # Get Supabase client - use authenticated client if tokens provided
-        if request.access_token and request.refresh_token:
-            logger.debug("Using authenticated client with user tokens")
-            client = await get_authenticated_client(
-                request.access_token, request.refresh_token
-            )
-        else:
-            client = await get_supabase_client()
+        # Get authenticated Supabase client with user tokens
+        logger.debug("Using authenticated client with user tokens")
+        client = await get_authenticated_client(access_token, refresh_token)
 
         default_quota = {
             "user_id": str(request.user_id),

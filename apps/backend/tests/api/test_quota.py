@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class TestQuotas(BaseTest):
     """Test suite for user quota endpoints."""
 
-    def test_user_quota_flow(self, client, auth_tokens, user_cleanup):
+    def test_user_quota_flow(self, client, auth_tokens, auth_cookies, user_cleanup):
         """Test the complete quota flow:
         1. First check if quota exists (should return None)
         2. Create a quota
@@ -22,22 +22,20 @@ class TestQuotas(BaseTest):
         # ARRANGE
         self.logger.info("Testing complete user quota flow")
 
-        # Extract tokens and user ID
-        auth_token = auth_tokens["access_token"]
-        refresh_token = auth_tokens["refresh_token"]
+        # Extract user ID for cleanup
         user_id = auth_tokens["user_id"]
         assert user_id, "Failed to get user ID from auth tokens"
 
         try:
+            # Set cookies on the client instance instead of per-request
+            client.cookies.set("auth_token", auth_cookies["auth_token"])
+            client.cookies.set("refresh_token", auth_cookies["refresh_token"])
+
             # ACT - Step 1: Check if quota exists using POST endpoint
             self.logger.info("Step 1: Checking if quota exists (should be None)")
             first_request = client.post(
                 "/api/user/quota",
-                json={
-                    "user_id": user_id,
-                    "access_token": auth_token,
-                    "refresh_token": refresh_token,
-                },
+                json={"user_id": user_id},
             )
 
             # ASSERT - first request should return 200 with null or quota
@@ -62,11 +60,7 @@ class TestQuotas(BaseTest):
             self.logger.info("Step 2: Creating quota")
             create_request = client.post(
                 "/api/user/quota/create",
-                json={
-                    "user_id": user_id,
-                    "access_token": auth_token,
-                    "refresh_token": refresh_token,
-                },
+                json={"user_id": user_id},
             )
 
             # ASSERT - create request successful
@@ -95,11 +89,7 @@ class TestQuotas(BaseTest):
             self.logger.info("Step 3: Checking quota after creation")
             check_request = client.post(
                 "/api/user/quota",
-                json={
-                    "user_id": user_id,
-                    "access_token": auth_token,
-                    "refresh_token": refresh_token,
-                },
+                json={"user_id": user_id},
             )
 
             # ASSERT - check request successful
@@ -124,4 +114,4 @@ class TestQuotas(BaseTest):
         finally:
             # CLEANUP
             if user_id:
-                user_cleanup(client, user_id, auth_token)
+                user_cleanup(client, user_id, auth_cookies)

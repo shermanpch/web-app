@@ -13,8 +13,6 @@
     "start": "npm run --prefix apps/frontend start",
     "lint": "npm run --prefix apps/frontend lint",
     "format": "prettier --write \"**/*.{ts,tsx,md,js,jsx,json}\"",
-    "test:e2e": "npm run --prefix apps/frontend test:e2e",
-    "test:e2e:ui": "npm run --prefix apps/frontend test:e2e:ui",
     "test:backend": "npm run --prefix apps/backend test:all"
   },
   "devDependencies": {

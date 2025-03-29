@@ -11,8 +11,6 @@ export interface DivinationRequest {
   third_number: number;
   question: string;
   language: string;
-  access_token: string;
-  refresh_token: string;
 }
 
 /**
@@ -75,8 +73,6 @@ export interface SaveReadingRequest {
   prediction: IChingPrediction;
   clarifying_question?: string;
   clarifying_answer?: string;
-  access_token: string;
-  refresh_token: string;
 }
 
 /**
@@ -104,8 +100,6 @@ export interface UpdateReadingRequest {
   prediction: IChingPrediction;
   clarifying_question: string;
   clarifying_answer?: string;
-  access_token: string;
-  refresh_token: string;
 }
 
 /**

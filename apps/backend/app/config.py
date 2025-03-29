@@ -3,7 +3,7 @@
 import os
 from typing import List
 
-from pydantic import ConfigDict, HttpUrl
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 

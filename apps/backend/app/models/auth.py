@@ -51,26 +51,10 @@ class PasswordReset(BaseModel):
     email: str
 
 
-class RefreshToken(BaseModel):
-    """Refresh token request model."""
-
-    refresh_token: str
-
-
 class PasswordChange(BaseModel):
     """Password change request model."""
 
     password: str
-    access_token: str
-
-
-class SessionData(BaseModel):
-    """User session data model."""
-
-    access_token: str
-    refresh_token: str
-    expires_in: int = 3600
-    token_type: str = "bearer"
 
 
 class AuthResponse(BaseModel):
@@ -80,20 +64,13 @@ class AuthResponse(BaseModel):
     message: Optional[str] = None
 
 
-class UserSession(BaseModel):
-    """User session data structure."""
-
-    access_token: str
-    refresh_token: str
-    expires_in: int = 3600
-    token_type: str = "bearer"
-
-
 class UserSessionData(BaseModel):
-    """Data structure for user session response."""
+    """Data structure for user session response.
+
+    Note: No longer contains session tokens as these are sent via HttpOnly cookies.
+    """
 
     user: Dict[str, Any]
-    session: UserSession
 
 
 class UserSessionResponse(BaseModel):
@@ -102,3 +79,12 @@ class UserSessionResponse(BaseModel):
     status: str
     data: Optional[UserSessionData] = None
     message: Optional[str] = None
+
+
+class AuthenticatedSession(BaseModel):
+    """Holds validated tokens extracted from cookies."""
+
+    access_token: str
+    refresh_token: str
+    # Optional: Add user_id if decoded during validation
+    # user_id: Optional[str] = None

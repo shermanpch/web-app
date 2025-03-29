@@ -16,10 +16,11 @@ import { usePageState } from "@/hooks/use-page-state";
 import { cn } from "@/lib/utils";
 
 export function DivinationForm() {
-  const { session, user } = useAuth();
+  const { user, isLoading } = useAuth();
+
   const {
     data: response,
-    isLoading,
+    isLoading: isResponseLoading,
     error,
     withLoadingState,
     setData,
@@ -50,6 +51,7 @@ export function DivinationForm() {
   });
 
   const [clarifyingQuestion, setClarifyingQuestion] = useState("");
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -71,8 +73,8 @@ export function DivinationForm() {
 
   // Save the reading to the database
   const saveReading = async (readingData: DivinationResponse) => {
-    if (!session || !user) {
-      console.error("Cannot save reading: No active session or user");
+    if (!user) {
+      setAuthError("You must be logged in to save readings.");
       return;
     }
 
@@ -97,16 +99,15 @@ export function DivinationForm() {
           third_number: parseInt(formState.third_number),
           language: formState.language,
           prediction,
-          access_token: session.access_token,
-          refresh_token: session.refresh_token,
         });
       }, "Failed to save I Ching reading");
 
       if (result) {
         setSaveData(result);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving reading:", error);
+      setAuthError(error.message);
     }
   };
 
@@ -114,8 +115,10 @@ export function DivinationForm() {
   const handleClarifyingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!session || !user || !saveResponse || !response) {
-      alert("Cannot submit clarifying question: Missing required data");
+    setAuthError(null);
+
+    if (!user || !saveResponse || !response) {
+      setAuthError("Missing required data. Please try again.");
       return;
     }
 
@@ -141,8 +144,6 @@ export function DivinationForm() {
         language: formState.language,
         prediction,
         clarifying_question: clarifyingQuestion,
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
       };
 
       const result = await withUpdateLoadingState(async () => {
@@ -152,16 +153,24 @@ export function DivinationForm() {
       if (result) {
         setUpdateData(result);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating reading with clarifying question:", error);
+      setAuthError(error.message);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!session) {
-      alert("You must be logged in to use this feature");
+    setAuthError(null);
+
+    if (isLoading) {
+      setAuthError("Loading authentication status. Please try again.");
+      return;
+    }
+
+    if (!user) {
+      setAuthError("You must be logged in to use this feature.");
       return;
     }
 
@@ -171,24 +180,27 @@ export function DivinationForm() {
     // Reset clarifying question
     setClarifyingQuestion("");
 
-    const result = await withLoadingState(async () => {
-      return await divinationApi.getIchingReading({
-        first_number: parseInt(formState.first_number),
-        second_number: parseInt(formState.second_number),
-        third_number: parseInt(formState.third_number),
-        language: formState.language,
-        question: formState.question,
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
-      });
-    }, "Failed to get I Ching reading");
+    try {
+      const result = await withLoadingState(async () => {
+        return await divinationApi.getIchingReading({
+          first_number: parseInt(formState.first_number),
+          second_number: parseInt(formState.second_number),
+          third_number: parseInt(formState.third_number),
+          language: formState.language,
+          question: formState.question,
+        });
+      }, "Failed to get I Ching reading");
 
-    // Update the data state with the result if we get one
-    if (result) {
-      setData(result);
+      // Update the data state with the result if we get one
+      if (result) {
+        setData(result);
 
-      // After getting a successful reading, save it to the database
-      await saveReading(result);
+        // After getting a successful reading, save it to the database
+        await saveReading(result);
+      }
+    } catch (error: any) {
+      console.error("Error submitting divination:", error);
+      setAuthError(error.message);
     }
   };
 
@@ -201,6 +213,13 @@ export function DivinationForm() {
       {/* Original form section */}
       <div className="w-full md:w-1/2 space-y-6">
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Auth error display */}
+          {authError && (
+            <div className="p-4 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-100 rounded-md mb-4">
+              {authError}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="first_number">First Number (0-999)</Label>
@@ -283,8 +302,11 @@ export function DivinationForm() {
           )}
 
           <div>
-            <Button type="submit" disabled={isLoading || isSaving}>
-              {isLoading
+            <Button
+              type="submit"
+              disabled={isResponseLoading || isSaving || isLoading}
+            >
+              {isResponseLoading
                 ? "Getting Reading..."
                 : isSaving
                   ? "Saving Reading..."

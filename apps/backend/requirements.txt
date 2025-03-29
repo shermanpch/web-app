@@ -5,15 +5,12 @@ pydantic-settings==2.8.1
 python-dotenv==1.0.1
 supabase==2.13.0
 httpx==0.27.2
-python-jose==3.4.0
-pyjwt==2.8.0
-requests==2.32.3
+pyjwt==2.10.1
 python-multipart==0.0.20
-psutil==6.0.0
-postgrest==0.19.3
 beautifulsoup4==4.12.3
 tqdm==4.66.5
 openai==1.66.3
+psutil==7.0.0
 
 # Testing dependencies
 pytest==8.3.5

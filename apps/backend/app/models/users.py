@@ -11,8 +11,6 @@ class UserQuotaRequest(BaseModel):
     """User quota request model."""
 
     user_id: UUID
-    access_token: str
-    refresh_token: str
 
 
 class UserQuotaResponse(BaseModel):

@@ -18,39 +18,30 @@ class BaseTest:
         """Clean up after test method."""
         pass
 
-    def _extract_auth_token(self, auth_headers: Dict[str, str]) -> str:
+    def _get_user_id(self, client, auth_cookies: Dict[str, str]) -> str:
         """
-        Extract bearer token from authorization headers.
-
-        Args:
-            auth_headers: Authorization headers dictionary
-
-        Returns:
-            str: Bearer token
-        """
-        auth_header = auth_headers.get("Authorization", "")
-        return auth_header.replace("Bearer ", "")
-
-    def _get_user_id(self, client, auth_headers: Dict[str, str]) -> str:
-        """
-        Get user ID from authenticated request.
+        Get user ID from authenticated request using cookies.
 
         Args:
             client: FastAPI test client
-            auth_headers: Authorization headers
+            auth_cookies: Authentication cookies dict
 
         Returns:
             str: User ID
         """
-        user_response = client.get("/api/auth/me", headers=auth_headers)
+        # Set cookies on the client instance
+        client.cookies.set("auth_token", auth_cookies["auth_token"])
+        client.cookies.set("refresh_token", auth_cookies["refresh_token"])
+
+        user_response = client.get("/api/auth/me")
         assert (
             user_response.status_code == 200
         ), f"Failed to get user info: {user_response.text}"
         return user_response.json().get("id")
 
-    def _extract_tokens(self, response) -> Dict[str, str]:
+    def _extract_tokens_from_cookies(self, response) -> Dict[str, str]:
         """
-        Extract access and refresh tokens from response.
+        Extract access and refresh tokens from response cookies.
 
         Args:
             response: HTTP response object
@@ -58,11 +49,16 @@ class BaseTest:
         Returns:
             Dict containing access_token and refresh_token
         """
-        data = response.json().get("data", {})
-        session = data.get("session", {})
+        cookies = response.cookies
+        access_token = cookies.get("auth_token")
+        refresh_token = cookies.get("refresh_token")
+
+        assert access_token, "Failed to extract access token from cookies"
+        assert refresh_token, "Failed to extract refresh token from cookies"
+
         return {
-            "access_token": session.get("access_token"),
-            "refresh_token": session.get("refresh_token"),
+            "access_token": access_token,
+            "refresh_token": refresh_token,
         }
 
     def _extract_user_data(self, response) -> Dict[str, Any]:

@@ -27,6 +27,7 @@ export const divinationApi = {
           headers: {
             "Content-Type": "application/json",
           },
+          withCredentials: true,
         },
       );
 
@@ -65,6 +66,7 @@ export const divinationApi = {
           headers: {
             "Content-Type": "application/json",
           },
+          withCredentials: true,
         },
       );
 
@@ -105,6 +107,7 @@ export const divinationApi = {
           headers: {
             "Content-Type": "application/json",
           },
+          withCredentials: true,
         },
       );
 

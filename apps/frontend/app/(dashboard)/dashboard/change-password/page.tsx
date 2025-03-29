@@ -1,17 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useRequireAuth } from "@/hooks/use-require-auth";
-import { PasswordForm } from "@/components/auth/password-form";
 import { useAuth } from "@/lib/auth/auth-context";
+import { PasswordForm } from "@/components/auth/password-form";
 
 export default function ChangePasswordPage() {
-  const { isAuthenticated, isLoading } = useRequireAuth();
-  const { changePassword } = useAuth();
+  const { changePassword, isLoading } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
-  const router = useRouter();
 
   const handleSubmit = async ({
     password,
@@ -23,11 +19,6 @@ export default function ChangePasswordPage() {
       setError(null);
       await changePassword(password);
       setSuccess(true);
-
-      // Redirect back to dashboard after success
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 2000);
     } catch (err) {
       setError(
         err instanceof Error
@@ -46,11 +37,6 @@ export default function ChangePasswordPage() {
     );
   }
 
-  // If not authenticated, return null (hook handles redirect)
-  if (!isAuthenticated) {
-    return null;
-  }
-
   return (
     <div className="flex flex-col p-8">
       <div className="max-w-md mx-auto w-full">
@@ -58,14 +44,16 @@ export default function ChangePasswordPage() {
           <h1 className="text-3xl font-bold text-[hsl(var(--foreground))]">
             Change Password
           </h1>
-          <p className="text-[hsl(var(--muted-foreground))] mt-2">
-            Enter your new password below.
-          </p>
+          {!success && (
+            <p className="text-[hsl(var(--muted-foreground))] mt-2">
+              Enter your new password below.
+            </p>
+          )}
         </div>
 
         {success ? (
           <div className="p-4 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 rounded-md mb-4">
-            Password changed successfully! Redirecting to dashboard...
+            Password changed successfully!
           </div>
         ) : (
           <>

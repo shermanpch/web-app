@@ -16,19 +16,25 @@ from ...models.divination import (
     IChingUpdateReadingRequest,
     IChingUpdateReadingResponse,
 )
-from ...services.auth.supabase import get_authenticated_client, get_supabase_client
+from ...services.auth.supabase import get_authenticated_client
 from ...services.core.oracle import Oracle
 
 # Create logger
 logger = logging.getLogger(__name__)
 
 
-async def get_iching_text_from_db(request: IChingTextRequest) -> IChingTextResponse:
+async def get_iching_text_from_db(
+    request: IChingTextRequest,
+    access_token: str,
+    refresh_token: str,
+) -> IChingTextResponse:
     """
     Fetch I Ching text for given parent and child coordinates.
 
     Args:
-        request: IChingTextRequest containing parent_coord, child_coord and auth tokens
+        request: IChingTextRequest containing parent and child coordinates
+        access_token: User's access token
+        refresh_token: User's refresh token
 
     Returns:
         IChingTextResponse with parent and child text
@@ -41,14 +47,8 @@ async def get_iching_text_from_db(request: IChingTextRequest) -> IChingTextRespo
     )
 
     try:
-        # Get Supabase client - use authenticated client if tokens provided
-        if request.access_token and request.refresh_token:
-            logger.debug("Using authenticated client with user tokens")
-            client = await get_authenticated_client(
-                request.access_token, request.refresh_token
-            )
-        else:
-            client = await get_supabase_client()
+        # Get authenticated client
+        client = await get_authenticated_client(access_token, refresh_token)
 
         # Query the iching_texts table
         response = await (
@@ -89,12 +89,16 @@ async def get_iching_text_from_db(request: IChingTextRequest) -> IChingTextRespo
 
 async def get_iching_image_from_bucket(
     request: IChingImageRequest,
+    access_token: str,
+    refresh_token: str,
 ) -> IChingImageResponse:
     """
     Fetch I Ching hexagram image URL from storage bucket for given coordinates.
 
     Args:
-        request: IChingImageRequest containing parent_coord, child_coord and auth tokens
+        request: IChingImageRequest containing parent and child coordinates
+        access_token: User's access token
+        refresh_token: User's refresh token
 
     Returns:
         IChingImageResponse: Object containing coordinates and image URL
@@ -111,13 +115,8 @@ async def get_iching_image_from_bucket(
         image_path = f"{request.parent_coord}/{request.child_coord}/hexagram.jpg"
         bucket_name = "iching-images"
 
-        # We must use an authenticated client since the bucket requires authentication
-        if request.access_token and request.refresh_token:
-            client = await get_authenticated_client(
-                request.access_token, request.refresh_token
-            )
-        else:
-            raise ValueError("Authentication tokens required to access I Ching images")
+        # Use authenticated client
+        client = await get_authenticated_client(access_token, refresh_token)
 
         # Get a reference to the bucket and create a signed URL
         bucket = client.storage.from_(bucket_name)
@@ -157,13 +156,17 @@ async def get_iching_coordinates_from_oracle(
 
 
 async def get_iching_reading_from_oracle(
-    reading: IChingReadingRequest,
+    request: IChingReadingRequest,
+    access_token: str,
+    refresh_token: str,
 ) -> IChingReadingResponse:
     """
     Generate a complete I Ching reading including coordinates, text, and image.
 
     Args:
-        reading: IChingReadingRequest containing input numbers and auth tokens
+        request: IChingReadingRequest containing input numbers and question
+        access_token: User's access token
+        refresh_token: User's refresh token
 
     Returns:
         IChingReadingResponse with complete reading details
@@ -172,36 +175,39 @@ async def get_iching_reading_from_oracle(
         Exception: If text or image cannot be retrieved
     """
     oracle = Oracle()
-    oracle.input(reading.first_number, reading.second_number, reading.third_number)
+    oracle.input(request.first_number, request.second_number, request.third_number)
     parent_coord, child_coord = oracle.convert_to_coordinates()
 
     text_request = IChingTextRequest(
         parent_coord=parent_coord,
         child_coord=child_coord,
-        access_token=reading.access_token,
-        refresh_token=reading.refresh_token,
     )
 
     image_request = IChingImageRequest(
         parent_coord=parent_coord,
         child_coord=child_coord,
-        access_token=reading.access_token,
-        refresh_token=reading.refresh_token,
     )
 
-    text = await get_iching_text_from_db(text_request)
-    image = await get_iching_image_from_bucket(image_request)
-    return await oracle.get_initial_reading(reading, text, image)
+    text = await get_iching_text_from_db(text_request, access_token, refresh_token)
+    image = await get_iching_image_from_bucket(
+        image_request, access_token, refresh_token
+    )
+
+    return await oracle.get_initial_reading(request, text, image)
 
 
 async def save_iching_reading_to_db(
     request: IChingSaveReadingRequest,
+    access_token: str,
+    refresh_token: str,
 ) -> IChingSaveReadingResponse:
     """
     Save I Ching reading data to user_readings table in Supabase.
 
     Args:
-        request: IChingSaveReadingRequest containing reading data and auth tokens
+        request: IChingSaveReadingRequest containing reading data
+        access_token: User's access token
+        refresh_token: User's refresh token
 
     Returns:
         IChingSaveReadingResponse with database record details
@@ -212,13 +218,8 @@ async def save_iching_reading_to_db(
     logger.info(f"Saving I Ching reading for user: {request.user_id}")
 
     try:
-        # Get authenticated client - authentication is required for database writes
-        if not request.access_token or not request.refresh_token:
-            raise ValueError("Authentication tokens required to save readings")
-
-        client = await get_authenticated_client(
-            request.access_token, request.refresh_token
-        )
+        # Get authenticated client
+        client = await get_authenticated_client(access_token, refresh_token)
 
         # Prepare reading data
         reading_data = {
@@ -248,14 +249,13 @@ async def save_iching_reading_to_db(
             logger.warning(f"No data returned from user_readings insert")
             raise Exception("Failed to save I Ching reading - no response data")
 
-        # Return success response with record details
-        record = data[0]
+        # Return success response
         return IChingSaveReadingResponse(
-            id=str(record["id"]),
-            user_id=record["user_id"],
-            created_at=str(record["created_at"]),
+            id=data[0]["id"],
+            user_id=data[0]["user_id"],
+            created_at=data[0]["created_at"],
             success=True,
-            message="I Ching reading saved successfully",
+            message="Reading saved successfully",
         )
 
     except Exception as e:
@@ -265,13 +265,17 @@ async def save_iching_reading_to_db(
 
 async def update_iching_reading_in_db(
     request: IChingUpdateReadingRequest,
+    access_token: str,
+    refresh_token: str,
 ) -> IChingUpdateReadingResponse:
     """
     Update I Ching reading data in user_readings table in Supabase.
 
     Args:
         request: IChingUpdateReadingRequest containing reading id, user id, question,
-                numbers, prediction data, and optional clarifying question with auth tokens
+                numbers, prediction data, and optional clarifying question
+        access_token: User's access token
+        refresh_token: User's refresh token
 
     Returns:
         IChingUpdateReadingResponse with updated reading details
@@ -284,14 +288,8 @@ async def update_iching_reading_in_db(
     logger.info(f"Updating I Ching reading with id: {request.id}")
 
     try:
-        # Get authenticated client - authentication is required for database writes
-        if not request.access_token or not request.refresh_token:
-            logger.error("Missing authentication tokens for update operation")
-            raise ValueError("Authentication tokens required to update readings")
-
-        client = await get_authenticated_client(
-            request.access_token, request.refresh_token
-        )
+        # Get authenticated client
+        client = await get_authenticated_client(access_token, refresh_token)
 
         # Get the existing reading data
         logger.info(f"Fetching existing reading with id: {request.id}")

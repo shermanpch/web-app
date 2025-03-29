@@ -1,11 +1,11 @@
 "use client";
 
-import { useRequireAuth } from "@/hooks/use-require-auth";
+import { useAuth } from "@/lib/auth/auth-context";
 import { Panel } from "@/components/ui/panel";
 import { DivinationForm } from "@/components/divination/divination-form";
 
 export default function DivinationPage() {
-  const { isLoading, isAuthenticated, user } = useRequireAuth();
+  const { isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -13,12 +13,6 @@ export default function DivinationPage() {
         <div>Loading...</div>
       </div>
     );
-  }
-
-  // If not authenticated, don't render anything - just return null
-  // The useRequireAuth hook will handle the redirect
-  if (!isAuthenticated || !user) {
-    return null;
   }
 
   return (

@@ -69,12 +69,13 @@ def user_cleanup():
         Callable: A function to clean up a test user
     """
 
-    def _cleanup(client, user_id, token):
-        if user_id and token:
-            headers = {"Authorization": f"Bearer {token}"}
-            delete_response = client.delete(
-                f"/api/auth/users/{user_id}", headers=headers
-            )
+    def _cleanup(client, user_id, auth_cookies):
+        if user_id and auth_cookies:
+            # Set cookies on the client instance
+            client.cookies.set("auth_token", auth_cookies["auth_token"])
+            client.cookies.set("refresh_token", auth_cookies["refresh_token"])
+
+            delete_response = client.delete(f"/api/auth/users/{user_id}")
             logger.info(
                 f"Cleanup: Deleted user {user_id}, status: {delete_response.status_code}"
             )
@@ -110,33 +111,43 @@ def auth_tokens(client, test_user):
     login_response = client.post("/api/auth/login", json=test_user)
     assert login_response.status_code == 200, f"Login failed: {login_response.text}"
 
-    # Extract tokens
-    data = login_response.json()
-    login_data = data.get("data", {})
-    session = login_data.get("session", {})
+    # Extract tokens from cookies
+    cookies = login_response.cookies
+    access_token = cookies.get("auth_token")
+    refresh_token = cookies.get("refresh_token")
 
-    access_token = session.get("access_token", "")
-    logger.info(f"Got access token: {access_token[:10]}...")
+    logger.info(
+        f"Got access token from cookies: {access_token[:10] if access_token else 'None'}..."
+    )
+    logger.info(
+        f"Got refresh token from cookies: {refresh_token[:10] if refresh_token else 'None'}..."
+    )
+
+    assert access_token, "Failed to extract access token from cookies"
+    assert refresh_token, "Failed to extract refresh token from cookies"
 
     return {
         "access_token": access_token,
-        "refresh_token": session.get("refresh_token", ""),
+        "refresh_token": refresh_token,
         "user_id": user_id,
     }
 
 
 @pytest.fixture(scope="function")
-def auth_headers(auth_tokens):
+def auth_cookies(auth_tokens):
     """
-    Get authentication headers for a test user, using auth_tokens fixture.
+    Get authentication cookies for a test user, using auth_tokens fixture.
 
     Args:
         auth_tokens: Dictionary containing auth tokens and user ID
 
     Returns:
-        dict: Authentication headers with access token
+        dict: Authentication cookies with access and refresh tokens
     """
-    return {"Authorization": f"Bearer {auth_tokens['access_token']}"}
+    return {
+        "auth_token": auth_tokens["access_token"],
+        "refresh_token": auth_tokens["refresh_token"],
+    }
 
 
 @pytest.fixture(scope="function")

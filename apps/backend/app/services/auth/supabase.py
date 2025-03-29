@@ -275,3 +275,31 @@ async def refresh_user_session(refresh_token: str) -> dict:
     except Exception as e:
         logger.error(f"Session refresh error: {str(e)}")
         raise e
+
+
+async def logout_user(access_token: str) -> dict:
+    """
+    Logout a user by invalidating their session using Supabase REST API.
+
+    Args:
+        access_token: User's access token to be invalidated
+
+    Returns:
+        Success response
+
+    Raises:
+        Exception: If logout fails
+    """
+    logger.info("Attempting to logout user")
+    try:
+        url = _get_supabase_auth_url("logout")
+        headers = _get_auth_headers(access_token)
+
+        response = requests.post(url, headers=headers)
+        response.raise_for_status()
+
+        logger.info("User logged out successfully")
+        return {"success": True}
+    except Exception as e:
+        logger.error(f"Logout error: {str(e)}")
+        raise e

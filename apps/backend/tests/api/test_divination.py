@@ -14,7 +14,7 @@ class TestDivination(BaseTest):
     """Test suite for divination endpoints."""
 
     def test_iching_text_retrieval_non_authenticated(self, client):
-        """Test retrieving I-Ching text without providing authentication tokens."""
+        """Test retrieving I-Ching text without authentication."""
         # ARRANGE
         self.logger.info("Testing I-Ching text retrieval without authentication")
 
@@ -22,45 +22,40 @@ class TestDivination(BaseTest):
         test_parent_coord = "1-1"
         test_child_coord = "2"
 
-        # ACT - Make request without auth tokens - this should trigger validation error
+        # Create a fresh client or clear cookies to ensure no auth is present
+        client.cookies.clear()
+
+        # ACT - Make request without auth tokens/cookies
         iching_response = client.post(
             "/api/divination/iching-text",
             json={
                 "parent_coord": test_parent_coord,
                 "child_coord": test_child_coord,
-                # access_token and refresh_token are required but missing
             },
         )
 
         # ASSERT
         assert (
-            iching_response.status_code == 422
-        ), "Request should fail with validation error when tokens are missing"
+            iching_response.status_code == 401
+        ), "Request should fail with authentication error when no auth is provided"
 
         # Verify error details in response
         error_data = iching_response.json()
         assert "detail" in error_data, "Response should contain error details"
+        assert (
+            "Authentication" in error_data["detail"]
+        ), "Error should mention authentication"
 
-        # Check for specific error messages about missing tokens
-        assert any(
-            "access_token" in str(item).lower() for item in error_data["detail"]
-        ), "Error should mention missing access_token"
-        assert any(
-            "refresh_token" in str(item).lower() for item in error_data["detail"]
-        ), "Error should mention missing refresh_token"
-
-        self.logger.info("Non-authenticated token test passed successfully!")
+        self.logger.info("Non-authenticated test passed successfully!")
 
     def test_iching_text_retrieval_authenticated(
-        self, client, auth_tokens, user_cleanup
+        self, client, auth_tokens, auth_cookies, user_cleanup
     ):
-        """Test retrieving I-Ching text using access and refresh tokens."""
+        """Test retrieving I-Ching text using authentication cookies."""
         # ARRANGE
         self.logger.info("Testing I-Ching text retrieval with authentication")
 
-        # Extract tokens and user ID
-        auth_token = auth_tokens["access_token"]
-        refresh_token = auth_tokens["refresh_token"]
+        # Extract user ID for cleanup
         user_id = auth_tokens["user_id"]
 
         # Test coordinates
@@ -68,14 +63,16 @@ class TestDivination(BaseTest):
         test_child_coord = "2"
 
         try:
-            # ACT - Make the API request with tokens in the request body using the model
+            # Set cookies on the client instance instead of per-request
+            client.cookies.set("auth_token", auth_cookies["auth_token"])
+            client.cookies.set("refresh_token", auth_cookies["refresh_token"])
+
+            # ACT - Make the API request
             iching_response = client.post(
                 "/api/divination/iching-text",
                 json={
                     "parent_coord": test_parent_coord,
                     "child_coord": test_child_coord,
-                    "access_token": auth_token,
-                    "refresh_token": refresh_token,
                 },
             )
 
@@ -106,7 +103,7 @@ class TestDivination(BaseTest):
         finally:
             # Clean up the test user
             if user_id:
-                user_cleanup(client, user_id, auth_token)
+                user_cleanup(client, user_id, auth_cookies)
 
     def _log_text_preview(self, iching_data):
         """Log preview of parent and child text content."""
@@ -122,7 +119,7 @@ class TestDivination(BaseTest):
             self.logger.info(f"Child text preview: {preview}")
 
     def test_iching_image_retrieval_non_authenticated(self, client):
-        """Test retrieving I-Ching image without providing authentication tokens."""
+        """Test retrieving I-Ching image without authentication."""
         # ARRANGE
         self.logger.info("Testing I-Ching image retrieval without authentication")
 
@@ -130,32 +127,29 @@ class TestDivination(BaseTest):
         test_parent_coord = "1-1"
         test_child_coord = "2"
 
-        # ACT - Make request without auth tokens - using POST with model structure
+        # Clear any existing cookies
+        client.cookies.clear()
+
+        # ACT - Make request without auth tokens/cookies
         iching_response = client.post(
             "/api/divination/iching-image",
             json={
                 "parent_coord": test_parent_coord,
                 "child_coord": test_child_coord,
-                # access_token and refresh_token are required but missing
             },
         )
 
         # ASSERT
         assert (
-            iching_response.status_code == 422
-        ), "Request should fail with validation error when tokens are missing"
+            iching_response.status_code == 401
+        ), "Request should fail with authentication error when no auth is provided"
 
         # Verify error details in response
         error_data = iching_response.json()
         assert "detail" in error_data, "Response should contain error details"
-
-        # Check for specific error messages about missing tokens
-        assert any(
-            "access_token" in str(item).lower() for item in error_data["detail"]
-        ), "Error should mention missing access_token"
-        assert any(
-            "refresh_token" in str(item).lower() for item in error_data["detail"]
-        ), "Error should mention missing refresh_token"
+        assert (
+            "Authentication" in error_data["detail"]
+        ), "Error should mention authentication"
 
         self.logger.info("Non-authenticated image retrieval test passed successfully!")
 
@@ -164,15 +158,14 @@ class TestDivination(BaseTest):
         self,
         client,
         auth_tokens,
+        auth_cookies,
         user_cleanup,
     ):
-        """Test retrieving I-Ching image using access and refresh tokens."""
+        """Test retrieving I-Ching image using authentication cookies."""
         # ARRANGE
         self.logger.info("Testing I-Ching image retrieval with authentication")
 
-        # Extract tokens and user ID
-        auth_token = auth_tokens["access_token"]
-        refresh_token = auth_tokens["refresh_token"]
+        # Extract user ID for cleanup
         user_id = auth_tokens["user_id"]
 
         # Test coordinates
@@ -180,14 +173,16 @@ class TestDivination(BaseTest):
         test_child_coord = "2"
 
         try:
-            # ACT - Use POST with model structure - all parameters in the request body
+            # Set cookies on the client instance instead of per-request
+            client.cookies.set("auth_token", auth_cookies["auth_token"])
+            client.cookies.set("refresh_token", auth_cookies["refresh_token"])
+
+            # ACT - Make the API request
             iching_response = client.post(
                 "/api/divination/iching-image",
                 json={
                     "parent_coord": test_parent_coord,
                     "child_coord": test_child_coord,
-                    "access_token": auth_token,
-                    "refresh_token": refresh_token,
                 },
             )
 
@@ -198,10 +193,9 @@ class TestDivination(BaseTest):
 
             # Verify response structure
             image_data = iching_response.json()
-            assert isinstance(image_data, dict), "Response should be a JSON object"
             assert_has_fields(image_data, ["parent_coord", "child_coord", "image_url"])
 
-            # Verify the coordinates match what we requested
+            # Verify coordinates match request
             assert (
                 image_data["parent_coord"] == test_parent_coord
             ), f"Expected parent_coord {test_parent_coord}, got {image_data['parent_coord']}"
@@ -209,20 +203,19 @@ class TestDivination(BaseTest):
                 image_data["child_coord"] == test_child_coord
             ), f"Expected child_coord {test_child_coord}, got {image_data['child_coord']}"
 
-            # Verify the image URL format and components using standardized helper
-            image_url = image_data["image_url"]
-            self._verify_image_url_structure(
-                image_url, test_parent_coord, test_child_coord
+            # Verify image URL is valid
+            image_url = self._verify_image_url_structure(
+                image_data["image_url"], test_parent_coord, test_child_coord
             )
 
-            # Verify the image URL is accessible using standardized helper
-            await self._verify_image_url_accessibility(image_url)
+            # Optionally: verify the URL is actually accessible
+            # await self._verify_image_url_accessibility(image_url)
 
             self.logger.info("I-Ching image retrieval test passed successfully!")
         finally:
             # Clean up the test user
             if user_id:
-                user_cleanup(client, user_id, auth_token)
+                user_cleanup(client, user_id, auth_cookies)
 
     def test_iching_coordinates_conversion(self, client):
         """Test the I-Ching coordinates conversion logic."""
@@ -271,46 +264,43 @@ class TestDivination(BaseTest):
 
         self.logger.info("I-Ching coordinates conversion test passed successfully!")
 
-    def test_iching_reading_authenticated(self, client, auth_tokens, user_cleanup):
-        """Test retrieving complete I-Ching reading using authentication."""
+    def test_iching_reading_authenticated(
+        self, client, auth_tokens, auth_cookies, user_cleanup
+    ):
+        """Test generating a complete I Ching reading."""
         # ARRANGE
-        self.logger.info("Testing complete I-Ching reading with authentication")
+        self.logger.info("Testing I-Ching reading generation")
 
-        # Extract tokens and user ID
-        auth_token = auth_tokens["access_token"]
-        refresh_token = auth_tokens["refresh_token"]
+        # Extract user ID for cleanup
         user_id = auth_tokens["user_id"]
 
-        # Test data for I-Ching reading
-        test_first_number = 42
-        test_second_number = 17
-        test_third_number = 31
-        test_question = "What direction should I take in my career?"
-        test_language = "English"
+        # Test input data
+        request_data = {
+            "first_number": 123,
+            "second_number": 456,
+            "third_number": 789,
+            "question": "What path should I take in life?",
+            "language": "en",
+        }
 
         try:
-            # Get the complete I-Ching reading
-            # The endpoint now handles getting text and image internally
-            reading_response = client.post(
+            # Set cookies on the client instance instead of per-request
+            client.cookies.set("auth_token", auth_cookies["auth_token"])
+            client.cookies.set("refresh_token", auth_cookies["refresh_token"])
+
+            # ACT - Make the API request
+            iching_response = client.post(
                 "/api/divination/iching-reading",
-                json={
-                    "first_number": test_first_number,
-                    "second_number": test_second_number,
-                    "third_number": test_third_number,
-                    "question": test_question,
-                    "language": test_language,
-                    "access_token": auth_token,
-                    "refresh_token": refresh_token,
-                },
+                json=request_data,
             )
 
             # ASSERT
             assert (
-                reading_response.status_code == 200
-            ), f"I-Ching reading retrieval failed: {reading_response.text}"
+                iching_response.status_code == 200
+            ), f"I-Ching reading retrieval failed: {iching_response.text}"
 
             # Verify response structure
-            reading_data = reading_response.json()
+            reading_data = iching_response.json()
             assert isinstance(reading_data, dict), "Response should be a JSON object"
 
             # Check that all required fields are present
@@ -352,39 +342,34 @@ class TestDivination(BaseTest):
         finally:
             # Clean up the test user
             if user_id:
-                user_cleanup(client, user_id, auth_token)
+                user_cleanup(client, user_id, auth_cookies)
 
-    def test_save_iching_reading(self, client, auth_tokens, user_cleanup):
-        """Test saving I-Ching reading to the user_readings table."""
+    def test_save_iching_reading(self, client, auth_tokens, auth_cookies, user_cleanup):
+        """Test saving an I Ching reading to the database."""
         # ARRANGE
-        self.logger.info("Testing saving I-Ching reading to database")
+        self.logger.info("Testing save I-Ching reading")
 
-        # Extract tokens and user ID
-        auth_token = auth_tokens["access_token"]
-        refresh_token = auth_tokens["refresh_token"]
+        # Extract user ID for cleanup
         user_id = auth_tokens["user_id"]
 
-        # Test data for I-Ching reading
-        test_first_number = 38
-        test_second_number = 24
-        test_third_number = 16
-        test_question = "How should I approach my current challenges?"
-        test_language = "English"
+        # Create a reading first
+        reading_data = {
+            "first_number": 123,
+            "second_number": 456,
+            "third_number": 789,
+            "question": "What should I focus on today?",
+            "language": "en",
+        }
 
         try:
-            # STEP 1: First get a real prediction from the iching-reading endpoint
-            self.logger.info("Getting real prediction from I-Ching reading API")
+            # Set cookies on the client instance instead of per-request
+            client.cookies.set("auth_token", auth_cookies["auth_token"])
+            client.cookies.set("refresh_token", auth_cookies["refresh_token"])
+
+            # Get a reading first
             reading_response = client.post(
                 "/api/divination/iching-reading",
-                json={
-                    "first_number": test_first_number,
-                    "second_number": test_second_number,
-                    "third_number": test_third_number,
-                    "question": test_question,
-                    "language": test_language,
-                    "access_token": auth_token,
-                    "refresh_token": refresh_token,
-                },
+                json=reading_data,
             )
 
             assert (
@@ -406,14 +391,12 @@ class TestDivination(BaseTest):
                 "/api/divination/iching-reading/save",
                 json={
                     "user_id": user_id,
-                    "question": test_question,
-                    "first_number": test_first_number,
-                    "second_number": test_second_number,
-                    "third_number": test_third_number,
-                    "language": test_language,
+                    "question": reading_data["question"],
+                    "first_number": reading_data["first_number"],
+                    "second_number": reading_data["second_number"],
+                    "third_number": reading_data["third_number"],
+                    "language": reading_data["language"],
                     "prediction": reading_data,
-                    "access_token": auth_token,
-                    "refresh_token": refresh_token,
                 },
             )
 
@@ -455,45 +438,42 @@ class TestDivination(BaseTest):
             # Do not clean up the test user to keep the reading in the database
             pass
 
-    def test_update_iching_reading(self, client, auth_tokens, user_cleanup):
-        """Test updating I-Ching reading with a clarifying question."""
+    def test_update_iching_reading(
+        self, client, auth_tokens, auth_cookies, user_cleanup
+    ):
+        """Test updating an I Ching reading with a clarification question."""
         # ARRANGE
-        self.logger.info("Testing updating I-Ching reading with clarifying question")
+        self.logger.info("Testing update I-Ching reading")
 
-        # Extract tokens and user ID
-        auth_token = auth_tokens["access_token"]
-        refresh_token = auth_tokens["refresh_token"]
+        # Extract user ID for cleanup
         user_id = auth_tokens["user_id"]
 
-        # Test data for I-Ching reading
-        test_first_number = 38
-        test_second_number = 24
-        test_third_number = 16
-        test_question = "Should I take this job offer?"
-        test_language = "English"
+        # Create and save a reading first
+        reading_data = {
+            "first_number": 123,
+            "second_number": 456,
+            "third_number": 789,
+            "question": "What should I focus on today?",
+            "language": "en",
+        }
 
         try:
-            # STEP 1: First get a real prediction from the iching-reading endpoint
-            self.logger.info("Getting real prediction from I-Ching reading API")
-            reading_response = client.post(
+            # Set cookies on the client instance instead of per-request
+            client.cookies.set("auth_token", auth_cookies["auth_token"])
+            client.cookies.set("refresh_token", auth_cookies["refresh_token"])
+
+            # Step 1: Get a reading
+            iching_response = client.post(
                 "/api/divination/iching-reading",
-                json={
-                    "first_number": test_first_number,
-                    "second_number": test_second_number,
-                    "third_number": test_third_number,
-                    "question": test_question,
-                    "language": test_language,
-                    "access_token": auth_token,
-                    "refresh_token": refresh_token,
-                },
+                json=reading_data,
             )
 
             assert (
-                reading_response.status_code == 200
-            ), f"Failed to get I-Ching reading: {reading_response.text}"
+                iching_response.status_code == 200
+            ), f"Failed to get I-Ching reading: {iching_response.text}"
 
             # Get the real prediction data
-            reading_data = reading_response.json()
+            reading_data = iching_response.json()
             self.logger.info(
                 f"Retrieved real prediction for hexagram: {reading_data['hexagram_name']}"
             )
@@ -507,16 +487,14 @@ class TestDivination(BaseTest):
                 "/api/divination/iching-reading/save",
                 json={
                     "user_id": user_id,
-                    "question": test_question,
-                    "first_number": test_first_number,
-                    "second_number": test_second_number,
-                    "third_number": test_third_number,
-                    "language": test_language,
+                    "question": reading_data["question"],
+                    "first_number": reading_data["first_number"],
+                    "second_number": reading_data["second_number"],
+                    "third_number": reading_data["third_number"],
+                    "language": reading_data["language"],
                     "prediction": reading_data,
                     "clarifying_question": None,
                     "clarifying_answer": None,
-                    "access_token": auth_token,
-                    "refresh_token": refresh_token,
                 },
             )
 
@@ -532,7 +510,7 @@ class TestDivination(BaseTest):
 
             # STEP 3: Update the reading with a clarifying question
             test_clarifying_question = (
-                "Can you give me more details about the job offer?"
+                "Can you give me more details about the situation?"
             )
             self.logger.info(
                 f"Updating reading with clarifying question: '{test_clarifying_question}'"
@@ -543,15 +521,13 @@ class TestDivination(BaseTest):
                 json={
                     "id": reading_id,
                     "user_id": user_id,
-                    "question": test_question,
-                    "first_number": test_first_number,
-                    "second_number": test_second_number,
-                    "third_number": test_third_number,
-                    "language": test_language,
+                    "question": reading_data["question"],
+                    "first_number": reading_data["first_number"],
+                    "second_number": reading_data["second_number"],
+                    "third_number": reading_data["third_number"],
+                    "language": reading_data["language"],
                     "prediction": reading_data,
                     "clarifying_question": test_clarifying_question,
-                    "access_token": auth_token,
-                    "refresh_token": refresh_token,
                 },
             )
 

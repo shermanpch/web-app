@@ -2,8 +2,9 @@
 
 import logging
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from ...models.auth import AuthenticatedSession
 from ...models.divination import (
     IChingCoordinatesRequest,
     IChingCoordinatesResponse,
@@ -18,6 +19,7 @@ from ...models.divination import (
     IChingUpdateReadingRequest,
     IChingUpdateReadingResponse,
 )
+from ...services.auth.dependencies import require_auth_session_from_cookies
 from ...services.divination.iching import (
     get_iching_coordinates_from_oracle,
     get_iching_image_from_bucket,
@@ -33,12 +35,16 @@ logger = logging.getLogger(__name__)
 
 
 @router.post("/iching-text", response_model=IChingTextResponse)
-async def get_iching_text(request: IChingTextRequest):
+async def get_iching_text(
+    request_data: IChingTextRequest,
+    session: AuthenticatedSession = Depends(require_auth_session_from_cookies),
+):
     """
     Get I Ching text using request data.
 
     Args:
-        request: Request model containing parent and child coordinates and tokens
+        request_data: Request model containing parent and child coordinates
+        session: Authenticated session with tokens
 
     Returns:
         I Ching text for the given coordinates
@@ -48,7 +54,11 @@ async def get_iching_text(request: IChingTextRequest):
     """
     try:
         # Get the I Ching text using the request model
-        result = await get_iching_text_from_db(request)
+        result = await get_iching_text_from_db(
+            request_data,
+            session.access_token,
+            session.refresh_token,
+        )
         return result
 
     except HTTPException:
@@ -63,49 +73,39 @@ async def get_iching_text(request: IChingTextRequest):
 
 
 @router.post("/iching-image", response_model=IChingImageResponse)
-async def get_iching_image(request: IChingImageRequest):
+async def get_iching_image(
+    request_data: IChingImageRequest,
+    session: AuthenticatedSession = Depends(require_auth_session_from_cookies),
+) -> IChingImageResponse:
     """
-    Get I Ching hexagram image URL from the request data.
+    Get I Ching image for a specific coordinate pair.
 
     Args:
-        request: Request model containing parent and child coordinates and tokens
+        request_data: Request containing parent_coord and child_coord
+        session: Authenticated session extracted from cookies
 
     Returns:
-        IChingImage object with coordinates and image URL
-
-    Raises:
-        HTTPException: If image URL cannot be retrieved
+        IChingImageResponse: Response with image URL
     """
+    logger.info(
+        f"API: Getting image for parent: {request_data.parent_coord}, child: {request_data.child_coord}"
+    )
+
     try:
-        # Get the I Ching image using the request model
-        logger.info(
-            f"API: Getting image for parent: {request.parent_coord}, child: {request.child_coord}"
-        )
-        logger.debug(
-            f"Using access token starting with: {request.access_token[:10]}..."
-        )
-        logger.debug(
-            f"Using refresh token starting with: {request.refresh_token[:10]}..."
+        # Get the image URL from the service
+        result = await get_iching_image_from_bucket(
+            request_data,
+            session.access_token,
+            session.refresh_token,
         )
 
-        try:
-            iching_image = await get_iching_image_from_bucket(request)
-            logger.info(
-                f"API: Successfully retrieved image URL: {iching_image.image_url}"
-            )
-            return iching_image
+        logger.info(f"API: Successfully retrieved image URL: {result.image_url}")
 
-        except Exception as e:
-            logger.error(f"Detailed error in get_iching_image_from_bucket: {str(e)}")
-            # Re-raise with more details
-            raise Exception(f"Failed to get image from bucket: {str(e)}")
+        # Return the image response directly
+        return result
 
-    except HTTPException:
-        # Re-raise HTTP exceptions
-        raise
     except Exception as e:
-        # Log error and return a generic error message
-        logger.error(f"API error getting I Ching image: {str(e)}")
+        logger.error(f"API error retrieving I Ching image: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve I Ching image: {str(e)}",
@@ -113,7 +113,7 @@ async def get_iching_image(request: IChingImageRequest):
 
 
 @router.post("/iching-coordinates", response_model=IChingCoordinatesResponse)
-async def get_iching_coordinates(request: IChingCoordinatesRequest):
+async def get_iching_coordinates(request_data: IChingCoordinatesRequest):
     """
     Convert input numbers to I Ching coordinates.
 
@@ -121,7 +121,7 @@ async def get_iching_coordinates(request: IChingCoordinatesRequest):
     using modulo arithmetic to determine the parent and child coordinates.
 
     Args:
-        request: Request model containing three numbers for coordinate calculation
+        request_data: Request model containing three numbers for coordinate calculation
 
     Returns:
         I Ching coordinates derived from the input numbers
@@ -131,10 +131,10 @@ async def get_iching_coordinates(request: IChingCoordinatesRequest):
     """
     try:
         logger.info(
-            f"API: Converting numbers to I Ching coordinates: {request.first_number}, {request.second_number}, {request.third_number}"
+            f"API: Converting numbers to I Ching coordinates: {request_data.first_number}, {request_data.second_number}, {request_data.third_number}"
         )
 
-        result = await get_iching_coordinates_from_oracle(request)
+        result = await get_iching_coordinates_from_oracle(request_data)
 
         logger.info(
             f"API: Successfully generated coordinates: parent={result.parent_coord}, child={result.child_coord}"
@@ -154,7 +154,10 @@ async def get_iching_coordinates(request: IChingCoordinatesRequest):
 
 
 @router.post("/iching-reading", response_model=IChingReadingResponse)
-async def get_iching_reading(request: IChingReadingRequest):
+async def get_iching_reading(
+    request_data: IChingReadingRequest,
+    session: AuthenticatedSession = Depends(require_auth_session_from_cookies),
+):
     """
     Generate a complete I Ching reading based on input numbers and question.
 
@@ -165,27 +168,28 @@ async def get_iching_reading(request: IChingReadingRequest):
     4. Generates the reading interpretation using LLM
 
     Args:
-        request: Request model containing numbers, question, language and auth tokens
+        request_data: Request model containing numbers, question, and preferences
+        session: Authenticated session with tokens
 
     Returns:
-        Complete I Ching reading with interpretation, advice, and image path
+        Complete I Ching reading with coordinates, text, image, and interpretation
 
     Raises:
         HTTPException: If reading cannot be generated
     """
     try:
+        # Get the complete I Ching reading
         logger.info(
-            f"API: Generating I Ching reading for question: '{request.question}'"
-        )
-        logger.info(
-            f"Using numbers: {request.first_number}, {request.second_number}, {request.third_number} and language: {request.language}"
+            f"API: Generating I Ching reading for question: {request_data.question}"
         )
 
-        result = await get_iching_reading_from_oracle(request)
-
-        logger.info(
-            f"API: Successfully generated I Ching reading for hexagram: {result.hexagram_name}"
+        result = await get_iching_reading_from_oracle(
+            request_data,
+            session.access_token,
+            session.refresh_token,
         )
+
+        logger.info(f"API: Successfully generated I Ching reading")
         return result
 
     except HTTPException:
@@ -201,25 +205,32 @@ async def get_iching_reading(request: IChingReadingRequest):
 
 
 @router.post("/iching-reading/save", response_model=IChingSaveReadingResponse)
-async def save_iching_reading(request: IChingSaveReadingRequest):
+async def save_iching_reading(
+    request_data: IChingSaveReadingRequest,
+    session: AuthenticatedSession = Depends(require_auth_session_from_cookies),
+):
     """
-    Save I Ching reading to user_readings table.
+    Save an I Ching reading to the user's saved readings.
 
     Args:
-        request: Request model containing reading data and auth tokens
+        request_data: Request model containing the reading data to save
+        session: Authenticated session with tokens
 
     Returns:
-        Confirmation of successful save with reading id
+        Response with save status and saved reading ID
 
     Raises:
         HTTPException: If reading cannot be saved
     """
     try:
-        logger.info(f"API: Saving I Ching reading for user: {request.user_id}")
+        # Save the I Ching reading
+        logger.info(f"API: Saving I Ching reading for user: {request_data.user_id}")
 
-        result = await save_iching_reading_to_db(request)
+        result = await save_iching_reading_to_db(
+            request_data, session.access_token, session.refresh_token
+        )
 
-        logger.info(f"API: Successfully saved I Ching reading with ID: {result.id}")
+        logger.info(f"API: Successfully saved I Ching reading: {result.id}")
         return result
 
     except HTTPException:
@@ -235,41 +246,38 @@ async def save_iching_reading(request: IChingSaveReadingRequest):
 
 
 @router.post("/iching-reading/update", response_model=IChingUpdateReadingResponse)
-async def update_iching_reading(request: IChingUpdateReadingRequest):
+async def update_iching_reading(
+    request_data: IChingUpdateReadingRequest,
+    session: AuthenticatedSession = Depends(require_auth_session_from_cookies),
+):
     """
-    Update I Ching reading in user_readings table.
-
-    This endpoint handles updating an existing I Ching reading with additional
-    information such as a clarifying question. It will generate a new answer
-    based on the original reading and the clarifying question.
+    Update an existing saved I Ching reading.
 
     Args:
-        request: Request model containing reading id, user id, original reading data,
-                clarifying question, and auth tokens
+        request_data: Request model containing the reading data to update
+        session: Authenticated session with tokens
 
     Returns:
-        Updated reading with clarifying question and answer added
+        Response with update status and updated reading ID
 
     Raises:
-        HTTPException: If reading cannot be updated or user is not authenticated
+        HTTPException: If reading cannot be updated
     """
     try:
-        logger.info(
-            f"API: Updating I Ching reading for user: {request.user_id} and id: {request.id}"
-        )
-        logger.debug(
-            f"Updating with clarifying question: {request.clarifying_question}"
+        # Update the I Ching reading
+        logger.info(f"API: Updating I Ching reading: {request_data.id}")
+
+        result = await update_iching_reading_in_db(
+            request_data,
+            session.access_token,
+            session.refresh_token,
         )
 
-        # Update the reading in the database
-        result = await update_iching_reading_in_db(request)
-        logger.info(f"Successfully processed update for reading id: {request.id}")
-
+        logger.info(f"API: Successfully updated I Ching reading: {result.id}")
         return result
 
     except HTTPException:
         # Re-raise HTTP exceptions
-        logger.warning(f"HTTP exception occurred during reading update")
         raise
     except Exception as e:
         # Log error and return a generic error message

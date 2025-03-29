@@ -10,8 +10,6 @@ class IChingTextRequest(BaseModel):
 
     parent_coord: str
     child_coord: str
-    access_token: str
-    refresh_token: str
 
 
 class IChingTextResponse(BaseModel):
@@ -28,8 +26,6 @@ class IChingImageRequest(BaseModel):
 
     parent_coord: str
     child_coord: str
-    access_token: str
-    refresh_token: str
 
 
 class IChingImageResponse(BaseModel):
@@ -89,8 +85,6 @@ class IChingReadingRequest(BaseModel):
     third_number: int
     question: str
     language: str = "English"
-    access_token: str
-    refresh_token: str
 
 
 class IChingReadingResponse(IChingPrediction):
@@ -115,8 +109,6 @@ class IChingSaveReadingRequest(BaseModel):
     prediction: Optional[IChingPrediction] = None
     clarifying_question: Optional[str] = None
     clarifying_answer: Optional[str] = None
-    access_token: str
-    refresh_token: str
 
 
 class IChingSaveReadingResponse(BaseModel):
@@ -142,8 +134,6 @@ class IChingUpdateReadingRequest(BaseModel):
     prediction: IChingPrediction
     clarifying_question: str
     clarifying_answer: Optional[str] = None
-    access_token: str
-    refresh_token: str
 
 
 class IChingUpdateReadingResponse(BaseModel):
