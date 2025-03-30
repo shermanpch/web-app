@@ -52,3 +52,7 @@ apps/backend/migrations/scripts/scrapers/.scraper_cache/
 
 # Local Netlify folder
 .netlify
+
+# Documentation
+todo.md
+codebase.md
