@@ -6,9 +6,6 @@ import {
   ErrorResponse,
 } from "@/types/auth";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:8000";
-
 export const authApi = {
   /**
    * Register a new user with email and password
