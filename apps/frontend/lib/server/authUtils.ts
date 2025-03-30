@@ -1,6 +1,5 @@
 import { User } from '@/types/auth';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8000';
+import { getApiUrl } from '../api/config';
 
 // This function runs ONLY on the server
 export async function fetchServerSideUser(authToken: string | undefined): Promise<User | null> {
@@ -10,7 +9,7 @@ export async function fetchServerSideUser(authToken: string | undefined): Promis
 
   try {
     // Use native fetch or a server-safe library
-    const response = await fetch(`/api/auth/me`, {
+    const response = await fetch(getApiUrl('/api/auth/me'), {
       headers: {
         // Pass the token explicitly in the Authorization header
         'Authorization': `Bearer ${authToken}`,

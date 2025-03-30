@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "python main.py",
+    "dev:https": "uvicorn main:app --host local.api.myapp.dev --port 8000 --reload --ssl-keyfile ../../.certs/local.api.myapp.dev-key.pem --ssl-certfile ../../.certs/local.api.myapp.dev.pem",
     "start": "python main.py",
     "test:all": "pytest tests/",
     "test:debug": "pytest -xvs tests/"

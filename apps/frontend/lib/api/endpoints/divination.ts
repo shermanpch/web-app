@@ -8,6 +8,7 @@ import {
   UpdateReadingRequest,
   UpdateReadingResponse,
 } from "@/types/divination";
+import { getApiUrl } from "../config";
 
 export const divinationApi = {
   /**
@@ -18,7 +19,7 @@ export const divinationApi = {
   ): Promise<DivinationResponse> {
     try {
       const response = await axios.post<DivinationResponse>(
-        `/api/divination/iching-reading`,
+        getApiUrl("/api/divination/iching-reading"),
         request,
         {
           headers: {
@@ -57,7 +58,7 @@ export const divinationApi = {
   ): Promise<SaveReadingResponse> {
     try {
       const response = await axios.post<SaveReadingResponse>(
-        `/api/divination/iching-reading/save`,
+        getApiUrl("/api/divination/iching-reading/save"),
         request,
         {
           headers: {
@@ -98,7 +99,7 @@ export const divinationApi = {
   ): Promise<UpdateReadingResponse> {
     try {
       const response = await axios.post<UpdateReadingResponse>(
-        `/api/divination/iching-reading/update`,
+        getApiUrl("/api/divination/iching-reading/update"),
         request,
         {
           headers: {

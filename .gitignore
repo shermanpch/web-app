@@ -56,3 +56,6 @@ apps/backend/migrations/scripts/scrapers/.scraper_cache/
 # Documentation
 todo.md
 codebase.md
+
+# SSL certificates
+.certs/
