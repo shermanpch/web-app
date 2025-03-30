@@ -56,6 +56,7 @@ apps/backend/migrations/scripts/scrapers/.scraper_cache/
 # Documentation
 todo.md
 codebase.md
+repomix-output.md
 
 # SSL certificates
 .certs/
