@@ -44,11 +44,29 @@ function LoginContent() {
     setError(null);
     
     await withLoadingState(async () => {
-      await authApi.login(credentials); // Backend sets cookies via Set-Cookie header
-      // Force refresh server components if needed
-      router.refresh(); 
-      // Redirect after successful login (cookies are now set)
-      router.push(redirectedFrom);
+      try {
+        // 1. Backend login - sets cookies via Set-Cookie header
+        await authApi.login(credentials);
+        
+        // 2. Verification API call to confirm the session is active
+        const user = await authApi.getCurrentUser();
+        
+        if (user && user.id) {
+          // 3. Verification successful - cookies are working correctly
+          console.log("Session verified successfully");
+          // Force refresh server components if needed
+          router.refresh();
+          // Redirect after successful login and verification
+          router.push(redirectedFrom);
+        } else {
+          // 4. Verification failed - cookies not properly set or not sent back
+          console.error("Login succeeded but session verification failed");
+          throw new Error("Authentication complete, but session verification failed. Please try again.");
+        }
+      } catch (err) {
+        console.error("Login or verification process failed:", err);
+        throw err; // Re-throw so withLoadingState catches it
+      }
     }, "Login failed. Please check your credentials and try again.");
   };
 
