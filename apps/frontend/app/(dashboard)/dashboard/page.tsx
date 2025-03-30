@@ -5,7 +5,8 @@ import { Panel } from "@/components/ui/panel";
 
 export default async function DashboardPage() {
   // Server-side authentication and data fetching
-  const authToken = cookies().get("auth_token")?.value;
+  const cookieStore = await cookies();
+  const authToken = cookieStore.get("auth_token")?.value;
   
   if (!authToken) {
     redirect("/login");
