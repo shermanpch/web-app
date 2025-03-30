@@ -59,7 +59,7 @@ def set_auth_cookies(
         max_age=expires_in,
         httponly=True,
         secure=secure,
-        samesite="None",
+        samesite="Lax",
         path="/",
     )
 
@@ -71,7 +71,7 @@ def set_auth_cookies(
         max_age=refresh_token_max_age,
         httponly=True,
         secure=secure,
-        samesite="None",
+        samesite="Lax",
         path="/",
     )
 

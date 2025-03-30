@@ -21,7 +21,7 @@ export const divinationApi = {
   ): Promise<DivinationResponse> {
     try {
       const response = await axios.post<DivinationResponse>(
-        `${API_BASE_URL}/api/divination/iching-reading`,
+        `/api/divination/iching-reading`,
         request,
         {
           headers: {
@@ -60,7 +60,7 @@ export const divinationApi = {
   ): Promise<SaveReadingResponse> {
     try {
       const response = await axios.post<SaveReadingResponse>(
-        `${API_BASE_URL}/api/divination/iching-reading/save`,
+        `/api/divination/iching-reading/save`,
         request,
         {
           headers: {
@@ -101,7 +101,7 @@ export const divinationApi = {
   ): Promise<UpdateReadingResponse> {
     try {
       const response = await axios.post<UpdateReadingResponse>(
-        `${API_BASE_URL}/api/divination/iching-reading/update`,
+        `/api/divination/iching-reading/update`,
         request,
         {
           headers: {

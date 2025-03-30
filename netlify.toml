@@ -11,3 +11,9 @@ directory = "apps/frontend"
 targetPort = 3000
 port = 8888
 autoLaunch = true
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://web-app-cizo.onrender.com/api/:splat"
+  status = 200
+  force = true

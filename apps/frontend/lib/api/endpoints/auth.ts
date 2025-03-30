@@ -16,7 +16,7 @@ export const authApi = {
   async signup(credentials: SignUpCredentials): Promise<UserSessionResponse> {
     try {
       const response = await axios.post<UserSessionResponse>(
-        `${API_BASE_URL}/api/auth/signup`,
+        `/api/auth/signup`,
         credentials,
         {
           headers: {
@@ -53,7 +53,7 @@ export const authApi = {
   async login(credentials: LoginCredentials): Promise<UserSessionResponse> {
     try {
       const response = await axios.post<UserSessionResponse>(
-        `${API_BASE_URL}/api/auth/login`,
+        `/api/auth/login`,
         credentials,
         {
           headers: {
@@ -90,7 +90,7 @@ export const authApi = {
   async logout(): Promise<void> {
     try {
       await axios.post(
-        `${API_BASE_URL}/api/auth/logout`,
+        `/api/auth/logout`,
         {},
         { withCredentials: true },
       );
@@ -109,7 +109,7 @@ export const authApi = {
         ? { password, access_token: accessToken }
         : { password };
 
-      await axios.post(`${API_BASE_URL}/api/auth/password/change`, payload, {
+      await axios.post(`/api/auth/password/change`, payload, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -141,7 +141,7 @@ export const authApi = {
   async requestPasswordReset(email: string): Promise<void> {
     try {
       await axios.post(
-        `${API_BASE_URL}/api/auth/password/reset`,
+        `/api/auth/password/reset`,
         { email },
         {
           headers: {
@@ -178,7 +178,7 @@ export const authApi = {
   async resetPassword(password: string, accessToken: string): Promise<void> {
     try {
       await axios.post(
-        `${API_BASE_URL}/api/auth/password/change`,
+        `/api/auth/password/change`,
         {
           password,
           access_token: accessToken,
@@ -217,7 +217,7 @@ export const authApi = {
    */
   async getCurrentUser() {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/auth/me`, {
+      const response = await axios.get(`/api/auth/me`, {
         withCredentials: true,
       });
       return response.data;
