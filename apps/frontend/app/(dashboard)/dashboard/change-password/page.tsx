@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { PasswordForm } from "@/components/auth/password-form";
 import { authApi } from "@/lib/api/endpoints/auth";
+import { usePageState } from "@/hooks/use-page-state";
 
 export default function ChangePasswordPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Use the hook for loading and error state
+  const { isLoading, error, withLoadingState, setError } = usePageState();
   const [success, setSuccess] = useState<boolean>(false);
 
   const handleSubmit = async ({
@@ -15,30 +16,14 @@ export default function ChangePasswordPage() {
     password: string;
     confirmPassword: string;
   }) => {
-    try {
-      setError(null);
-      setIsLoading(true);
+    // Clear error manually if needed before the async operation
+    setError(null);
+    
+    await withLoadingState(async () => {
       await authApi.changePassword(password);
-      setSuccess(true);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "An error occurred while changing your password.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
+      setSuccess(true); // Set success on successful API call
+    }, "An error occurred while changing your password."); // Custom error message
   };
-
-  // Show loading state while checking authentication
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div>Loading...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col p-8">
@@ -59,14 +44,11 @@ export default function ChangePasswordPage() {
             Password changed successfully!
           </div>
         ) : (
-          <>
-            {error && (
-              <div className="p-4 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-100 rounded-md mb-4">
-                {error}
-              </div>
-            )}
-            <PasswordForm onSubmit={handleSubmit} isLoading={isLoading} />
-          </>
+          <PasswordForm 
+            onSubmit={handleSubmit} 
+            isLoading={isLoading} 
+            error={error}
+          />
         )}
       </div>
     </div>

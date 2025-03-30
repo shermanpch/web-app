@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { divinationApi } from "@/lib/api/endpoints/divination";
-import { authApi } from "@/lib/api/endpoints/auth";
 import {
   DivinationResponse,
   SaveReadingResponse,
@@ -14,30 +13,13 @@ import {
 } from "@/types/divination";
 import { usePageState } from "@/hooks/use-page-state";
 import { cn } from "@/lib/utils";
-import { User } from "@/types/auth";
 
-export function DivinationForm() {
-  // Fetch user data from API instead of auth context
-  const [user, setUser] = useState<User | null>(null);
-  const [isUserLoading, setIsUserLoading] = useState(true);
+// Define props interface
+interface DivinationFormProps {
+  userId: string; // Accept userId as a prop
+}
 
-  // Fetch current user when component mounts
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        setIsUserLoading(true);
-        const userData = await authApi.getCurrentUser();
-        setUser(userData);
-      } catch (error) {
-        console.error("Error fetching current user:", error);
-      } finally {
-        setIsUserLoading(false);
-      }
-    };
-
-    fetchCurrentUser();
-  }, []);
-
+export function DivinationForm({ userId }: DivinationFormProps) {
   const {
     data: response,
     isLoading: isResponseLoading,
@@ -93,10 +75,7 @@ export function DivinationForm() {
 
   // Save the reading to the database
   const saveReading = async (readingData: DivinationResponse) => {
-    if (!user) {
-      setAuthError("You must be logged in to save readings.");
-      return;
-    }
+    setAuthError(null);
 
     try {
       // Create a prediction object from the reading data
@@ -112,7 +91,7 @@ export function DivinationForm() {
 
       const result = await withSaveLoadingState(async () => {
         return await divinationApi.saveIchingReading({
-          user_id: user.id,
+          user_id: userId,
           question: formState.question,
           first_number: parseInt(formState.first_number),
           second_number: parseInt(formState.second_number),
@@ -134,11 +113,10 @@ export function DivinationForm() {
   // Handle submission of clarifying question
   const handleClarifyingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setAuthError(null);
 
-    if (!user || !saveResponse || !response) {
-      setAuthError("Missing required data. Please try again.");
+    if (!saveResponse || !response) {
+      setAuthError("Missing required reading data. Please try again.");
       return;
     }
 
@@ -156,7 +134,7 @@ export function DivinationForm() {
 
       const updateRequest = {
         id: saveResponse.id,
-        user_id: user.id,
+        user_id: userId,
         question: formState.question,
         first_number: parseInt(formState.first_number),
         second_number: parseInt(formState.second_number),
@@ -181,18 +159,7 @@ export function DivinationForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setAuthError(null);
-
-    if (isUserLoading) {
-      setAuthError("Loading authentication status. Please try again.");
-      return;
-    }
-
-    if (!user) {
-      setAuthError("You must be logged in to use this feature.");
-      return;
-    }
 
     // Reset any previous save response and update response
     setSaveData(undefined);
@@ -227,6 +194,10 @@ export function DivinationForm() {
   const responsePreClass = cn(
     "bg-[hsl(var(--muted))] p-4 rounded-md overflow-auto max-h-[400px]",
   );
+
+  // Disable button if necessary data isn't available or during API calls
+  const isSubmitDisabled = isResponseLoading || isSaving;
+  const isClarifyDisabled = isUpdating;
 
   return (
     <div className="flex flex-col md:flex-row md:space-x-6 space-y-6 md:space-y-0">
@@ -324,13 +295,9 @@ export function DivinationForm() {
           <div>
             <Button
               type="submit"
-              disabled={isResponseLoading || isSaving || isUserLoading}
+              disabled={isSubmitDisabled}
             >
-              {isResponseLoading
-                ? "Getting Reading..."
-                : isSaving
-                  ? "Saving Reading..."
-                  : "Submit"}
+              {isResponseLoading ? "Getting Reading..." : isSaving ? "Saving..." : "Submit"}
             </Button>
           </div>
         </form>
@@ -394,7 +361,7 @@ export function DivinationForm() {
               )}
 
               <div>
-                <Button type="submit" disabled={isUpdating}>
+                <Button type="submit" disabled={isClarifyDisabled}>
                   {isUpdating ? "Submitting..." : "Submit Clarifying Question"}
                 </Button>
               </div>

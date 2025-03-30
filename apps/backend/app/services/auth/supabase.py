@@ -3,7 +3,8 @@
 import logging
 from typing import Any, Dict, Optional, Tuple
 
-from fastapi import HTTPException, status
+from fastapi import status
+from supabase import AuthApiError
 from supabase._async.client import AsyncClient, create_client
 from supabase.lib.client_options import ClientOptions
 
@@ -365,7 +366,7 @@ async def logout_user(access_token: str, refresh_token: str) -> Dict[str, Any]:
 
 async def get_user(access_token: str, refresh_token: str) -> Dict[str, Any]:
     """
-    Get the user information using Supabase client.
+    Get the user information using Supabase client, attempting refresh if needed.
 
     Args:
         access_token: User's access token
@@ -375,29 +376,94 @@ async def get_user(access_token: str, refresh_token: str) -> Dict[str, Any]:
         User data
 
     Raises:
-        SupabaseAuthError: If fetching user fails
+        SupabaseAuthError: If fetching user fails even after potential refresh
     """
-    logger.info("Fetching user information")
+    logger.info("Attempting to fetch user information...")
+    client: Optional[AsyncClient] = None  # Initialize client to None
+
     try:
         client = await get_authenticated_client(access_token, refresh_token)
         response = await client.auth.get_user()
 
-        # Check if we got a valid user
-        if not response.user:
-            raise SupabaseAuthError("Invalid or expired session")
+        # Check if we got a valid user directly
+        if response.user:
+            logger.info("User information retrieved successfully with initial token.")
+            return response.model_dump()
+        else:
+            # If no user but no immediate error, maybe token expired silently? Try refresh.
+            logger.warning(
+                "Initial get_user call returned no user, attempting session refresh."
+            )
+            # Fall through to refresh logic, or raise specific error if appropriate
+            # Based on Supabase client behavior, an error might be raised below instead.
 
-        logger.info("User information retrieved successfully")
-        return response.model_dump()
     except Exception as e:
         error_str = str(e).lower()
-        logger.error(f"Error fetching user data: {error_str}")
+        logger.warning(
+            f"Initial get_user failed: {error_str}. Checking if refresh is possible."
+        )
 
-        if "expired" in error_str or "invalid" in error_str:
+        # Check if the error indicates an expired access token and refresh is possible
+        # Note: Exact error message/type might vary depending on Supabase client version.
+        # Adjust the condition based on actual errors observed.
+        is_expired_error = (
+            "invalid token" in error_str
+            or "jwt expired" in error_str
+            or isinstance(e, AuthApiError)
+            and e.status == 401
+        )  # Example check
+
+        if is_expired_error and refresh_token and client:
+            logger.info("Access token likely expired, attempting refresh...")
+            try:
+                # Use the same client instance which should have the refresh token set
+                refresh_response = await client.auth.refresh_session()
+                if refresh_response.user and refresh_response.session:
+                    logger.info("Session refreshed successfully. Re-fetching user.")
+                    # Retry getting the user with the refreshed session
+                    # The client session is updated internally by refresh_session()
+                    response_after_refresh = await client.auth.get_user()
+                    if response_after_refresh.user:
+                        logger.info("User retrieved successfully after refresh.")
+                        # Return the model dump of the UserResponse object
+                        return response_after_refresh.model_dump()
+                    else:
+                        logger.error(
+                            "Failed to retrieve user even after successful refresh."
+                        )
+                        raise SupabaseAuthError(
+                            "Failed to retrieve user after session refresh",
+                            status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        )
+                else:
+                    logger.warning(
+                        "Session refresh attempt did not return valid user/session."
+                    )
+                    raise SupabaseAuthError(
+                        "Session refresh failed", status.HTTP_401_UNAUTHORIZED
+                    )
+
+            except Exception as refresh_err:
+                logger.error(f"Session refresh failed: {str(refresh_err)}")
+                # If refresh fails, raise the appropriate error
+                raise SupabaseAuthError(
+                    "Your session has expired or is invalid. Please log in again.",
+                    status.HTTP_401_UNAUTHORIZED,
+                )
+        else:
+            # If the error wasn't an expiration error, or no refresh token, or no client, re-raise
+            logger.error(
+                f"Unhandled error fetching user data or refresh not possible: {error_str}"
+            )
             raise SupabaseAuthError(
-                "Your session has expired. Please log in again.",
-                status_code=status.HTTP_401_UNAUTHORIZED,
+                "Failed to authenticate user", status.HTTP_401_UNAUTHORIZED
             )
 
-        raise SupabaseAuthError(
-            "Failed to authenticate user", status_code=status.HTTP_401_UNAUTHORIZED
-        )
+    # Fallback if initial get_user returned no user and no exception was caught
+    # This path might indicate an issue with the Supabase client or unexpected response
+    logger.error(
+        "get_user finished without returning user data or raising a definitive error."
+    )
+    raise SupabaseAuthError(
+        "Failed to retrieve user data", status.HTTP_500_INTERNAL_SERVER_ERROR
+    )

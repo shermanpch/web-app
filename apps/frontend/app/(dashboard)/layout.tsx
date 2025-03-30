@@ -3,6 +3,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { fetchServerSideUser } from "@/lib/server/authUtils";
+import { User } from '@/types/auth';
 
 // Import components
 import LogoutButton from "@/components/auth/logout-button";
@@ -13,15 +14,19 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  let authToken: string | undefined;
+  let user: User | null = null;
+  let fetchError: string | null = null;
+
   try {
     // Server-side authentication check using cookies()
-    let authToken: string | undefined;
     try {
       const cookieStore = await cookies();
       authToken = cookieStore.get("auth_token")?.value;
     } catch (error) {
-      console.error("[DashboardLayout] Error accessing cookies:", error);
-      authToken = undefined;
+      console.error("[DashboardLayout] Critical error accessing cookies:", error);
+      // If cookies cannot be accessed at all, redirect immediately
+      redirect('/login?error=cookie_error');
     }
 
     // Double-check auth (Middleware should catch this, but defense-in-depth)
@@ -31,15 +36,25 @@ export default async function DashboardLayout({
     }
 
     // Fetch user data on the server
-    const user = await fetchServerSideUser(authToken);
-
-    // If user fetch fails (e.g., invalid/expired token after middleware check)
-    if (!user) {
-      console.log("[DashboardLayout] Failed to fetch user server-side, redirecting.");
-      // Optionally try a server-side token refresh here if implemented
-      redirect('/login');
+    try {
+      user = await fetchServerSideUser(authToken);
+    } catch (error) {
+      // Catch errors specifically from the fetch function itself (e.g., network)
+      console.error("[DashboardLayout] Network or unexpected error fetching server-side user:", error);
+      fetchError = "server_unavailable"; // Mark the error type
     }
 
+    // Handle different failure scenarios AFTER fetching
+    if (fetchError === "server_unavailable") {
+      // Redirect or render an error page if the API call failed fundamentally
+      redirect(`/login?error=${fetchError}`);
+    } else if (!user) {
+      // User is null, likely invalid/expired token even after potential backend refresh
+      console.log("[DashboardLayout] Failed to fetch user server-side (null user), redirecting.");
+      redirect('/login?error=invalid_session');
+    }
+
+    // --- If we reach here, user is authenticated and fetched ---
     const navItems = [
       { href: "/dashboard", label: "Dashboard" },
       { href: "/dashboard/divination", label: "Divination" },
@@ -71,7 +86,19 @@ export default async function DashboardLayout({
       </div>
     );
   } catch (error) {
-    console.error("[DashboardLayout] Error:", error);
-    redirect('/login'); // Fallback to login on any error
+    // Fallback error handler for any uncaught errors
+    console.error("[DashboardLayout] Unhandled error:", error);
+    
+    // Try to provide more context in the redirect based on error type
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const isNetworkRelated = errorMessage.toLowerCase().includes('network') || 
+                            errorMessage.toLowerCase().includes('fetch') ||
+                            errorMessage.toLowerCase().includes('connection');
+    
+    if (isNetworkRelated) {
+      redirect('/login?error=network_error');
+    } else {
+      redirect('/login?error=unknown_error');
+    }
   }
 }

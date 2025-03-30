@@ -186,6 +186,7 @@ export const authApi = {
         {
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}`,
           },
           withCredentials: true,
         },
