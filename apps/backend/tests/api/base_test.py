@@ -11,7 +11,6 @@ class BaseTest:
 
     def setup_method(self, method):
         """Set up test method."""
-        # Use __name__ pattern for logger with class name suffix
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def teardown_method(self, method):

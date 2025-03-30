@@ -3,30 +3,34 @@
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 
 
-class UserData(BaseModel):
-    """User data model."""
+class UserBase(BaseModel):
+    """Base user model with common fields."""
+
+    email: Optional[EmailStr] = None
+
+
+class UserData(UserBase):
+    """User data model returned to clients."""
 
     id: str
-    email: Optional[str] = None
+    last_sign_in_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
 
 
-class TokenPayload(BaseModel):
-    """Token payload model."""
+class TokenData(BaseModel):
+    """Token data extracted from JWT."""
 
-    sub: Optional[str] = None  # User ID
-    email: Optional[str] = None
+    user_id: str = Field(..., alias="sub")
+    email: Optional[EmailStr] = None
     exp: Optional[int] = None  # Expiration timestamp
-    iat: Optional[int] = None  # Issued at timestamp
 
-    def is_token_expired(self) -> bool:
+    def is_expired(self) -> bool:
         """Check if token is expired."""
         if self.exp is None:
             return False
-
-        # Get current timestamp
         now = datetime.now(timezone.utc).timestamp()
         return now > self.exp
 
@@ -34,21 +38,20 @@ class TokenPayload(BaseModel):
 class UserLogin(BaseModel):
     """User login request model."""
 
-    email: str
+    email: EmailStr
     password: str
 
 
-class UserSignup(BaseModel):
+class UserSignup(UserLogin):
     """User signup request model."""
 
-    email: str
-    password: str
+    pass
 
 
 class PasswordReset(BaseModel):
     """Password reset request model."""
 
-    email: str
+    email: EmailStr
 
 
 class PasswordChange(BaseModel):
@@ -60,31 +63,34 @@ class PasswordChange(BaseModel):
 class AuthResponse(BaseModel):
     """Base authentication response model."""
 
-    status: str
+    success: bool
     message: Optional[str] = None
 
 
-class UserSessionData(BaseModel):
-    """Data structure for user session response.
-
-    Note: No longer contains session tokens as these are sent via HttpOnly cookies.
-    """
-
-    user: Dict[str, Any]
-
-
-class UserSessionResponse(BaseModel):
-    """User session response model."""
-
-    status: str
-    data: Optional[UserSessionData] = None
-    message: Optional[str] = None
-
-
-class AuthenticatedSession(BaseModel):
-    """Holds validated tokens extracted from cookies."""
+class SessionInfo(BaseModel):
+    """Session information returned after authentication."""
 
     access_token: str
     refresh_token: str
-    # Optional: Add user_id if decoded during validation
-    # user_id: Optional[str] = None
+    expires_in: int
+
+
+class AuthenticatedSession(BaseModel):
+    """Authenticated session data with tokens."""
+
+    access_token: str
+    refresh_token: str
+
+
+class UserSession(BaseModel):
+    """User session data returned to frontend."""
+
+    user: UserData
+
+
+class UserSessionResponse(BaseModel):
+    """Response model for user session data."""
+
+    success: bool = True
+    data: Optional[UserSession] = None
+    message: Optional[str] = None

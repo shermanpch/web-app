@@ -1,6 +1,7 @@
 """Authentication API endpoints."""
 
 import logging
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
@@ -12,11 +13,13 @@ from ...models.auth import (
     PasswordReset,
     UserData,
     UserLogin,
-    UserSessionData,
+    UserSession,
     UserSessionResponse,
     UserSignup,
 )
-from ...services.auth import (
+from ...services.auth.dependencies import get_auth_tokens, get_current_user
+from ...services.auth.supabase import (
+    SupabaseAuthError,
     change_password,
     delete_user,
     login_user,
@@ -24,10 +27,6 @@ from ...services.auth import (
     refresh_user_session,
     reset_password,
     signup_user,
-)
-from ...services.auth.dependencies import (
-    get_current_user,
-    require_auth_session_from_cookies,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -40,52 +39,63 @@ def set_auth_cookies(
     access_token: str,
     refresh_token: str,
     expires_in: int = 3600,
-):
+) -> None:
     """
-    Set authentication cookies on the response.
+    Set secure HTTP-only cookies for authentication.
 
     Args:
         response: FastAPI Response object
-        access_token: User access token
-        refresh_token: User refresh token
+        access_token: JWT access token
+        refresh_token: JWT refresh token
         expires_in: Token expiration time in seconds
     """
-    # Set secure flag based on environment
-    secure_flag = settings.ENVIRONMENT.lower() in ["production", "staging"]
-    refresh_token_max_age_seconds = 7 * 24 * 60 * 60  # 7 days
+    # Set secure flag in production/staging environments
+    secure = settings.ENVIRONMENT.lower() in ["production", "staging"]
 
-    # In production/staging, use SameSite=None for cross-domain cookie access
-    # In development, use Lax which is more permissive for same-domain
-    samesite_value = "none" if secure_flag else "lax"
-
-    # Set cookies
+    # Set access token cookie (shorter lifespan)
     response.set_cookie(
         key="auth_token",
         value=access_token,
         max_age=expires_in,
         httponly=True,
-        secure=secure_flag,
-        samesite=samesite_value,
+        secure=secure,
+        samesite="lax",
         path="/",
     )
+
+    # Set refresh token cookie (longer lifespan)
+    refresh_token_max_age = 7 * 24 * 60 * 60  # 7 days
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
-        max_age=refresh_token_max_age_seconds,
+        max_age=refresh_token_max_age,
         httponly=True,
-        secure=secure_flag,
-        samesite=samesite_value,
+        secure=secure,
+        samesite="lax",
         path="/",
     )
 
 
-@router.get("/me", response_model=UserData)
-async def get_current_user_info(current_user: UserData = Depends(get_current_user)):
+def clear_auth_cookies(response: Response) -> None:
     """
-    Get current user information.
+    Clear authentication cookies.
 
     Args:
-        current_user: Current authenticated user
+        response: FastAPI Response object
+    """
+    response.delete_cookie(key="auth_token", path="/")
+    response.delete_cookie(key="refresh_token", path="/")
+
+
+@router.get("/me", response_model=UserData)
+async def get_current_user_info(
+    current_user: UserData = Depends(get_current_user),
+) -> UserData:
+    """
+    Get current authenticated user information.
+
+    Args:
+        current_user: User data from the authentication dependency
 
     Returns:
         Current user information
@@ -94,182 +104,215 @@ async def get_current_user_info(current_user: UserData = Depends(get_current_use
 
 
 @router.post("/refresh", response_model=UserSessionResponse)
-async def refresh_session(
-    response: Response,
-    request: Request,
-):
+async def refresh_session(response: Response, request: Request) -> UserSessionResponse:
     """
-    Refresh a user session token.
-
-    Gets refresh token from cookies.
+    Refresh an authentication session using a refresh token.
 
     Args:
-        response: FastAPI Response object for setting cookies
-        request: FastAPI Request object for cookie extraction
+        response: Response object for setting cookies
+        request: Request object containing cookies
 
     Returns:
-        New session tokens
+        Updated session information
+
+    Raises:
+        HTTPException: If refresh token is missing or invalid
     """
     try:
         # Get refresh token from cookies
         refresh_token = request.cookies.get("refresh_token")
-
         if not refresh_token:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Refresh token missing from cookies",
+                detail="Refresh token required",
             )
 
-        response_data = await refresh_user_session(refresh_token)
+        # Attempt to refresh the session
+        result = await refresh_user_session(refresh_token)
 
-        # Extract token data
-        access_token = response_data.get("access_token", "")
-        refresh_token = response_data.get("refresh_token", "")
-        expires_in = response_data.get("expires_in", 3600)
+        # Extract session data
+        session_data = result.get("session", {})
+        user_data = result.get("user", {})
 
-        # Set authentication cookies
-        set_auth_cookies(response, access_token, refresh_token, expires_in)
+        # Set new cookies
+        set_auth_cookies(
+            response,
+            access_token=session_data.get("access_token", ""),
+            refresh_token=session_data.get("refresh_token", ""),
+            expires_in=session_data.get("expires_in", 3600),
+        )
 
         return UserSessionResponse(
-            status="success",
-            data=UserSessionData(
-                user=response_data.get("user", {}),
+            success=True,
+            data=UserSession(
+                user=UserData(
+                    id=user_data.get("id", ""),
+                    email=user_data.get("email"),
+                    last_sign_in_at=user_data.get("last_sign_in_at"),
+                    created_at=user_data.get("created_at"),
+                )
             ),
         )
-    except Exception as e:
-        # Log the actual error for debugging
-        logger.error(f"Token refresh error: {str(e)}")
 
-        # Check for common token refresh errors
-        error_msg = str(e).lower()
-        if "expired" in error_msg or "invalid" in error_msg:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Your session has expired. Please log in again.",
-            )
-
+    except SupabaseAuthError as e:
+        # Return the specific error from our custom exception
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to refresh session. Please log in again.",
+            status_code=e.status_code,
+            detail=e.message,
+        )
+    except Exception as e:
+        logger.error(f"Session refresh error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session refresh failed. Please log in again.",
         )
 
 
 @router.post("/signup", response_model=UserSessionResponse)
-async def register_user(user: UserSignup, response: Response):
+async def register_user(user: UserSignup, response: Response) -> UserSessionResponse:
     """
-    Register a new user.
+    Register a new user account.
 
     Args:
-        user: User signup data
-        response: FastAPI Response object for setting cookies
+        user: User signup data with email and password
+        response: Response object for setting cookies
 
     Returns:
-        User registration response
+        New user session information
+
+    Raises:
+        HTTPException: If registration fails
     """
     try:
-        logger.info(f"Attempting to register new user with email: {user.email}")
-        response_data = await signup_user(user.email, user.password)
-        session_data = response_data.get("session", {})
-        logger.info(f"Successfully registered new user with email: {user.email}")
+        logger.info(f"Attempting to register user with email: {user.email}")
 
-        # Extract token data
-        access_token = session_data.get("access_token", "")
-        refresh_token = session_data.get("refresh_token", "")
-        expires_in = session_data.get("expires_in", 3600)
+        # Register the user
+        result = await signup_user(user.email, user.password)
+
+        # Extract data
+        session_data = result.get("session", {})
+        user_data = result.get("user", {})
+
+        logger.info(f"Successfully registered user: {user.email}")
 
         # Set authentication cookies
-        set_auth_cookies(response, access_token, refresh_token, expires_in)
+        set_auth_cookies(
+            response,
+            access_token=session_data.get("access_token", ""),
+            refresh_token=session_data.get("refresh_token", ""),
+            expires_in=session_data.get("expires_in", 3600),
+        )
 
         return UserSessionResponse(
-            status="success",
-            data=UserSessionData(
-                user=response_data.get("user", {}),
+            success=True,
+            data=UserSession(
+                user=UserData(
+                    id=user_data.get("id", ""),
+                    email=user_data.get("email"),
+                    created_at=user_data.get("created_at"),
+                    last_sign_in_at=user_data.get("last_sign_in_at"),
+                )
             ),
         )
+
+    except SupabaseAuthError as e:
+        # Use status code and message from our custom exception
+        raise HTTPException(
+            status_code=e.status_code,
+            detail=e.message,
+        )
     except Exception as e:
-        error_str = str(e)
-
-        # Log the actual error for debugging
-        logger.error(f"Signup error for {user.email}: {error_str}")
-
-        # Determine the appropriate error message based on the exception
-        if "422 client error: unprocessable entity" in error_str.lower():
-            error_message = "This email is already registered"
-            error_code = status.HTTP_409_CONFLICT
-        else:
-            error_message = "Failed to create account"
-            error_code = status.HTTP_400_BAD_REQUEST
-
-        raise HTTPException(status_code=error_code, detail=error_message)
+        logger.error(f"Registration error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred during registration. Please try again.",
+        )
 
 
 @router.post("/login", response_model=UserSessionResponse)
-async def login(user: UserLogin, response: Response):
+async def login(user: UserLogin, response: Response) -> UserSessionResponse:
     """
-    Login a user.
+    Authenticate a user and create a new session.
 
     Args:
-        user: User login data
-        response: FastAPI Response object for setting cookies
+        user: User login data with email and password
+        response: Response object for setting cookies
 
     Returns:
-        User login response with access token
+        User session information
+
+    Raises:
+        HTTPException: If authentication fails
     """
     try:
         logger.info(f"Login attempt for user: {user.email}")
-        response_data = await login_user(user.email, user.password)
+
+        # Authenticate the user
+        result = await login_user(user.email, user.password)
+
+        # Extract data
+        session_data = result.get("session", {})
+        user_data = result.get("user", {})
+
         logger.info(f"Successful login for user: {user.email}")
 
-        # Extract token data
-        access_token = response_data.get("access_token", "")
-        refresh_token = response_data.get("refresh_token", "")
-        expires_in = response_data.get("expires_in", 3600)
-
         # Set authentication cookies
-        set_auth_cookies(response, access_token, refresh_token, expires_in)
+        set_auth_cookies(
+            response,
+            access_token=session_data.get("access_token", ""),
+            refresh_token=session_data.get("refresh_token", ""),
+            expires_in=session_data.get("expires_in", 3600),
+        )
 
         return UserSessionResponse(
-            status="success",
-            data=UserSessionData(
-                user=response_data.get("user", {}),
+            success=True,
+            data=UserSession(
+                user=UserData(
+                    id=user_data.get("id", ""),
+                    email=user_data.get("email"),
+                    created_at=user_data.get("created_at"),
+                    last_sign_in_at=user_data.get("last_sign_in_at"),
+                )
             ),
         )
+
+    except SupabaseAuthError as e:
+        raise HTTPException(
+            status_code=e.status_code,
+            detail=e.message,
+        )
     except Exception as e:
-        error_str = str(e)
-
-        # Log the actual error for debugging
-        logger.error(f"Login error for {user.email}: {error_str}")
-
-        error_message = "Invalid email or password"
-
+        logger.error(f"Login error for {user.email}: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=error_message,
+            detail="Invalid email or password",
         )
 
 
 @router.post("/password/reset", response_model=AuthResponse)
-async def request_password_reset(data: PasswordReset):
+async def request_password_reset(data: PasswordReset) -> AuthResponse:
     """
-    Request password reset email.
+    Request a password reset email.
 
     Args:
-        data: Password reset data
+        data: Password reset request with email
 
     Returns:
-        Password reset response
+        Success response
     """
     try:
         logger.info(f"Password reset requested for email: {data.email}")
         await reset_password(data.email)
         logger.info(f"Password reset email sent for: {data.email}")
-        return AuthResponse(status="success", message="Password reset email sent")
-    except Exception as e:
-        # Log the actual error for debugging
-        logger.error(f"Password reset error for {data.email}: {str(e)}")
-
         return AuthResponse(
-            status="success",
+            success=True,
+            message="If an account with that email exists, a password reset link has been sent",
+        )
+    except Exception as e:
+        # Always return success to avoid email enumeration attacks
+        logger.error(f"Password reset error for {data.email}: {str(e)}")
+        return AuthResponse(
+            success=True,
             message="If an account with that email exists, a password reset link has been sent",
         )
 
@@ -277,34 +320,40 @@ async def request_password_reset(data: PasswordReset):
 @router.post("/password/change", response_model=AuthResponse)
 async def update_password(
     data: PasswordChange,
-    session: AuthenticatedSession = Depends(require_auth_session_from_cookies),
-):
+    session: AuthenticatedSession = Depends(get_auth_tokens),
+) -> AuthResponse:
     """
-    Change user password.
+    Change the authenticated user's password.
 
     Args:
-        data: Password change data
+        data: New password
         session: Authenticated session with tokens
 
     Returns:
-        Password change response
+        Success response
+
+    Raises:
+        HTTPException: If password change fails
     """
     try:
         logger.info("Password change requested")
-        await change_password(data.password, session.access_token)
+        await change_password(
+            data.password,
+            session.access_token,
+            session.refresh_token,
+        )
         logger.info("Password successfully changed")
-        return AuthResponse(status="success", message="Password changed successfully")
-    except Exception as e:
-        # Log the actual error for debugging
-        logger.error(f"Password change error: {str(e)}")
-
-        error_message = "Failed to change password"
-        if "invalid" in str(e).lower():
-            error_message = "Your session has expired. Please log in again."
-
+        return AuthResponse(success=True, message="Password changed successfully")
+    except SupabaseAuthError as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=error_message,
+            status_code=e.status_code,
+            detail=e.message,
+        )
+    except Exception as e:
+        logger.error(f"Password change error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to change password. Please try again.",
         )
 
 
@@ -312,41 +361,47 @@ async def update_password(
 async def remove_user(
     user_id: str,
     current_user: UserData = Depends(get_current_user),
-    session: AuthenticatedSession = Depends(require_auth_session_from_cookies),
-):
+    response: Response = None,
+) -> AuthResponse:
     """
     Delete a user account.
 
-    This endpoint requires authentication and can only be used
-    to delete the user's own account or by an admin.
-
     Args:
         user_id: The ID of the user to delete
-        current_user: The currently authenticated user
-        session: The authenticated session (for cookie-based auth)
+        current_user: Currently authenticated user
+        response: Response object for clearing cookies if deleting own account
 
     Returns:
-        Success message on successful deletion
+        Success response
 
     Raises:
-        HTTPException: If the user is not found or deletion fails
+        HTTPException: If user is not allowed to delete the account or deletion fails
     """
-    # Check if the user is trying to delete their own account or is an admin
+    # Verify that the user is trying to delete their own account
     if current_user.id != user_id:
         logger.warning(f"User {current_user.id} attempted to delete account {user_id}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only delete your own account",
         )
+
     try:
         logger.info(f"Deleting user account: {user_id}")
         await delete_user(user_id)
         logger.info(f"Successfully deleted user account: {user_id}")
-        return AuthResponse(status="success", message="User deleted successfully")
-    except Exception as e:
-        # Log the actual error for debugging
-        logger.error(f"Account deletion error for user {user_id}: {str(e)}")
 
+        # Clear auth cookies when users delete their own account
+        if response:
+            clear_auth_cookies(response)
+
+        return AuthResponse(success=True, message="Account deleted successfully")
+    except SupabaseAuthError as e:
+        raise HTTPException(
+            status_code=e.status_code,
+            detail=e.message,
+        )
+    except Exception as e:
+        logger.error(f"Account deletion error for user {user_id}: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete account. Please try again later.",
@@ -356,39 +411,26 @@ async def remove_user(
 @router.post("/logout", response_model=AuthResponse)
 async def logout(
     response: Response,
-    session: AuthenticatedSession = Depends(require_auth_session_from_cookies),
-):
+    session: AuthenticatedSession = Depends(get_auth_tokens),
+) -> AuthResponse:
     """
-    Logout a user by invalidating their session.
+    Logout the current user by invalidating their session.
 
     Args:
-        response: FastAPI Response object for clearing cookies
-        session: Current user's session information
+        response: Response object for clearing cookies
+        session: Current authentication session
 
     Returns:
         Success response
     """
     try:
-        # Invalidate the session in Supabase
-        await logout_user(session.access_token)
-
-        # Clear auth cookies
-        response.delete_cookie(key="auth_token", path="/")
-        response.delete_cookie(key="refresh_token", path="/")
-
-        return AuthResponse(
-            status="success",
-            message="Logged out successfully",
-        )
+        # Try to invalidate the session on Supabase
+        await logout_user(session.access_token, session.refresh_token)
     except Exception as e:
-        logger.error(f"Logout error: {str(e)}")
+        # Log but continue - we'll still clear cookies
+        logger.error(f"Logout error with Supabase: {str(e)}")
 
-        # Even if there's an error with Supabase, clear the cookies
-        response.delete_cookie(key="auth_token", path="/")
-        response.delete_cookie(key="refresh_token", path="/")
+    # Always clear cookies, even if Supabase call fails
+    clear_auth_cookies(response)
 
-        # Return success regardless to ensure frontend proceeds with logout
-        return AuthResponse(
-            status="success",
-            message="Logged out successfully",
-        )
+    return AuthResponse(success=True, message="Logged out successfully")

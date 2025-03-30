@@ -36,7 +36,8 @@ interface StoredAuthData {
   session: Session;
 }
 
-const API_BASE_URL = "/api";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:8000";
 
 // Provider component
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -220,7 +221,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Update the API logout to actually call the server logout endpoint
       await axios.post(
-        `${API_BASE_URL}/auth/logout`,
+        `${API_BASE_URL}/api/auth/logout`,
         {},
         {
           withCredentials: true, // Ensure cookies are sent
@@ -254,7 +255,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Call change password API with withCredentials to include cookies
       await axios.post(
-        `${API_BASE_URL}/auth/password/change`,
+        `${API_BASE_URL}/api/auth/password/change`,
         { password },
         {
           withCredentials: true,
@@ -277,7 +278,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       // Get current auth state from server
-      const response = await axios.get(`${API_BASE_URL}/auth/me`, {
+      const response = await axios.get(`${API_BASE_URL}/api/auth/me`, {
         withCredentials: true,
         validateStatus: (status) => status >= 200 && status < 500,
       });

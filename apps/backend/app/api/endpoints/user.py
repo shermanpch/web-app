@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from ...models.auth import AuthenticatedSession
 from ...models.users import UserQuotaRequest, UserQuotaResponse
-from ...services.auth.dependencies import require_auth_session_from_cookies
+from ...services.auth.dependencies import get_auth_tokens
 from ...services.users.quota import create_user_quota, get_user_quota_from_db
 
 router = APIRouter(prefix="/user", tags=["user"])
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 @router.post("/quota", response_model=Optional[UserQuotaResponse])
 async def get_user_quota(
     request_data: UserQuotaRequest,
-    session: AuthenticatedSession = Depends(require_auth_session_from_cookies),
+    session: AuthenticatedSession = Depends(get_auth_tokens),
 ):
     """
     Get user quota information.
@@ -50,7 +50,7 @@ async def get_user_quota(
 @router.post("/quota/create", response_model=UserQuotaResponse)
 async def create_quota(
     request_data: UserQuotaRequest,
-    session: AuthenticatedSession = Depends(require_auth_session_from_cookies),
+    session: AuthenticatedSession = Depends(get_auth_tokens),
 ):
     """
     Create a new user quota or reset to default values.

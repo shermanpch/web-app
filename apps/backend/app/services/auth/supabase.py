@@ -1,15 +1,26 @@
 """Supabase client utilities."""
 
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Tuple
 
-import httpx
+from fastapi import HTTPException, status
 from supabase._async.client import AsyncClient, create_client
+from supabase.lib.client_options import ClientOptions
 
 from ...config import settings
+from ...models.auth import SessionInfo, UserData
 
 # Create logger
 logger = logging.getLogger(__name__)
+
+
+class SupabaseAuthError(Exception):
+    """Custom exception for Supabase authentication errors."""
+
+    def __init__(self, message: str, status_code: int = status.HTTP_401_UNAUTHORIZED):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(self.message)
 
 
 async def get_supabase_client() -> AsyncClient:
@@ -19,13 +30,15 @@ async def get_supabase_client() -> AsyncClient:
     Returns:
         Supabase client instance
     """
-    logger.debug(f"Creating Supabase client with URL: {settings.SUPABASE_URL[:20]}...")
-    return await create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+    return await create_client(
+        settings.SUPABASE_URL,
+        settings.SUPABASE_KEY,
+        options=ClientOptions(auto_refresh_token=True, persist_session=False),
+    )
 
 
 async def get_authenticated_client(
-    access_token: str,
-    refresh_token: str,
+    access_token: str, refresh_token: str
 ) -> AsyncClient:
     """
     Create a Supabase client using an existing user token.
@@ -37,8 +50,7 @@ async def get_authenticated_client(
     Returns:
         Authenticated Supabase client instance
     """
-    logger.debug(f"Creating authenticated Supabase client...")
-    client = await create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+    client = await get_supabase_client()
     await client.auth.set_session(access_token, refresh_token)
     return client
 
@@ -50,182 +62,213 @@ async def get_supabase_admin_client() -> AsyncClient:
     Returns:
         Supabase client instance with admin privileges
     """
-    logger.debug(
-        f"Creating Supabase admin client with URL: {settings.SUPABASE_URL[:20]}..."
-    )
     return await create_client(
         settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY
     )
 
 
-def _get_supabase_auth_url(endpoint: str) -> str:
+def _extract_session_info(
+    response_data: Dict[str, Any],
+) -> Tuple[SessionInfo, UserData]:
     """
-    Generate a Supabase Auth URL for the given endpoint.
+    Extract session information and user data from Supabase response.
 
     Args:
-        endpoint: The auth endpoint path
+        response_data: Response data from Supabase auth operations
 
     Returns:
-        Full Supabase Auth URL
+        Tuple containing SessionInfo and UserData
+
+    Raises:
+        SupabaseAuthError: If required data is missing
     """
-    return f"{settings.SUPABASE_URL}/auth/v1/{endpoint}"
+    try:
+        session_data = response_data.get("session", {})
+        user_data = response_data.get("user", {})
+
+        if not session_data or not user_data:
+            raise SupabaseAuthError("Invalid authentication response from Supabase")
+
+        session_info = SessionInfo(
+            access_token=session_data.get("access_token"),
+            refresh_token=session_data.get("refresh_token"),
+            expires_in=session_data.get("expires_in", 3600),
+        )
+
+        user = UserData(
+            id=user_data.get("id"),
+            email=user_data.get("email"),
+            created_at=user_data.get("created_at"),
+            last_sign_in_at=user_data.get("last_sign_in_at"),
+        )
+
+        return session_info, user
+
+    except Exception as e:
+        logger.error(f"Error extracting session data: {str(e)}")
+        raise SupabaseAuthError(f"Error processing authentication data: {str(e)}")
 
 
-def _get_auth_headers(token: str = None) -> Dict[str, str]:
+async def signup_user(email: str, password: str) -> Dict[str, Any]:
     """
-    Generate headers for Supabase Auth API requests.
-
-    Args:
-        token: Optional auth token for authenticated requests
-
-    Returns:
-        Headers dictionary
-    """
-    headers = {
-        "Content-Type": "application/json",
-        "apikey": settings.SUPABASE_KEY,
-    }
-
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
-
-    return headers
-
-
-async def signup_user(email: str, password: str) -> dict:
-    """
-    Register a new user using Supabase REST API.
+    Register a new user using Supabase client.
 
     Args:
         email: User email
         password: User password
 
     Returns:
-        User registration response
+        Dict containing session info and user data
+
+    Raises:
+        SupabaseAuthError: On authentication failure
     """
     logger.info(f"Signing up user: {email}")
     try:
-        url = _get_supabase_auth_url("signup")
-        payload = {"email": email, "password": password}
+        client = await get_supabase_client()
+        response = await client.auth.sign_up({"email": email, "password": password})
 
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=payload, headers=_get_auth_headers())
-            response.raise_for_status()
+        # Check if registration succeeded
+        if not response.user or not response.session:
+            raise SupabaseAuthError(
+                "User registration failed: No user or session data returned",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
-            logger.info(f"Signup successful for: {email}")
-            return response.json()
-    except Exception as e:
-        logger.error(f"Signup error for {email}: {str(e)}")
+        logger.info(f"Signup successful for: {email}")
+        return response.model_dump()
+    except SupabaseAuthError as e:
+        # Re-raise our custom exceptions
         raise e
+    except Exception as e:
+        error_str = str(e).lower()
+        logger.error(f"Signup error for {email}: {error_str}")
+
+        # Handle specific error cases
+        if "already registered" in error_str or "already in use" in error_str:
+            raise SupabaseAuthError(
+                "This email is already registered", status_code=status.HTTP_409_CONFLICT
+            )
+
+        # General error
+        raise SupabaseAuthError(
+            f"Registration failed: {str(e)}", status_code=status.HTTP_400_BAD_REQUEST
+        )
 
 
-async def login_user(email: str, password: str) -> dict:
+async def login_user(email: str, password: str) -> Dict[str, Any]:
     """
-    Login a user using Supabase REST API.
+    Login a user using Supabase client.
 
     Args:
         email: User email
         password: User password
 
     Returns:
-        User login response
+        Dict containing session info and user data
+
+    Raises:
+        SupabaseAuthError: On authentication failure
     """
     logger.info(f"Logging in user: {email}")
     try:
-        url = _get_supabase_auth_url("token?grant_type=password")
-        payload = {"email": email, "password": password}
+        client = await get_supabase_client()
+        response = await client.auth.sign_in_with_password(
+            {"email": email, "password": password}
+        )
 
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=payload, headers=_get_auth_headers())
-            response.raise_for_status()
+        # Check if login succeeded
+        if not response.user or not response.session:
+            raise SupabaseAuthError("Invalid email or password")
 
-            logger.info(f"Login successful for: {email}")
-            return response.json()
+        logger.info(f"Login successful for: {email}")
+        return response.model_dump()
+    except SupabaseAuthError as e:
+        # Re-raise our custom exceptions
+        raise e
     except Exception as e:
         logger.error(f"Login error for {email}: {str(e)}")
-        raise e
+        raise SupabaseAuthError("Invalid email or password")
 
 
-async def reset_password(email: str) -> dict:
+async def reset_password(email: str) -> Dict[str, Any]:
     """
-    Request a password reset email through Supabase REST API.
+    Request a password reset email through Supabase client.
 
     Args:
         email: User email
 
     Returns:
-        Password reset response
+        Success response
     """
     logger.info(f"Requesting password reset for: {email}")
     try:
-        # Use the FRONTEND_URL setting directly
         redirect_url = f"{settings.FRONTEND_URL}/reset-password"
         logger.info(f"Reset password will redirect to: {redirect_url}")
 
-        url = _get_supabase_auth_url(f"recover?redirect_to={redirect_url}")
-        payload = {"email": email}
+        client = await get_supabase_client()
+        await client.auth.reset_password_for_email(
+            email, options={"redirect_to": redirect_url}
+        )
 
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=payload, headers=_get_auth_headers())
-            response.raise_for_status()
-
-            logger.info(f"Password reset email sent to: {email}")
-            return {"success": True}
+        logger.info(f"Password reset email sent to: {email}")
+        return {"success": True}
     except Exception as e:
         logger.error(f"Password reset error for {email}: {str(e)}")
-        raise e
+        # We don't raise an error here to avoid revealing if an email exists
+        return {"success": True}
 
 
-async def change_password(new_password: str, access_token: str) -> dict:
+async def change_password(
+    new_password: str, access_token: str, refresh_token: str
+) -> Dict[str, Any]:
     """
-    Change user password using Supabase REST API.
+    Change user password using Supabase client.
 
     Args:
         new_password: New password
         access_token: User access token
+        refresh_token: User refresh token
 
     Returns:
-        Password change response
+        Success response
+
+    Raises:
+        SupabaseAuthError: On password change failure
     """
     logger.info("Attempting to change password")
     try:
-        url = _get_supabase_auth_url("user")
-        payload = {"password": new_password}
-        headers = _get_auth_headers(access_token)
+        client = await get_authenticated_client(access_token, refresh_token)
+        response = await client.auth.update_user({"password": new_password})
 
-        async with httpx.AsyncClient() as client:
-            response = await client.put(url, json=payload, headers=headers)
-
-            # Handle specific error codes before raising general errors
-            if response.status_code == 422:
-                error_body = response.json()
-                logger.error(f"Password change error response: {error_body}")
-
-                if error_body.get("error_code") == "same_password":
-                    error_message = (
-                        "New password should be different from your current password"
-                    )
-                    raise ValueError(f"same_password_error: {error_message}")
-
-            if response.status_code != 200:
-                logger.error(f"Password change error response: {response.text}")
-
-            response.raise_for_status()
-
-            logger.info("Password updated successfully")
-            return response.json()
-    except ValueError as e:
-        # Re-raise ValueError which may contain our custom error message
-        logger.error(f"Password change error: {str(e)}")
-        raise e
+        logger.info("Password updated successfully")
+        return {"success": True}
     except Exception as e:
-        logger.error(f"Password change error: {str(e)}")
-        raise e
+        error_str = str(e).lower()
+        logger.error(f"Password change error: {error_str}")
+
+        # Check for specific error types
+        if "same_password" in error_str:
+            raise SupabaseAuthError(
+                "New password should be different from your current password",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        elif "invalid" in error_str or "expired" in error_str:
+            raise SupabaseAuthError(
+                "Your session has expired. Please log in again.",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        # General error
+        raise SupabaseAuthError(
+            "Failed to change password. Please try again.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
 
 
-async def delete_user(user_id: str) -> dict:
+async def delete_user(user_id: str) -> Dict[str, Any]:
     """
-    Delete a user by user ID.
+    Delete a user by user ID using Supabase client.
 
     This function uses the admin API with service role key to delete a user from Supabase.
 
@@ -233,79 +276,128 @@ async def delete_user(user_id: str) -> dict:
         user_id: The UUID of the user to delete
 
     Returns:
-        dict: Response indicating success or failure
+        Success response
 
     Raises:
-        Exception: If deletion fails
+        SupabaseAuthError: If deletion fails
     """
-    # Create a special client with service role key for admin operations
     logger.info(f"Creating admin client with service role key for user deletion")
-    admin_client = await get_supabase_admin_client()
-
-    logger.info(f"Attempting to delete user with ID: {user_id}")
     try:
-        # Delete the user using admin API
-        response = await admin_client.auth.admin.delete_user(user_id)
+        admin_client = await get_supabase_admin_client()
+
+        logger.info(f"Attempting to delete user with ID: {user_id}")
+        await admin_client.auth.admin.delete_user(user_id)
+
         logger.info(f"User {user_id} deleted successfully")
-        return {"success": True, "message": f"User {user_id} deleted successfully"}
+        return {"success": True}
     except Exception as e:
         logger.error(f"Failed to delete user {user_id}: {str(e)}")
-        raise e
+        raise SupabaseAuthError(
+            "Failed to delete account. Please try again later.",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
-async def refresh_user_session(refresh_token: str) -> dict:
+async def refresh_user_session(refresh_token: str) -> Dict[str, Any]:
     """
-    Refresh a user session using Supabase REST API.
+    Refresh a user session using Supabase client.
 
     Args:
         refresh_token: User's refresh token from previous login
 
     Returns:
-        New session tokens and user data
+        New session data with tokens and user info
 
     Raises:
-        Exception: If session refresh fails
+        SupabaseAuthError: If session refresh fails
     """
     logger.info("Attempting to refresh user session")
     try:
-        url = _get_supabase_auth_url("token?grant_type=refresh_token")
-        payload = {"refresh_token": refresh_token}
+        client = await get_supabase_client()
+        response = await client.auth.refresh_session(refresh_token)
 
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=payload, headers=_get_auth_headers())
-            response.raise_for_status()
+        # Check if refresh succeeded
+        if not response.user or not response.session:
+            raise SupabaseAuthError("Failed to refresh session")
 
-            logger.info("User session refreshed successfully")
-            return response.json()
+        logger.info("User session refreshed successfully")
+        return response.model_dump()
     except Exception as e:
-        logger.error(f"Session refresh error: {str(e)}")
-        raise e
+        error_str = str(e).lower()
+        logger.error(f"Session refresh error: {error_str}")
+
+        if "expired" in error_str or "invalid" in error_str:
+            raise SupabaseAuthError(
+                "Your session has expired. Please log in again.",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        raise SupabaseAuthError(
+            "Failed to refresh session. Please log in again.",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
 
 
-async def logout_user(access_token: str) -> dict:
+async def logout_user(access_token: str, refresh_token: str) -> Dict[str, Any]:
     """
-    Logout a user by invalidating their session using Supabase REST API.
+    Logout a user by invalidating their session using Supabase client.
 
     Args:
         access_token: User's access token to be invalidated
+        refresh_token: User's refresh token
 
     Returns:
         Success response
-
-    Raises:
-        Exception: If logout fails
     """
     logger.info("Attempting to logout user")
     try:
-        url = _get_supabase_auth_url("logout")
-        headers = _get_auth_headers(access_token)
+        client = await get_authenticated_client(access_token, refresh_token)
+        await client.auth.sign_out()
 
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url, headers=headers)
-            response.raise_for_status()
-
-            logger.info("User logged out successfully")
-            return {"success": True}
+        logger.info("User logged out successfully")
+        return {"success": True}
     except Exception as e:
+        # Just log errors, don't raise them - we want logout to succeed even if
+        # there's an issue with invalidating the token on the server
         logger.error(f"Logout error: {str(e)}")
-        raise e
+        return {"success": True}
+
+
+async def get_user(access_token: str, refresh_token: str) -> Dict[str, Any]:
+    """
+    Get the user information using Supabase client.
+
+    Args:
+        access_token: User's access token
+        refresh_token: User's refresh token
+
+    Returns:
+        User data
+
+    Raises:
+        SupabaseAuthError: If fetching user fails
+    """
+    logger.info("Fetching user information")
+    try:
+        client = await get_authenticated_client(access_token, refresh_token)
+        response = await client.auth.get_user()
+
+        # Check if we got a valid user
+        if not response.user:
+            raise SupabaseAuthError("Invalid or expired session")
+
+        logger.info("User information retrieved successfully")
+        return response.model_dump()
+    except Exception as e:
+        error_str = str(e).lower()
+        logger.error(f"Error fetching user data: {error_str}")
+
+        if "expired" in error_str or "invalid" in error_str:
+            raise SupabaseAuthError(
+                "Your session has expired. Please log in again.",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        raise SupabaseAuthError(
+            "Failed to authenticate user", status_code=status.HTTP_401_UNAUTHORIZED
+        )

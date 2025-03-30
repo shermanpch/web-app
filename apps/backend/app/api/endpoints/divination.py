@@ -19,7 +19,7 @@ from ...models.divination import (
     IChingUpdateReadingRequest,
     IChingUpdateReadingResponse,
 )
-from ...services.auth.dependencies import require_auth_session_from_cookies
+from ...services.auth.dependencies import get_auth_tokens
 from ...services.divination.iching import (
     get_iching_coordinates_from_oracle,
     get_iching_image_from_bucket,
@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 @router.post("/iching-text", response_model=IChingTextResponse)
 async def get_iching_text(
     request_data: IChingTextRequest,
-    session: AuthenticatedSession = Depends(require_auth_session_from_cookies),
+    session: AuthenticatedSession = Depends(get_auth_tokens),
 ):
     """
     Get I Ching text using request data.
@@ -75,7 +75,7 @@ async def get_iching_text(
 @router.post("/iching-image", response_model=IChingImageResponse)
 async def get_iching_image(
     request_data: IChingImageRequest,
-    session: AuthenticatedSession = Depends(require_auth_session_from_cookies),
+    session: AuthenticatedSession = Depends(get_auth_tokens),
 ) -> IChingImageResponse:
     """
     Get I Ching image for a specific coordinate pair.
@@ -156,7 +156,7 @@ async def get_iching_coordinates(request_data: IChingCoordinatesRequest):
 @router.post("/iching-reading", response_model=IChingReadingResponse)
 async def get_iching_reading(
     request_data: IChingReadingRequest,
-    session: AuthenticatedSession = Depends(require_auth_session_from_cookies),
+    session: AuthenticatedSession = Depends(get_auth_tokens),
 ):
     """
     Generate a complete I Ching reading based on input numbers and question.
@@ -207,7 +207,7 @@ async def get_iching_reading(
 @router.post("/iching-reading/save", response_model=IChingSaveReadingResponse)
 async def save_iching_reading(
     request_data: IChingSaveReadingRequest,
-    session: AuthenticatedSession = Depends(require_auth_session_from_cookies),
+    session: AuthenticatedSession = Depends(get_auth_tokens),
 ):
     """
     Save an I Ching reading to the user's saved readings.
@@ -248,7 +248,7 @@ async def save_iching_reading(
 @router.post("/iching-reading/update", response_model=IChingUpdateReadingResponse)
 async def update_iching_reading(
     request_data: IChingUpdateReadingRequest,
-    session: AuthenticatedSession = Depends(require_auth_session_from_cookies),
+    session: AuthenticatedSession = Depends(get_auth_tokens),
 ):
     """
     Update an existing saved I Ching reading.

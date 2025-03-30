@@ -2,7 +2,6 @@
 
 import logging
 
-import pytest
 from fastapi import status
 from tests.api.base_test import BaseTest
 from tests.conftest import assert_has_fields, assert_successful_response
