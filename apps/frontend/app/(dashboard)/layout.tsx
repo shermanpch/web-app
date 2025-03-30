@@ -1,7 +1,5 @@
 import React from "react";
 import Link from "next/link";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 
 // Import components
 import LogoutButton from "@/components/auth/logout-button";
@@ -12,15 +10,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Server-side authentication check
-  const cookieStore = await cookies();
-  const authToken = cookieStore.get("auth_token")?.value;
-
-  // Redirect to login if no auth token
-  if (!authToken) {
-    redirect("/login?redirectedFrom=/dashboard");
-  }
-
+  
   const navItems = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/dashboard/divination", label: "Divination" },
