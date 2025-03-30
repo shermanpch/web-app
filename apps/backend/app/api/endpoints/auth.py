@@ -36,7 +36,10 @@ logger = logging.getLogger(__name__)
 
 
 def set_auth_cookies(
-    response: Response, access_token: str, refresh_token: str, expires_in: int = 3600
+    response: Response,
+    access_token: str,
+    refresh_token: str,
+    expires_in: int = 3600,
 ):
     """
     Set authentication cookies on the response.
@@ -51,6 +54,10 @@ def set_auth_cookies(
     secure_flag = settings.ENVIRONMENT.lower() in ["production", "staging"]
     refresh_token_max_age_seconds = 7 * 24 * 60 * 60  # 7 days
 
+    # In production/staging, use SameSite=None for cross-domain cookie access
+    # In development, use Lax which is more permissive for same-domain
+    samesite_value = "none" if secure_flag else "lax"
+
     # Set cookies
     response.set_cookie(
         key="auth_token",
@@ -58,7 +65,7 @@ def set_auth_cookies(
         max_age=expires_in,
         httponly=True,
         secure=secure_flag,
-        samesite="lax",
+        samesite=samesite_value,
         path="/",
     )
     response.set_cookie(
@@ -67,7 +74,7 @@ def set_auth_cookies(
         max_age=refresh_token_max_age_seconds,
         httponly=True,
         secure=secure_flag,
-        samesite="strict",
+        samesite=samesite_value,
         path="/",
     )
 
