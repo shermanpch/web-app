@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/lib/auth/auth-context";
 import { divinationApi } from "@/lib/api/endpoints/divination";
+import { authApi } from "@/lib/api/endpoints/auth";
 import {
   DivinationResponse,
   SaveReadingResponse,
@@ -14,9 +14,29 @@ import {
 } from "@/types/divination";
 import { usePageState } from "@/hooks/use-page-state";
 import { cn } from "@/lib/utils";
+import { User } from "@/types/auth";
 
 export function DivinationForm() {
-  const { user, isLoading } = useAuth();
+  // Fetch user data from API instead of auth context
+  const [user, setUser] = useState<User | null>(null);
+  const [isUserLoading, setIsUserLoading] = useState(true);
+
+  // Fetch current user when component mounts
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        setIsUserLoading(true);
+        const userData = await authApi.getCurrentUser();
+        setUser(userData);
+      } catch (error) {
+        console.error("Error fetching current user:", error);
+      } finally {
+        setIsUserLoading(false);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
 
   const {
     data: response,
@@ -164,7 +184,7 @@ export function DivinationForm() {
 
     setAuthError(null);
 
-    if (isLoading) {
+    if (isUserLoading) {
       setAuthError("Loading authentication status. Please try again.");
       return;
     }
@@ -304,7 +324,7 @@ export function DivinationForm() {
           <div>
             <Button
               type="submit"
-              disabled={isResponseLoading || isSaving || isLoading}
+              disabled={isResponseLoading || isSaving || isUserLoading}
             >
               {isResponseLoading
                 ? "Getting Reading..."

@@ -1,24 +1,18 @@
-"use client"; // IMPORTANT: Mark as a Client Component
+"use client";
 
 import React from "react";
-import { useAuth } from "@/lib/auth/auth-context";
 
-export default function UserDisplay() {
-  const { user, isLoading } = useAuth(); // Get state from AuthProvider
-
-  if (isLoading) {
-    // Display a loading state matching the layout style
-    return (
-      <span className="text-sm text-[hsl(var(--muted-foreground))] animate-pulse">
-        Loading...
-      </span>
-    );
+// Accept email as a prop
+export default function UserDisplay({ email }: { email: string | null }) {
+  // No need for isLoading or useAuth anymore for this basic display
+  if (!email) {
+    // Handle case where email might be null unexpectedly
+    return <span className="text-sm text-[hsl(var(--muted-foreground))]">User</span>;
   }
 
-  // Display the user's email from the context, or a fallback
   return (
     <span className="text-sm text-[hsl(var(--foreground))]">
-      {user?.email || "User"}
+      {email}
     </span>
   );
-}
+} 

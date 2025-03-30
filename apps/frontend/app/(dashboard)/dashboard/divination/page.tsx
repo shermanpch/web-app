@@ -1,20 +1,7 @@
-"use client";
-
-import { useAuth } from "@/lib/auth/auth-context";
 import { Panel } from "@/components/ui/panel";
 import { DivinationForm } from "@/components/divination/divination-form";
 
 export default function DivinationPage() {
-  const { isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div>Loading...</div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col p-8">
       <h1 className="text-3xl font-bold text-[hsl(var(--foreground))] mb-8">

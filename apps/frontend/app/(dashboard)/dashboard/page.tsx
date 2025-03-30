@@ -1,29 +1,20 @@
-"use client";
-
-import { useAuth } from "@/lib/auth/auth-context";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { fetchServerSideUser } from "@/lib/server/authUtils";
 import { Panel } from "@/components/ui/panel";
 
-export default function DashboardPage() {
-  const { user, isLoading, isAuthenticated } = useAuth();
-
-  // Show loading state while checking authentication
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div>Loading...</div>
-      </div>
-    );
+export default async function DashboardPage() {
+  // Server-side authentication and data fetching
+  const authToken = cookies().get("auth_token")?.value;
+  
+  if (!authToken) {
+    redirect("/login");
   }
-
-  // Optional but recommended safety check
-  if (!isAuthenticated) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-red-500">
-          Authentication error. Please login again.
-        </div>
-      </div>
-    );
+  
+  const user = await fetchServerSideUser(authToken);
+  
+  if (!user) {
+    redirect("/login");
   }
 
   return (

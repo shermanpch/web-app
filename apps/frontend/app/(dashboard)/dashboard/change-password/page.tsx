@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/lib/auth/auth-context";
 import { PasswordForm } from "@/components/auth/password-form";
+import { authApi } from "@/lib/api/endpoints/auth";
 
 export default function ChangePasswordPage() {
-  const { changePassword, isLoading } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
 
@@ -17,7 +17,8 @@ export default function ChangePasswordPage() {
   }) => {
     try {
       setError(null);
-      await changePassword(password);
+      setIsLoading(true);
+      await authApi.changePassword(password);
       setSuccess(true);
     } catch (err) {
       setError(
@@ -25,6 +26,8 @@ export default function ChangePasswordPage() {
           ? err.message
           : "An error occurred while changing your password.",
       );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -62,7 +65,7 @@ export default function ChangePasswordPage() {
                 {error}
               </div>
             )}
-            <PasswordForm onSubmit={handleSubmit} />
+            <PasswordForm onSubmit={handleSubmit} isLoading={isLoading} />
           </>
         )}
       </div>

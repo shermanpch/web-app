@@ -4,7 +4,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@theme/theme-provider";
 import { config } from "@config/index";
-import { AuthProvider } from "@/lib/auth/auth-context";
 import Script from "next/script";
 
 // Load font only once for performance optimization
@@ -201,13 +200,11 @@ export default function RootLayout({
       </head>
       <body className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))] font-sans min-h-screen w-full overflow-x-hidden">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <AuthProvider>
-            <div className="flex min-h-screen flex-col bg-[hsl(var(--background))]">
-              {/* The Header will only be rendered for the root page, 
-                  not in the (auth) or (dashboard) route groups */}
-              {children}
-            </div>
-          </AuthProvider>
+          <div className="flex min-h-screen flex-col bg-[hsl(var(--background))]">
+            {/* The Header will only be rendered for the root page, 
+                not in the (auth) or (dashboard) route groups */}
+            {children}
+          </div>
         </ThemeProvider>
       </body>
     </html>
