@@ -10,7 +10,7 @@ export async function fetchServerSideUser(authToken: string | undefined): Promis
 
   try {
     // Use native fetch or a server-safe library
-    const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+    const response = await fetch(`/api/auth/me`, {
       headers: {
         // Pass the token explicitly in the Authorization header
         'Authorization': `Bearer ${authToken}`,
