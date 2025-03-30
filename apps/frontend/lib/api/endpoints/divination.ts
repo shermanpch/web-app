@@ -9,8 +9,7 @@ import {
   UpdateReadingResponse,
 } from "@/types/divination";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:8000";
+const API_BASE_URL = "/api";
 
 export const divinationApi = {
   /**
@@ -21,7 +20,7 @@ export const divinationApi = {
   ): Promise<DivinationResponse> {
     try {
       const response = await axios.post<DivinationResponse>(
-        `${API_BASE_URL}/api/divination/iching-reading`,
+        `${API_BASE_URL}/divination/iching-reading`,
         request,
         {
           headers: {
@@ -60,7 +59,7 @@ export const divinationApi = {
   ): Promise<SaveReadingResponse> {
     try {
       const response = await axios.post<SaveReadingResponse>(
-        `${API_BASE_URL}/api/divination/iching-reading/save`,
+        `${API_BASE_URL}/divination/iching-reading/save`,
         request,
         {
           headers: {
@@ -101,7 +100,7 @@ export const divinationApi = {
   ): Promise<UpdateReadingResponse> {
     try {
       const response = await axios.post<UpdateReadingResponse>(
-        `${API_BASE_URL}/api/divination/iching-reading/update`,
+        `${API_BASE_URL}/divination/iching-reading/update`,
         request,
         {
           headers: {
