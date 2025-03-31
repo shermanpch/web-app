@@ -8,22 +8,22 @@ export async function fetchServerSideUser(
     return null;
   }
 
+  const INTERNAL_API_URL = process.env.INTERNAL_BACKEND_API_URL
+
   try {
-    // Use native fetch or a server-safe library
-    const response = await fetch("/api/auth/me", {
+    // Use native fetch
+    const response = await fetch(`${INTERNAL_API_URL}/api/auth/me`, {
       headers: {
-        // Pass the token explicitly in the Authorization header
         Authorization: `Bearer ${authToken}`,
       },
-      cache: "no-store", // Ensure fresh data
+      cache: "no-store",
     });
 
     if (!response.ok) {
       console.error(
         `[fetchServerSideUser] API responded with status ${response.status}`,
       );
-      // Optionally try to refresh token here server-side if you have refresh logic
-      return null; // Token likely invalid or expired
+      return null;
     }
 
     const userData: User = await response.json();

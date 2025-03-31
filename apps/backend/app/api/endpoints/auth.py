@@ -1,7 +1,6 @@
 """Authentication API endpoints."""
 
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
@@ -49,8 +48,6 @@ def set_auth_cookies(
         refresh_token: JWT refresh token
         expires_in: Token expiration time in seconds
     """
-    # Set secure flag in production/staging environments
-    secure = settings.ENVIRONMENT.lower() in ["production", "staging"]
 
     # Set access token cookie (shorter lifespan)
     response.set_cookie(
@@ -58,8 +55,8 @@ def set_auth_cookies(
         value=access_token,
         max_age=expires_in,
         httponly=True,
-        secure=secure,
-        samesite="Lax",
+        secure=True,
+        samesite="None",
         path="/",
     )
 
@@ -70,8 +67,8 @@ def set_auth_cookies(
         value=refresh_token,
         max_age=refresh_token_max_age,
         httponly=True,
-        secure=secure,
-        samesite="Lax",
+        secure=True,
+        samesite="None",
         path="/",
     )
 

@@ -7,13 +7,26 @@ package = "@netlify/plugin-nextjs"
 
 [dev]
 framework = "next"
-directory = "apps/frontend"
 targetPort = 3000
 port = 8888
 autoLaunch = true
 
+[dev.https]
+certFile = ".certs/localhost+2.pem"
+keyFile = ".certs/localhost+2-key.pem"
+
+# Redirect for development environment
 [[redirects]]
-  from = "/api/*"
-  to = "https://web-app-cizo.onrender.com/api/:splat"
-  status = 200
-  force = true
+from = "/api/*"
+to = "https://localhost:8000/api/:splat"
+status = 200
+force = true
+conditions = {Deploy-Context = ["dev"]}
+
+# Redirect for production environment
+[[redirects]]
+from = "/api/*"
+to = "https://web-app-cizo.onrender.com/api/:splat"
+status = 200
+force = true
+conditions = {Deploy-Context = ["production"]}

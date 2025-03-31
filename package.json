@@ -6,17 +6,19 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\" --names \"frontend,backend\" --prefix-colors \"blue,green\"",
-    "dev:frontend": "npm run --prefix apps/frontend dev",
-    "dev:backend": "npm run --prefix apps/backend dev",
-    "build": "npm run --prefix apps/frontend build",
-    "start": "npm run --prefix apps/frontend start",
-    "lint": "npm run --prefix apps/frontend lint",
+    "dev": "concurrently \"npm run frontend:dev\" \"npm run backend:dev\"",
+    "dev:https": "concurrently \"npm run netlify\" \"npm run backend:dev:https\"",
+    "frontend:dev": "npm run --prefix apps/frontend dev",
+    "frontend:dev:https": "npm run --prefix apps/frontend dev:https",
+    "netlify": "NODE_EXTRA_CA_CERTS='/Users/sherman/Library/Application Support/mkcert/rootCA.pem' netlify dev --filter frontend",
+    "backend:dev": "npm run --prefix apps/backend dev",
+    "backend:dev:https": "npm run --prefix apps/backend dev:https",
     "format": "prettier --write \"**/*.{ts,tsx,md,js,jsx,json}\"",
     "test:backend": "npm run --prefix apps/backend test:all"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
+    "netlify-cli": "^19.1.4",
     "prettier": "^3.5.3"
   },
   "engines": {

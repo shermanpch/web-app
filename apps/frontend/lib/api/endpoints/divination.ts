@@ -9,6 +9,8 @@ import {
   UpdateReadingResponse,
 } from "@/types/divination";
 
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL
+
 export const divinationApi = {
   /**
    * Get I Ching reading
@@ -18,7 +20,7 @@ export const divinationApi = {
   ): Promise<DivinationResponse> {
     try {
       const response = await axios.post<DivinationResponse>(
-        "/api/divination/iching-reading",
+        `${API_URL}/api/divination/iching-reading`,
         request,
         {
           headers: {
@@ -57,7 +59,7 @@ export const divinationApi = {
   ): Promise<SaveReadingResponse> {
     try {
       const response = await axios.post<SaveReadingResponse>(
-        "/api/divination/iching-reading/save",
+        `${API_URL}/api/divination/iching-reading/save`,
         request,
         {
           headers: {
@@ -98,7 +100,7 @@ export const divinationApi = {
   ): Promise<UpdateReadingResponse> {
     try {
       const response = await axios.post<UpdateReadingResponse>(
-        "/api/divination/iching-reading/update",
+        `${API_URL}/api/divination/iching-reading/update`,
         request,
         {
           headers: {

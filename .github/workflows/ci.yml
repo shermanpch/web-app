@@ -11,8 +11,8 @@ env:
   HOST: "0.0.0.0"
   PORT: "8000"
   FRONTEND_URL: "http://localhost:3000"
-  NEXT_PUBLIC_BACKEND_API_URL: "http://localhost:8000"
-  ENVIRONMENT: "development"
+  NEXT_PUBLIC_BACKEND_API_URL: ""
+  INTERNAL_BACKEND_API_URL: "http://localhost:8000"
 
   # To ensure frontend use a different port
   FRONTEND_PORT: "3000"
