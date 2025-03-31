@@ -18,7 +18,7 @@ export default function ChangePasswordPage() {
   }) => {
     // Clear error manually if needed before the async operation
     setError(null);
-    
+
     await withLoadingState(async () => {
       await authApi.changePassword(password);
       setSuccess(true); // Set success on successful API call
@@ -44,9 +44,9 @@ export default function ChangePasswordPage() {
             Password changed successfully!
           </div>
         ) : (
-          <PasswordForm 
-            onSubmit={handleSubmit} 
-            isLoading={isLoading} 
+          <PasswordForm
+            onSubmit={handleSubmit}
+            isLoading={isLoading}
             error={error}
           />
         )}

@@ -293,11 +293,12 @@ export function DivinationForm({ userId }: DivinationFormProps) {
           )}
 
           <div>
-            <Button
-              type="submit"
-              disabled={isSubmitDisabled}
-            >
-              {isResponseLoading ? "Getting Reading..." : isSaving ? "Saving..." : "Submit"}
+            <Button type="submit" disabled={isSubmitDisabled}>
+              {isResponseLoading
+                ? "Getting Reading..."
+                : isSaving
+                  ? "Saving..."
+                  : "Submit"}
             </Button>
           </div>
         </form>

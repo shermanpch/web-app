@@ -17,24 +17,35 @@ export default function LogoutButton() {
     try {
       await authApi.logout(); // Calls backend to invalidate session & clear cookies
     } catch (e) {
-      console.error("Logout API call failed, proceeding with client-side redirect.", e);
+      console.error(
+        "Logout API call failed, proceeding with client-side redirect.",
+        e,
+      );
       setError("Logout failed on server. Redirecting...");
     } finally {
-      setTimeout(() => {
-        router.push('/login');
-        router.refresh();
-      }, error ? 1500 : 0);
+      setTimeout(
+        () => {
+          router.push("/login");
+          router.refresh();
+        },
+        error ? 1500 : 0,
+      );
     }
   };
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <Button variant="destructive" onClick={handleLogout} size="sm" disabled={isLoading}>
-        {isLoading ? 'Logging out...' : 'Logout'}
+      <Button
+        variant="destructive"
+        onClick={handleLogout}
+        size="sm"
+        disabled={isLoading}
+      >
+        {isLoading ? "Logging out..." : "Logout"}
       </Button>
       {error && (
         <p className="text-xs text-red-500 flex items-center gap-1">
-          <AlertCircle className="w-3 h-3"/> {error}
+          <AlertCircle className="w-3 h-3" /> {error}
         </p>
       )}
     </div>

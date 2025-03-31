@@ -11,7 +11,7 @@ import { authApi } from "@/lib/api/endpoints/auth";
 function SignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectedFrom = searchParams.get('redirectedFrom') || '/dashboard';
+  const redirectedFrom = searchParams.get("redirectedFrom") || "/dashboard";
   const { withLoadingState, error, isLoading } = usePageState();
 
   const handleSignup = async (credentials: LoginCredentials) => {

@@ -7,13 +7,13 @@ export default async function DashboardPage() {
   // Server-side authentication and data fetching
   const cookieStore = await cookies();
   const authToken = cookieStore.get("auth_token")?.value;
-  
+
   if (!authToken) {
     redirect("/login");
   }
-  
+
   const user = await fetchServerSideUser(authToken);
-  
+
   if (!user) {
     redirect("/login");
   }

@@ -5,7 +5,6 @@ import {
   UserSessionResponse,
   ErrorResponse,
 } from "@/types/auth";
-import { getApiUrl } from "../config";
 
 export const authApi = {
   /**
@@ -14,7 +13,7 @@ export const authApi = {
   async signup(credentials: SignUpCredentials): Promise<UserSessionResponse> {
     try {
       const response = await axios.post<UserSessionResponse>(
-        getApiUrl("/api/auth/signup"),
+        "/api/auth/signup",
         credentials,
         {
           headers: {
@@ -51,7 +50,7 @@ export const authApi = {
   async login(credentials: LoginCredentials): Promise<UserSessionResponse> {
     try {
       const response = await axios.post<UserSessionResponse>(
-        getApiUrl("/api/auth/login"),
+        "/api/auth/login",
         credentials,
         {
           headers: {
@@ -87,11 +86,7 @@ export const authApi = {
    */
   async logout(): Promise<void> {
     try {
-      await axios.post(
-        getApiUrl("/api/auth/logout"),
-        {},
-        { withCredentials: true },
-      );
+      await axios.post("/api/auth/logout", {}, { withCredentials: true });
     } catch (error) {
       console.error("Error during server logout:", error);
       // Still resolve the promise to allow client-side logout to complete
@@ -107,7 +102,7 @@ export const authApi = {
         ? { password, access_token: accessToken }
         : { password };
 
-      await axios.post(getApiUrl("/api/auth/password/change"), payload, {
+      await axios.post("/api/auth/password/change", payload, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -139,7 +134,7 @@ export const authApi = {
   async requestPasswordReset(email: string): Promise<void> {
     try {
       await axios.post(
-        getApiUrl("/api/auth/password/reset"),
+        "/api/auth/password/reset",
         { email },
         {
           headers: {
@@ -176,7 +171,7 @@ export const authApi = {
   async resetPassword(password: string, accessToken: string): Promise<void> {
     try {
       await axios.post(
-        getApiUrl("/api/auth/password/change"),
+        "/api/auth/password/change",
         {
           password,
           access_token: accessToken,
@@ -184,7 +179,7 @@ export const authApi = {
         {
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${accessToken}`,
+            Authorization: `Bearer ${accessToken}`,
           },
           withCredentials: true,
         },
@@ -215,7 +210,7 @@ export const authApi = {
    */
   async getCurrentUser() {
     try {
-      const response = await axios.get(getApiUrl("/api/auth/me"), {
+      const response = await axios.get("/api/auth/me", {
         withCredentials: true,
       });
       return response.data;
