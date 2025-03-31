@@ -14,7 +14,8 @@
     "backend:dev": "npm run --prefix apps/backend dev",
     "backend:dev:https": "npm run --prefix apps/backend dev:https",
     "format": "prettier --write \"**/*.{ts,tsx,md,js,jsx,json}\"",
-    "test:backend": "npm run --prefix apps/backend test:all"
+    "test:backend": "npm run --prefix apps/backend test:all",
+    "lint": "npm run --prefix apps/frontend lint"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
