@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "uvicorn main:app --host localhost --port 8000 --reload",
     "dev:https": "uvicorn main:app --host localhost --port 8000 --reload --ssl-keyfile ../../.certs/localhost+2-key.pem --ssl-certfile ../../.certs/localhost+2.pem",
-    "start": "python main.py",
     "test:all": "pytest tests/",
     "test:debug": "pytest -xvs tests/"
   },
