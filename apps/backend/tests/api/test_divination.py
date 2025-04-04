@@ -131,25 +131,14 @@ class TestDivination(BaseTest):
         client.cookies.clear()
 
         # ACT - Make request without auth tokens/cookies
-        iching_response = client.post(
-            "/api/divination/iching-image",
-            json={
-                "parent_coord": test_parent_coord,
-                "child_coord": test_child_coord,
-            },
+        iching_response = client.get(
+            f"/api/divination/iching-image?parent_coord={test_parent_coord}&child_coord={test_child_coord}"
         )
 
         # ASSERT
         assert (
             iching_response.status_code == 401
         ), "Request should fail with authentication error when no auth is provided"
-
-        # Verify error details in response
-        error_data = iching_response.json()
-        assert "detail" in error_data, "Response should contain error details"
-        assert (
-            "Authentication" in error_data["detail"]
-        ), "Error should mention authentication"
 
         self.logger.info("Non-authenticated image retrieval test passed successfully!")
 
@@ -178,12 +167,8 @@ class TestDivination(BaseTest):
             client.cookies.set("refresh_token", auth_cookies["refresh_token"])
 
             # ACT - Make the API request
-            iching_response = client.post(
-                "/api/divination/iching-image",
-                json={
-                    "parent_coord": test_parent_coord,
-                    "child_coord": test_child_coord,
-                },
+            iching_response = client.get(
+                f"/api/divination/iching-image?parent_coord={test_parent_coord}&child_coord={test_child_coord}"
             )
 
             # ASSERT
@@ -191,25 +176,13 @@ class TestDivination(BaseTest):
                 iching_response.status_code == 200
             ), f"I-Ching image retrieval failed: {iching_response.text}"
 
-            # Verify response structure
-            image_data = iching_response.json()
-            assert_has_fields(image_data, ["parent_coord", "child_coord", "image_url"])
-
-            # Verify coordinates match request
+            # Verify response headers and content
             assert (
-                image_data["parent_coord"] == test_parent_coord
-            ), f"Expected parent_coord {test_parent_coord}, got {image_data['parent_coord']}"
+                iching_response.headers["Content-Type"] == "image/jpeg"
+            ), "Response should be a JPEG image"
             assert (
-                image_data["child_coord"] == test_child_coord
-            ), f"Expected child_coord {test_child_coord}, got {image_data['child_coord']}"
-
-            # Verify image URL is valid
-            image_url = self._verify_image_url_structure(
-                image_data["image_url"], test_parent_coord, test_child_coord
-            )
-
-            # Optionally: verify the URL is actually accessible
-            # await self._verify_image_url_accessibility(image_url)
+                len(iching_response.content) > 0
+            ), "Response should contain image data"
 
             self.logger.info("I-Ching image retrieval test passed successfully!")
         finally:
@@ -313,7 +286,6 @@ class TestDivination(BaseTest):
                     "line_change",
                     "result",
                     "advice",
-                    "image_path",
                 ],
             )
 
@@ -335,7 +307,6 @@ class TestDivination(BaseTest):
                 f"Result Hexagram: {reading_data['result']['name']} - {reading_data['result']['interpretation'][:50]}..."
             )
             self.logger.info(f"Advice: {reading_data['advice'][:100]}...")
-            self.logger.info(f"Image Path: {reading_data['image_path']}")
 
             self.logger.info("I-Ching reading test passed successfully!")
 
