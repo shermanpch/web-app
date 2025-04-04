@@ -79,7 +79,6 @@ __all__ = [
     "get_iching_coordinates_from_oracle",
     "get_iching_reading_from_oracle",
     "get_iching_text_from_db",
-    "get_iching_image_data",
     "save_iching_reading_to_db",
     "update_iching_reading_in_db",
     "get_user_quota_from_db",

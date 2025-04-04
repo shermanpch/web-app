@@ -1,9 +1,9 @@
 """Authentication models for the application."""
 
-from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from datetime import datetime
+from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr
 
 
 class UserBase(BaseModel):
@@ -18,21 +18,6 @@ class UserData(UserBase):
     id: str
     last_sign_in_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
-
-
-class TokenData(BaseModel):
-    """Token data extracted from JWT."""
-
-    user_id: str = Field(..., alias="sub")
-    email: Optional[EmailStr] = None
-    exp: Optional[int] = None  # Expiration timestamp
-
-    def is_expired(self) -> bool:
-        """Check if token is expired."""
-        if self.exp is None:
-            return False
-        now = datetime.now(timezone.utc).timestamp()
-        return now > self.exp
 
 
 class UserLogin(BaseModel):
@@ -65,14 +50,6 @@ class AuthResponse(BaseModel):
 
     success: bool
     message: Optional[str] = None
-
-
-class SessionInfo(BaseModel):
-    """Session information returned after authentication."""
-
-    access_token: str
-    refresh_token: str
-    expires_in: int
 
 
 class AuthenticatedSession(BaseModel):

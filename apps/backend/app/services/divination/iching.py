@@ -2,6 +2,8 @@
 
 import logging
 
+from fastapi import HTTPException
+
 from ...models.divination import (
     IChingCoordinatesRequest,
     IChingCoordinatesResponse,
@@ -105,8 +107,6 @@ async def fetch_iching_image_data(
     Raises:
         HTTPException: If image data cannot be retrieved or not found
     """
-    from fastapi import HTTPException
-
     logger.info(
         f"Fetching I Ching image data for parent: {request.parent_coord}, child: {request.child_coord}"
     )

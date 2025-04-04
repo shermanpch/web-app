@@ -1,7 +1,7 @@
 """Supabase client utilities."""
 
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 from fastapi import status
 from supabase import AuthApiError
@@ -9,7 +9,6 @@ from supabase._async.client import AsyncClient, create_client
 from supabase.lib.client_options import ClientOptions
 
 from ...config import settings
-from ...models.auth import SessionInfo, UserData
 
 # Create logger
 logger = logging.getLogger(__name__)
@@ -66,48 +65,6 @@ async def get_supabase_admin_client() -> AsyncClient:
     return await create_client(
         settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY
     )
-
-
-def _extract_session_info(
-    response_data: Dict[str, Any],
-) -> Tuple[SessionInfo, UserData]:
-    """
-    Extract session information and user data from Supabase response.
-
-    Args:
-        response_data: Response data from Supabase auth operations
-
-    Returns:
-        Tuple containing SessionInfo and UserData
-
-    Raises:
-        SupabaseAuthError: If required data is missing
-    """
-    try:
-        session_data = response_data.get("session", {})
-        user_data = response_data.get("user", {})
-
-        if not session_data or not user_data:
-            raise SupabaseAuthError("Invalid authentication response from Supabase")
-
-        session_info = SessionInfo(
-            access_token=session_data.get("access_token"),
-            refresh_token=session_data.get("refresh_token"),
-            expires_in=session_data.get("expires_in", 3600),
-        )
-
-        user = UserData(
-            id=user_data.get("id"),
-            email=user_data.get("email"),
-            created_at=user_data.get("created_at"),
-            last_sign_in_at=user_data.get("last_sign_in_at"),
-        )
-
-        return session_info, user
-
-    except Exception as e:
-        logger.error(f"Error extracting session data: {str(e)}")
-        raise SupabaseAuthError(f"Error processing authentication data: {str(e)}")
 
 
 async def signup_user(email: str, password: str) -> Dict[str, Any]:

@@ -1,10 +1,10 @@
 """User readings models for the application."""
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-from uuid import UUID, uuid4
+from typing import Any, Dict, Optional
+from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 
 class UserQuotaRequest(BaseModel):

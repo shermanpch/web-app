@@ -1,15 +1,9 @@
 """Authentication dependencies for the application."""
 
-from typing import Optional, Tuple
-
 from fastapi import Depends, HTTPException, Request, status
-from fastapi.security import HTTPBearer
 
 from ...models.auth import AuthenticatedSession, UserData
 from .supabase import SupabaseAuthError, get_user
-
-# Make security optional to allow cookie-based auth as an alternative
-security = HTTPBearer(auto_error=False)
 
 
 async def get_auth_tokens(request: Request) -> AuthenticatedSession:
