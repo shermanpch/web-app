@@ -6,7 +6,6 @@ from ...models.divination import (
     IChingCoordinatesRequest,
     IChingCoordinatesResponse,
     IChingImageRequest,
-    IChingImageResponse,
     IChingReadingRequest,
     IChingReadingResponse,
     IChingSaveReadingRequest,
@@ -87,13 +86,13 @@ async def get_iching_text_from_db(
         raise e
 
 
-async def get_iching_image_from_bucket(
+async def fetch_iching_image_data(
     request: IChingImageRequest,
     access_token: str,
     refresh_token: str,
-) -> IChingImageResponse:
+) -> bytes:
     """
-    Fetch I Ching hexagram image URL from storage bucket for given coordinates.
+    Fetch I Ching hexagram image data (bytes) from storage bucket for given coordinates.
 
     Args:
         request: IChingImageRequest containing parent and child coordinates
@@ -101,13 +100,15 @@ async def get_iching_image_from_bucket(
         refresh_token: User's refresh token
 
     Returns:
-        IChingImageResponse: Object containing coordinates and image URL
+        bytes: Raw image bytes
 
     Raises:
-        Exception: If image URL cannot be retrieved
+        HTTPException: If image data cannot be retrieved or not found
     """
+    from fastapi import HTTPException
+
     logger.info(
-        f"Fetching I Ching image for parent: {request.parent_coord}, child: {request.child_coord}"
+        f"Fetching I Ching image data for parent: {request.parent_coord}, child: {request.child_coord}"
     )
 
     try:
@@ -118,20 +119,26 @@ async def get_iching_image_from_bucket(
         # Use authenticated client
         client = await get_authenticated_client(access_token, refresh_token)
 
-        # Get a reference to the bucket and create a signed URL
+        # Get the image bytes directly
         bucket = client.storage.from_(bucket_name)
-        signed_url_response = await bucket.create_signed_url(image_path, 3600)
-        image_url = signed_url_response["signedURL"]
+        try:
+            response = await bucket.download(image_path)
+            return response
+        except Exception as download_error:
+            logger.error(f"Error downloading image from Supabase: {download_error}")
+            raise HTTPException(
+                status_code=404, detail=f"Image not found: {image_path}"
+            )
 
-        return IChingImageResponse(
-            parent_coord=request.parent_coord,
-            child_coord=request.child_coord,
-            image_url=image_url,
-        )
-
+    except HTTPException as http_exception:
+        # Re-raise HTTP exceptions with their status codes
+        logger.error(f"HTTP error fetching I Ching image: {http_exception}")
+        raise http_exception
     except Exception as e:
         logger.error(f"Error fetching I Ching image: {str(e)}")
-        raise e
+        raise HTTPException(
+            status_code=500, detail=f"Failed to fetch I Ching image: {str(e)}"
+        )
 
 
 async def get_iching_coordinates_from_oracle(
@@ -161,7 +168,7 @@ async def get_iching_reading_from_oracle(
     refresh_token: str,
 ) -> IChingReadingResponse:
     """
-    Generate a complete I Ching reading including coordinates, text, and image.
+    Generate a complete I Ching reading including coordinates and text.
 
     Args:
         request: IChingReadingRequest containing input numbers and question
@@ -172,7 +179,7 @@ async def get_iching_reading_from_oracle(
         IChingReadingResponse with complete reading details
 
     Raises:
-        Exception: If text or image cannot be retrieved
+        Exception: If text cannot be retrieved
     """
     oracle = Oracle()
     oracle.input(request.first_number, request.second_number, request.third_number)
@@ -183,17 +190,10 @@ async def get_iching_reading_from_oracle(
         child_coord=child_coord,
     )
 
-    image_request = IChingImageRequest(
-        parent_coord=parent_coord,
-        child_coord=child_coord,
-    )
-
+    # Get text data
     text = await get_iching_text_from_db(text_request, access_token, refresh_token)
-    image = await get_iching_image_from_bucket(
-        image_request, access_token, refresh_token
-    )
 
-    return await oracle.get_initial_reading(request, text, image)
+    return await oracle.get_initial_reading(request, text)
 
 
 async def save_iching_reading_to_db(

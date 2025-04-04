@@ -28,7 +28,6 @@ export default async function DashboardLayout({
         "[DashboardLayout] Critical error accessing cookies:",
         error,
       );
-      // If cookies cannot be accessed at all, redirect immediately
       redirect("/login?error=cookie_error");
     }
 
@@ -44,20 +43,17 @@ export default async function DashboardLayout({
     try {
       user = await fetchServerSideUser(authToken);
     } catch (error) {
-      // Catch errors specifically from the fetch function itself (e.g., network)
       console.error(
         "[DashboardLayout] Network or unexpected error fetching server-side user:",
         error,
       );
-      fetchError = "server_unavailable"; // Mark the error type
+      fetchError = "server_unavailable";
     }
 
     // Handle different failure scenarios AFTER fetching
     if (fetchError === "server_unavailable") {
-      // Redirect or render an error page if the API call failed fundamentally
       redirect(`/login?error=${fetchError}`);
     } else if (!user) {
-      // User is null, likely invalid/expired token even after potential backend refresh
       console.log(
         "[DashboardLayout] Failed to fetch user server-side (null user), redirecting.",
       );
@@ -68,6 +64,7 @@ export default async function DashboardLayout({
     const navItems = [
       { href: "/dashboard", label: "Dashboard" },
       { href: "/dashboard/divination", label: "Divination" },
+      { href: "/dashboard/readings", label: "Readings" },
       { href: "/dashboard/change-password", label: "Change Password" },
     ];
 
@@ -87,7 +84,7 @@ export default async function DashboardLayout({
               ))}
             </div>
             <div className="flex items-center gap-4">
-              <UserDisplay email={user.email} />
+              <UserDisplay email={user?.email || null} />
               <LogoutButton />
             </div>
           </div>
@@ -96,10 +93,8 @@ export default async function DashboardLayout({
       </div>
     );
   } catch (error) {
-    // Fallback error handler for any uncaught errors
+    // Fallback error handler
     console.error("[DashboardLayout] Unhandled error:", error);
-
-    // Try to provide more context in the redirect based on error type
     const errorMessage = error instanceof Error ? error.message : String(error);
     const isNetworkRelated =
       errorMessage.toLowerCase().includes("network") ||
@@ -109,6 +104,11 @@ export default async function DashboardLayout({
     if (isNetworkRelated) {
       redirect("/login?error=network_error");
     } else {
+      // Check if it's a redirect error from within the try block
+      if (error && typeof error === 'object' && 'digest' in error && typeof error.digest === 'string' && error.digest.startsWith('NEXT_REDIRECT')) {
+        // This was likely a redirect, let Next.js handle it.
+        throw error;
+      }
       redirect("/login?error=unknown_error");
     }
   }

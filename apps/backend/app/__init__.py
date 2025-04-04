@@ -13,15 +13,16 @@ from .models.divination import (
     IChingCoordinatesRequest,
     IChingCoordinatesResponse,
     IChingImageRequest,
-    IChingImageResponse,
     IChingReadingRequest,
     IChingReadingResponse,
     IChingSaveReadingRequest,
+    IChingSaveReadingResponse,
     IChingTextRequest,
     IChingTextResponse,
     IChingUpdateReadingRequest,
+    IChingUpdateReadingResponse,
 )
-from .models.users import UserQuotaRequest, UserQuotaResponse
+from .models.users import UserQuotaRequest, UserQuotaResponse, UserReadingResponse
 
 # Services
 from .services.auth import get_current_user
@@ -33,16 +34,13 @@ from .services.auth.supabase import (
 from .services.core.oracle import Oracle
 from .services.divination.iching import (
     get_iching_coordinates_from_oracle,
-    get_iching_image_from_bucket,
     get_iching_reading_from_oracle,
     get_iching_text_from_db,
     save_iching_reading_to_db,
     update_iching_reading_in_db,
 )
 from .services.users.quota import create_user_quota, get_user_quota_from_db
-
-# Utils
-from .utils.clients import IChingAPIClient
+from .services.users.reading import get_user_readings_from_db
 
 __all__ = [
     # API
@@ -62,28 +60,29 @@ __all__ = [
     "IChingCoordinatesRequest",
     "IChingCoordinatesResponse",
     "IChingImageRequest",
-    "IChingImageResponse",
     "IChingReadingRequest",
     "IChingReadingResponse",
     "IChingSaveReadingRequest",
+    "IChingSaveReadingResponse",
     "IChingUpdateReadingRequest",
+    "IChingUpdateReadingResponse",
     "IChingTextRequest",
     "IChingTextResponse",
     "UserQuotaRequest",
     "UserQuotaResponse",
+    "UserReadingResponse",
     # Services
     "get_current_user",
     "get_authenticated_client",
     "get_supabase_client",
     "get_supabase_admin_client",
     "get_iching_coordinates_from_oracle",
-    "get_iching_image_from_bucket",
     "get_iching_reading_from_oracle",
     "get_iching_text_from_db",
+    "get_iching_image_data",
     "save_iching_reading_to_db",
     "update_iching_reading_in_db",
     "get_user_quota_from_db",
     "create_user_quota",
-    # Utils
-    "IChingAPIClient",
+    "get_user_readings_from_db",
 ]

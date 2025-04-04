@@ -28,14 +28,6 @@ class IChingImageRequest(BaseModel):
     child_coord: str
 
 
-class IChingImageResponse(BaseModel):
-    """I Ching image response model."""
-
-    parent_coord: str
-    child_coord: str
-    image_url: str
-
-
 class IChingCoordinatesRequest(BaseModel):
     """I Ching coordinates request model."""
 
@@ -74,7 +66,6 @@ class IChingPrediction(BaseModel):
     line_change: LineChange
     result: HexagramResult
     advice: str
-    image_path: Optional[str] = None
 
 
 class IChingReadingRequest(BaseModel):

@@ -4,7 +4,6 @@ from openai import AsyncOpenAI
 
 from ...config import settings
 from ...models.divination import (
-    IChingImageResponse,
     IChingReadingRequest,
     IChingReadingResponse,
     IChingTextResponse,
@@ -84,10 +83,9 @@ class Oracle:
         self,
         reading: IChingReadingRequest,
         text: IChingTextResponse,
-        image: IChingImageResponse,
     ) -> IChingReadingResponse:
         """
-        Generate an initial I Ching reading based on the provided text, image, and question.
+        Generate an initial I Ching reading based on the provided text and question.
 
         This method combines the I Ching text associated with the parent and child coordinates
         with the user's question to generate a complete reading through the LLM.
@@ -95,11 +93,9 @@ class Oracle:
         Args:
             reading: IChingReadingRequest containing the user's question and input numbers
             text: IChingTextResponse containing the parent and child hexagram texts
-            image: IChingImageResponse containing the hexagram image URL
 
         Returns:
-            IChingReadingResponse: Complete reading response with prediction, image path,
-                                   and original request data
+            IChingReadingResponse: Complete reading response with prediction and original request data
         """
 
         system_prompt_with_text = self.system_prompt.format(
@@ -120,7 +116,6 @@ class Oracle:
         )
 
         parsed_response = response.choices[0].message.parsed
-        parsed_response.image_path = image.image_url
         parsed_response.first_number = reading.first_number
         parsed_response.second_number = reading.second_number
         parsed_response.third_number = reading.third_number

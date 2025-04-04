@@ -1,12 +1,13 @@
 import logging
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from ...models.auth import AuthenticatedSession
-from ...models.users import UserQuotaRequest, UserQuotaResponse
-from ...services.auth.dependencies import get_auth_tokens
+from ...models.auth import AuthenticatedSession, UserData
+from ...models.users import UserQuotaRequest, UserQuotaResponse, UserReadingResponse
+from ...services.auth.dependencies import get_auth_tokens, get_current_user
 from ...services.users.quota import create_user_quota, get_user_quota_from_db
+from ...services.users.reading import get_user_readings_from_db
 
 router = APIRouter(prefix="/user", tags=["user"])
 
@@ -77,4 +78,42 @@ async def create_quota(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create user quota: {str(e)}",
+        )
+
+
+@router.get("/readings", response_model=List[UserReadingResponse])
+async def get_user_readings(
+    current_user: UserData = Depends(get_current_user),
+    session: AuthenticatedSession = Depends(get_auth_tokens),
+):
+    """
+    Get all historical readings for the authenticated user.
+
+    Args:
+        current_user: The authenticated user data obtained from the token.
+        session: Authenticated session with tokens.
+
+    Returns:
+        A list of the user's historical readings.
+
+    Raises:
+        HTTPException: If readings cannot be retrieved.
+    """
+    logger.info(f"API: Fetching readings for user ID: {current_user.id}")
+    try:
+        readings = await get_user_readings_from_db(
+            user_id=current_user.id,
+            access_token=session.access_token,
+            refresh_token=session.refresh_token,
+        )
+        return readings
+    except Exception as e:
+        logger.error(
+            f"API error fetching readings for user {current_user.id}: {str(e)}"
+        )
+        # Propagate the specific error message from the service layer if possible
+        detail_message = f"Failed to retrieve readings: {str(e)}"
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=detail_message,
         )

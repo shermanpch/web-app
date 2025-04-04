@@ -39,20 +39,12 @@ export interface IChingPrediction {
   line_change: LineChange;
   result: HexagramResult;
   advice: string;
-  image_path?: string;
 }
 
 /**
  * I Ching reading response from the API
  */
-export interface DivinationResponse {
-  hexagram_name: string;
-  summary: string;
-  interpretation: string;
-  line_change: LineChange;
-  result: HexagramResult;
-  advice: string;
-  image_path?: string;
+export interface DivinationResponse extends IChingPrediction {
   first_number: number;
   second_number: number;
   third_number: number;
@@ -116,4 +108,22 @@ export interface UpdateReadingResponse {
   prediction: IChingPrediction;
   clarifying_question: string;
   clarifying_answer: string;
+}
+
+/**
+ * Represents a single historical reading entry fetched from the backend.
+ * Matches the structure of backend's UserReadingResponse.
+ */
+export interface UserReadingHistoryEntry {
+  id: string; // UUID as string
+  user_id: string; // UUID as string
+  question: string;
+  first_number: number;
+  second_number: number;
+  third_number: number;
+  language: string;
+  prediction: IChingPrediction | null;
+  clarifying_question: string | null;
+  clarifying_answer: string | null;
+  created_at: string; // ISO date string
 }

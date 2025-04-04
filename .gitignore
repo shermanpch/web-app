@@ -42,13 +42,12 @@ apps/backend/migrations/scripts/data/
 apps/backend/migrations/scripts/scrapers/.scraper_cache/
 
 # Cursor
-.cursor
+.cursorrules
 
 # Playwright
 **/test-results/
 **/playwright-report/
 **/playwright/.cache/
-**/e2e/.auth/
 
 # Local Netlify folder
 .netlify

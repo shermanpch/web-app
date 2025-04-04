@@ -86,7 +86,6 @@ export function DivinationForm({ userId }: DivinationFormProps) {
         line_change: readingData.line_change,
         result: readingData.result,
         advice: readingData.advice,
-        image_path: readingData.image_path,
       };
 
       const result = await withSaveLoadingState(async () => {
@@ -129,7 +128,6 @@ export function DivinationForm({ userId }: DivinationFormProps) {
         line_change: response.line_change,
         result: response.result,
         advice: response.advice,
-        image_path: response.image_path,
       };
 
       const updateRequest = {

@@ -2,14 +2,13 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 
 from ...models.auth import AuthenticatedSession
 from ...models.divination import (
     IChingCoordinatesRequest,
     IChingCoordinatesResponse,
     IChingImageRequest,
-    IChingImageResponse,
     IChingReadingRequest,
     IChingReadingResponse,
     IChingSaveReadingRequest,
@@ -21,8 +20,8 @@ from ...models.divination import (
 )
 from ...services.auth.dependencies import get_auth_tokens
 from ...services.divination.iching import (
+    fetch_iching_image_data,
     get_iching_coordinates_from_oracle,
-    get_iching_image_from_bucket,
     get_iching_reading_from_oracle,
     get_iching_text_from_db,
     save_iching_reading_to_db,
@@ -72,43 +71,61 @@ async def get_iching_text(
         )
 
 
-@router.post("/iching-image", response_model=IChingImageResponse)
-async def get_iching_image(
-    request_data: IChingImageRequest,
+@router.get("/iching-image")
+async def get_iching_image_data(
+    parent_coord: str = Query(
+        ..., description="Parent hexagram coordinate (e.g., '1-2')"
+    ),
+    child_coord: str = Query(..., description="Child hexagram coordinate (e.g., '3')"),
     session: AuthenticatedSession = Depends(get_auth_tokens),
-) -> IChingImageResponse:
+):
     """
-    Get I Ching image for a specific coordinate pair.
+    Get I Ching image data for a specific coordinate pair.
+
+    This endpoint proxies requests to the Supabase storage bucket and returns the raw image data,
+    bypassing browser authentication issues with direct signed URLs.
 
     Args:
-        request_data: Request containing parent_coord and child_coord
+        parent_coord: Parent hexagram coordinate (Query parameter)
+        child_coord: Child hexagram coordinate (Query parameter)
         session: Authenticated session extracted from cookies
 
     Returns:
-        IChingImageResponse: Response with image URL
+        Response: Raw image data with appropriate content type
     """
     logger.info(
-        f"API: Getting image for parent: {request_data.parent_coord}, child: {request_data.child_coord}"
+        f"API: Getting image data for parent: {parent_coord}, child: {child_coord}"
     )
 
     try:
-        # Get the image URL from the service
-        result = await get_iching_image_from_bucket(
-            request_data,
-            session.access_token,
-            session.refresh_token,
+        # Create image request model
+        image_request = IChingImageRequest(
+            parent_coord=parent_coord, child_coord=child_coord
         )
 
-        logger.info(f"API: Successfully retrieved image URL: {result.image_url}")
+        # Get the image bytes from the service
+        image_bytes = await fetch_iching_image_data(
+            request=image_request,
+            access_token=session.access_token,
+            refresh_token=session.refresh_token,
+        )
 
-        # Return the image response directly
-        return result
+        logger.info(
+            f"API: Successfully retrieved image data, returning {len(image_bytes)} bytes"
+        )
 
+        # Return the raw image data
+        return Response(content=image_bytes, media_type="image/jpeg")
+
+    except HTTPException as http_error:
+        # Re-raise HTTP exceptions with their status codes
+        logger.error(f"HTTP error retrieving I Ching image: {http_error.detail}")
+        raise http_error
     except Exception as e:
-        logger.error(f"API error retrieving I Ching image: {e}")
+        logger.error(f"API error retrieving I Ching image data: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve I Ching image: {str(e)}",
+            detail=f"Failed to retrieve I Ching image data: {str(e)}",
         )
 
 
@@ -164,15 +181,14 @@ async def get_iching_reading(
     This endpoint orchestrates the full I Ching reading process:
     1. Converts input numbers to coordinates
     2. Retrieves the appropriate hexagram text
-    3. Obtains the hexagram image
-    4. Generates the reading interpretation using LLM
+    3. Generates the reading interpretation using LLM
 
     Args:
         request_data: Request model containing numbers, question, and preferences
         session: Authenticated session with tokens
 
     Returns:
-        Complete I Ching reading with coordinates, text, image, and interpretation
+        Complete I Ching reading with coordinates, text, and interpretation
 
     Raises:
         HTTPException: If reading cannot be generated
