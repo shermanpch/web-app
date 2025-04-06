@@ -197,6 +197,7 @@ async def upgrade_user_to_premium(
 
         # # Calculate expiration date (30 days from now in UTC)
         # expires_at = datetime.now(timezone.utc) + timedelta(days=30)
+
         # Calculate expiration date (10 seconds from now in UTC)
         expires_at = datetime.now(timezone.utc) + timedelta(seconds=10)
 
