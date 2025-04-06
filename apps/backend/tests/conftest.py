@@ -61,40 +61,16 @@ def test_user():
 
 
 @pytest.fixture(scope="function")
-def user_cleanup():
-    """
-    Fixture providing a cleanup function for test users.
-
-    Returns:
-        Callable: A function to clean up a test user
-    """
-
-    def _cleanup(client, user_id, auth_cookies):
-        if user_id and auth_cookies:
-            # Set cookies on the client instance
-            client.cookies.set("auth_token", auth_cookies["auth_token"])
-            client.cookies.set("refresh_token", auth_cookies["refresh_token"])
-
-            delete_response = client.delete(f"/api/auth/users/{user_id}")
-            logger.info(
-                f"Cleanup: Deleted user {user_id}, status: {delete_response.status_code}"
-            )
-            return delete_response
-        return None
-
-    return _cleanup
-
-
-@pytest.fixture(scope="function")
 def auth_tokens(client, test_user):
     """
     Get both access and refresh tokens for a test user.
+    Automatically handles user creation and cleanup.
 
     Args:
         client: FastAPI test client
         test_user: Test user credentials
 
-    Returns:
+    Yields:
         dict: Dictionary containing 'access_token', 'refresh_token', and 'user_id'
     """
     # Register the user
@@ -126,11 +102,27 @@ def auth_tokens(client, test_user):
     assert access_token, "Failed to extract access token from cookies"
     assert refresh_token, "Failed to extract refresh token from cookies"
 
-    return {
+    # Store tokens and user_id
+    auth_data = {
         "access_token": access_token,
         "refresh_token": refresh_token,
         "user_id": user_id,
     }
+
+    # Yield the tokens and user_id for the test to use
+    yield auth_data
+
+    # Cleanup after the test is done
+    if user_id:
+        # Set cookies on the client instance for authentication
+        client.cookies.set("auth_token", access_token)
+        client.cookies.set("refresh_token", refresh_token)
+
+        # Delete the user
+        delete_response = client.delete(f"/api/auth/users/{user_id}")
+        logger.info(
+            f"Cleanup: Deleted user {user_id}, status: {delete_response.status_code}"
+        )
 
 
 @pytest.fixture(scope="function")
@@ -148,6 +140,31 @@ def auth_cookies(auth_tokens):
         "auth_token": auth_tokens["access_token"],
         "refresh_token": auth_tokens["refresh_token"],
     }
+
+
+@pytest.fixture(scope="function")
+def authenticated_client(client, auth_tokens):
+    """
+    Provides a pre-authenticated TestClient instance.
+
+    This fixture handles setting up authentication cookies automatically,
+    eliminating the need for manual cookie configuration in tests.
+
+    Args:
+        client: FastAPI test client
+        auth_tokens: Authentication tokens and user ID
+
+    Yields:
+        tuple: (TestClient, str) - The authenticated client and the user_id
+    """
+    # Set the authentication cookies on the client
+    client.cookies.set("auth_token", auth_tokens["access_token"])
+    client.cookies.set("refresh_token", auth_tokens["refresh_token"])
+
+    # Yield the authenticated client and user_id as a tuple
+    yield client, auth_tokens["user_id"]
+
+    # The auth_tokens fixture will handle user cleanup automatically
 
 
 @pytest.fixture(scope="function")
@@ -223,3 +240,40 @@ def assert_has_fields(obj, fields, prefix=""):
     """
     for field in fields:
         assert field in obj, f"{prefix}Missing required field: {field}"
+
+
+def extract_tokens_from_cookies(response):
+    """
+    Extract access and refresh tokens from response cookies.
+
+    Args:
+        response: HTTP response object
+
+    Returns:
+        Dict containing access_token and refresh_token
+    """
+    cookies = response.cookies
+    access_token = cookies.get("auth_token")
+    refresh_token = cookies.get("refresh_token")
+
+    assert access_token, "Failed to extract access token from cookies"
+    assert refresh_token, "Failed to extract refresh token from cookies"
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+    }
+
+
+def extract_user_data(response):
+    """
+    Extract user data from response.
+
+    Args:
+        response: HTTP response object
+
+    Returns:
+        Dict containing user data
+    """
+    data = response.json().get("data", {})
+    return data.get("user", {})

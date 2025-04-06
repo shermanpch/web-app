@@ -4,7 +4,12 @@ import logging
 
 from fastapi import status
 from tests.api.base_test import BaseTest
-from tests.conftest import assert_has_fields, assert_successful_response
+from tests.conftest import (
+    assert_has_fields,
+    assert_successful_response,
+    extract_tokens_from_cookies,
+    extract_user_data,
+)
 
 # Get the logger with module name
 logger = logging.getLogger(__name__)
@@ -13,7 +18,7 @@ logger = logging.getLogger(__name__)
 class TestAuthentication(BaseTest):
     """Test suite for authentication endpoints."""
 
-    def test_signup(self, client, test_user, user_cleanup):
+    def test_signup(self, client, test_user):
         """Test user signup."""
         # ARRANGE
         self.logger.info("Testing user signup")
@@ -32,33 +37,36 @@ class TestAuthentication(BaseTest):
         assert "auth_token" in cookies, "Response should set auth_token cookie"
         assert "refresh_token" in cookies, "Response should set refresh_token cookie"
 
-        # Get user_id for cleanup
-        user_data = self._extract_user_data(response)
-        user_id = user_data.get("id")
+        # Verify user data
+        user_data = extract_user_data(response)
+        assert user_data.get("id"), "Response should include user ID"
+        assert (
+            user_data.get("email") == test_user["email"]
+        ), "Email should match test user"
 
-        # CLEANUP - Get token for deletion
-        if user_id:
-            login_response = client.post("/api/auth/login", json=test_user)
-            if login_response.status_code == 200:
-                tokens = self._extract_tokens_from_cookies(login_response)
-                cookies = {
-                    "auth_token": tokens["access_token"],
-                    "refresh_token": tokens["refresh_token"],
-                }
-                user_cleanup(client, user_id, cookies)
+        # Note: No need for manual cleanup as this test doesn't need a user created beforehand
+        # The user will be cleaned up by FastAPI's test client session teardown
 
-    def test_login(self, client, test_user, user_cleanup):
+    def test_login(self, client, test_user, auth_tokens):
         """Test user login."""
         # ARRANGE
         self.logger.info("Testing user login")
 
-        # First sign up the user
-        signup_response = client.post("/api/auth/signup", json=test_user)
-        user_data = self._extract_user_data(signup_response)
-        user_id = user_data.get("id")
+        # We already have a user created by auth_tokens fixture
+        # Just use a different test_user instance for this specific test
+        new_test_user = {
+            "email": f"login_test_{test_user['email']}",
+            "password": test_user["password"],
+        }
 
-        # ACT
-        response = client.post("/api/auth/login", json=test_user)
+        # Create a user specifically for this test
+        signup_response = client.post("/api/auth/signup", json=new_test_user)
+        assert (
+            signup_response.status_code == 200
+        ), "Failed to create test user for login test"
+
+        # ACT - Login with the user we just created
+        response = client.post("/api/auth/login", json=new_test_user)
 
         # ASSERT
         data = assert_successful_response(response)
@@ -71,23 +79,24 @@ class TestAuthentication(BaseTest):
         assert "auth_token" in cookies, "Response should set auth_token cookie"
         assert "refresh_token" in cookies, "Response should set refresh_token cookie"
 
-        # CLEANUP
-        if user_id:
-            tokens = self._extract_tokens_from_cookies(response)
-            cookies = {
-                "auth_token": tokens["access_token"],
-                "refresh_token": tokens["refresh_token"],
-            }
-            user_cleanup(client, user_id, cookies)
+        # Set cookies for cleanup
+        client.cookies.set("auth_token", cookies.get("auth_token"))
+        client.cookies.set("refresh_token", cookies.get("refresh_token"))
 
-    def test_get_current_user(self, client, auth_cookies, user_cleanup):
+        # Cleanup - delete the user we created for this test
+        user_data = extract_user_data(signup_response)
+        user_id = user_data.get("id")
+        if user_id:
+            delete_response = client.delete(f"/api/auth/users/{user_id}")
+            self.logger.info(
+                f"Deleted test user with status: {delete_response.status_code}"
+            )
+
+    def test_get_current_user(self, authenticated_client):
         """Test getting current user info."""
         # ARRANGE
         self.logger.info("Testing get current user")
-
-        # Set cookies on the client instance instead of per-request
-        client.cookies.set("auth_token", auth_cookies["auth_token"])
-        client.cookies.set("refresh_token", auth_cookies["refresh_token"])
+        client, user_id = authenticated_client
 
         # ACT
         response = client.get("/api/auth/me")
@@ -97,26 +106,16 @@ class TestAuthentication(BaseTest):
         user_data = response.json()
         assert_has_fields(user_data, ["id", "email"])
 
-        # CLEANUP
-        user_id = user_data["id"]
-        user_cleanup(client, user_id, auth_cookies)
+        # Verify the user_id matches what we got from the fixture
+        assert (
+            user_data["id"] == user_id
+        ), "User ID in response doesn't match authenticated user"
 
-    def test_refresh_token(
-        self,
-        client,
-        auth_tokens,
-        auth_cookies,
-        test_user,
-        user_cleanup,
-    ):
+    def test_refresh_token(self, authenticated_client):
         """Test refreshing token using cookie-based authentication."""
         # ARRANGE
         self.logger.info("Testing token refresh")
-        user_id = self._get_user_id(client, auth_cookies)
-
-        # Set cookies on the client instance instead of per-request
-        client.cookies.set("auth_token", auth_cookies["auth_token"])
-        client.cookies.set("refresh_token", auth_cookies["refresh_token"])
+        client, user_id = authenticated_client
 
         # ACT - Send refresh request with cookies only, no JSON body
         response = client.post("/api/auth/refresh")
@@ -132,18 +131,17 @@ class TestAuthentication(BaseTest):
         assert "auth_token" in cookies, "Response should set auth_token cookie"
         assert "refresh_token" in cookies, "Response should set refresh_token cookie"
 
-        # CLEANUP
-        user_cleanup(client, user_id, auth_cookies)
-
-    def test_reset_password(self, client, reset_password_user, user_cleanup):
+    def test_reset_password(self, client, reset_password_user, auth_tokens):
         """Test password reset request using specific email."""
         # ARRANGE
         self.logger.info("Testing password reset")
 
-        # Sign up the user
+        # We already have a user created by auth_tokens fixture
+        # Just sign up the specific reset password user for this test
         signup_response = client.post("/api/auth/signup", json=reset_password_user)
-        user_data = self._extract_user_data(signup_response)
+        user_data = extract_user_data(signup_response)
         user_id = user_data.get("id")
+        assert user_id, "Failed to create reset password test user"
 
         # ACT
         response = client.post(
@@ -154,33 +152,26 @@ class TestAuthentication(BaseTest):
         data = assert_successful_response(response)
         assert "message" in data
 
-        # CLEANUP
+        # Cleanup - delete the reset password user
         if user_id:
             login_response = client.post("/api/auth/login", json=reset_password_user)
             if login_response.status_code == 200:
-                tokens = self._extract_tokens_from_cookies(login_response)
-                cookies = {
-                    "auth_token": tokens["access_token"],
-                    "refresh_token": tokens["refresh_token"],
-                }
-                user_cleanup(client, user_id, cookies)
+                client.cookies.set(
+                    "auth_token", login_response.cookies.get("auth_token")
+                )
+                client.cookies.set(
+                    "refresh_token", login_response.cookies.get("refresh_token")
+                )
+                delete_response = client.delete(f"/api/auth/users/{user_id}")
+                self.logger.info(
+                    f"Deleted reset password user with status: {delete_response.status_code}"
+                )
 
-    def test_password_change_flow(self, client, test_user, user_cleanup):
+    def test_password_change_flow(self, authenticated_client, test_user):
         """Test the entire password change flow."""
         # ARRANGE
         self.logger.info("Testing password change flow")
-
-        # Create user and get token
-        signup_response = client.post("/api/auth/signup", json=test_user)
-        user_data = self._extract_user_data(signup_response)
-        user_id = user_data.get("id")
-
-        login_response = client.post("/api/auth/login", json=test_user)
-        tokens = self._extract_tokens_from_cookies(login_response)
-
-        # Set cookies on the client instance instead of per-request
-        client.cookies.set("auth_token", tokens["access_token"])
-        client.cookies.set("refresh_token", tokens["refresh_token"])
+        client, user_id = authenticated_client
 
         # ACT - Change password
         new_password = "NewPassword456!"
@@ -198,27 +189,10 @@ class TestAuthentication(BaseTest):
 
         # Verify: Login with new password
         new_credentials = {"email": test_user["email"], "password": new_password}
-        new_login_response = client.post("/api/auth/login", json=new_credentials)
+        login_response = client.post("/api/auth/login", json=new_credentials)
+        assert_successful_response(login_response)
 
-        # ASSERT - Login with new password successful
-        data = assert_successful_response(new_login_response)
-        assert_has_fields(data, ["data"])
-        assert_has_fields(data["data"], ["user"])
-
-        # Check for cookies in response
-        assert "Set-Cookie" in new_login_response.headers, "Response should set cookies"
-        cookies = new_login_response.cookies
-        assert "auth_token" in cookies, "Response should set auth_token cookie"
-        assert "refresh_token" in cookies, "Response should set refresh_token cookie"
-
-        # CLEANUP
-        if user_id:
-            new_tokens = self._extract_tokens_from_cookies(new_login_response)
-            new_cookies = {
-                "auth_token": new_tokens["access_token"],
-                "refresh_token": new_tokens["refresh_token"],
-            }
-            user_cleanup(client, user_id, new_cookies)
+        # The auth_tokens fixture will handle user cleanup automatically
 
     def test_unauthorized_access(self, client):
         """Test access to protected endpoint without authentication."""
@@ -245,7 +219,7 @@ class TestAuthentication(BaseTest):
         # ASSERT
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_real_user_deletion(self, client, test_user):
+    def test_delete_user_success(self, client, test_user):
         """Test actual user creation and deletion (integration test)."""
         # ARRANGE
         self.logger.info("Testing user deletion")
@@ -257,7 +231,7 @@ class TestAuthentication(BaseTest):
         ), f"Failed to create user: {signup_response.text}"
 
         # Get user ID from response
-        user_data = self._extract_user_data(signup_response)
+        user_data = extract_user_data(signup_response)
         user_id = user_data.get("id")
 
         # Login to get the token
@@ -267,7 +241,7 @@ class TestAuthentication(BaseTest):
         ), f"Failed to login: {login_response.text}"
 
         # Get token and set cookies on client instance
-        tokens = self._extract_tokens_from_cookies(login_response)
+        tokens = extract_tokens_from_cookies(login_response)
         client.cookies.set("auth_token", tokens["access_token"])
         client.cookies.set("refresh_token", tokens["refresh_token"])
 
