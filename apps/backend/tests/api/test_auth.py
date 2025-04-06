@@ -3,6 +3,7 @@
 import logging
 
 from fastapi import status
+
 from tests.api.base_test import BaseTest
 from tests.conftest import (
     assert_has_fields,
@@ -44,15 +45,23 @@ class TestAuthentication(BaseTest):
             user_data.get("email") == test_user["email"]
         ), "Email should match test user"
 
-        # Note: No need for manual cleanup as this test doesn't need a user created beforehand
-        # The user will be cleaned up by FastAPI's test client session teardown
+        # Set cookies for cleanup
+        client.cookies.set("auth_token", cookies.get("auth_token"))
+        client.cookies.set("refresh_token", cookies.get("refresh_token"))
 
-    def test_login(self, client, test_user, auth_tokens):
+        # Cleanup - delete the user we created for this test
+        user_id = user_data.get("id")
+        if user_id:
+            delete_response = client.delete(f"/api/auth/users/{user_id}")
+            self.logger.info(
+                f"Deleted test user with status: {delete_response.status_code}"
+            )
+
+    def test_login(self, client, test_user):
         """Test user login."""
         # ARRANGE
         self.logger.info("Testing user login")
 
-        # We already have a user created by auth_tokens fixture
         # Just use a different test_user instance for this specific test
         new_test_user = {
             "email": f"login_test_{test_user['email']}",
@@ -131,12 +140,10 @@ class TestAuthentication(BaseTest):
         assert "auth_token" in cookies, "Response should set auth_token cookie"
         assert "refresh_token" in cookies, "Response should set refresh_token cookie"
 
-    def test_reset_password(self, client, reset_password_user, auth_tokens):
+    def test_reset_password(self, client, reset_password_user):
         """Test password reset request using specific email."""
         # ARRANGE
         self.logger.info("Testing password reset")
-
-        # We already have a user created by auth_tokens fixture
         # Just sign up the specific reset password user for this test
         signup_response = client.post("/api/auth/signup", json=reset_password_user)
         user_data = extract_user_data(signup_response)
@@ -175,14 +182,9 @@ class TestAuthentication(BaseTest):
 
         # ACT - Change password
         new_password = "NewPassword456!"
-        change_request = {
-            "password": new_password,
-        }
+        change_request = {"password": new_password}
 
-        change_response = client.post(
-            "/api/auth/password/change",
-            json=change_request,
-        )
+        change_response = client.post("/api/auth/password/change", json=change_request)
 
         # ASSERT - Password change successful
         assert_successful_response(change_response)
@@ -191,8 +193,6 @@ class TestAuthentication(BaseTest):
         new_credentials = {"email": test_user["email"], "password": new_password}
         login_response = client.post("/api/auth/login", json=new_credentials)
         assert_successful_response(login_response)
-
-        # The auth_tokens fixture will handle user cleanup automatically
 
     def test_unauthorized_access(self, client):
         """Test access to protected endpoint without authentication."""

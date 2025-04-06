@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+
 from main import app
 
 # Create logs directory if it doesn't exist
@@ -126,23 +127,6 @@ def auth_tokens(client, test_user):
 
 
 @pytest.fixture(scope="function")
-def auth_cookies(auth_tokens):
-    """
-    Get authentication cookies for a test user, using auth_tokens fixture.
-
-    Args:
-        auth_tokens: Dictionary containing auth tokens and user ID
-
-    Returns:
-        dict: Authentication cookies with access and refresh tokens
-    """
-    return {
-        "auth_token": auth_tokens["access_token"],
-        "refresh_token": auth_tokens["refresh_token"],
-    }
-
-
-@pytest.fixture(scope="function")
 def authenticated_client(client, auth_tokens):
     """
     Provides a pre-authenticated TestClient instance.
@@ -164,8 +148,6 @@ def authenticated_client(client, auth_tokens):
     # Yield the authenticated client and user_id as a tuple
     yield client, auth_tokens["user_id"]
 
-    # The auth_tokens fixture will handle user cleanup automatically
-
 
 @pytest.fixture(scope="function")
 def reset_password_user():
@@ -178,30 +160,6 @@ def reset_password_user():
     from app.config import settings
 
     return {"email": settings.TEST_EMAIL, "password": "TestPassword123!"}
-
-
-@pytest.fixture(scope="function")
-def test_logger(request):
-    """
-    Set up a logger for each test, using the module name pattern.
-
-    Args:
-        request: Pytest request object
-
-    Returns:
-        Logger: Logger configured for the current test
-    """
-    # Create logger name based on module path and test name
-    test_name = request.node.name
-    logger_name = f"{request.module.__name__}.{test_name}"
-
-    # Get or create logger
-    test_logger = logging.getLogger(logger_name)
-
-    # Log test boundaries
-    test_logger.info(f"Starting test: {test_name}")
-    yield test_logger
-    test_logger.info(f"Completed test: {test_name}")
 
 
 # Assertion helper functions

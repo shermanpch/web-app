@@ -3,6 +3,7 @@
 import logging
 
 import pytest
+
 from tests.api.base_test import BaseTest
 from tests.conftest import assert_has_fields
 
@@ -130,10 +131,7 @@ class TestDivination(BaseTest):
         self.logger.info("Non-authenticated image retrieval test passed successfully!")
 
     @pytest.mark.asyncio
-    async def test_iching_image_retrieval_authenticated(
-        self,
-        authenticated_client,
-    ):
+    async def test_iching_image_retrieval_authenticated(self, authenticated_client):
         """Test retrieving I-Ching image using authentication cookies."""
         # ARRANGE
         self.logger.info("Testing I-Ching image retrieval with authentication")
