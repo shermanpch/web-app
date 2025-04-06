@@ -44,7 +44,11 @@ from .services.divination.iching import (
     save_iching_reading_to_db,
     update_iching_reading_in_db,
 )
-from .services.users.quota import decrement_user_quota, get_user_quota_from_db
+from .services.users.quota import (
+    decrement_user_quota,
+    get_user_quota_from_db,
+    upgrade_user_to_premium,
+)
 from .services.users.reading import get_user_readings_from_db
 
 __all__ = [
@@ -90,4 +94,5 @@ __all__ = [
     "get_user_quota_from_db",
     "get_user_readings_from_db",
     "decrement_user_quota",
+    "upgrade_user_to_premium",
 ]

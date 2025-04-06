@@ -65,6 +65,7 @@ export default async function DashboardLayout({
       { href: "/dashboard", label: "Dashboard" },
       { href: "/dashboard/divination", label: "Divination" },
       { href: "/dashboard/readings", label: "Readings" },
+      { href: "/dashboard/quota", label: "Membership" },
       { href: "/dashboard/change-password", label: "Change Password" },
     ];
 

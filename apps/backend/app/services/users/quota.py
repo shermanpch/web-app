@@ -142,3 +142,76 @@ async def decrement_user_quota(
     except Exception as e:
         logger.error(f"Error decrementing user quota: {str(e)}")
         raise Exception(f"Failed to decrement user quota: {str(e)}")
+
+
+async def upgrade_user_to_premium(
+    request: UpdateUserQuotaRequest,
+    access_token: str,
+    refresh_token: str,
+) -> UpdateUserQuotaResponse:
+    """
+    Upgrade a user's membership to premium and add 30 queries to their quota.
+
+    Args:
+        request: UpdateUserQuotaRequest containing user_id
+        access_token: User's access token
+        refresh_token: User's refresh token
+
+    Returns:
+        UpdateUserQuotaResponse object with updated quota information
+
+    Raises:
+        Exception: If quota not found, update fails, or database query fails
+    """
+    logger.info(f"Starting premium upgrade process for user: {request.user_id}")
+
+    try:
+        # Get authenticated Supabase client with user tokens
+        logger.debug("Using authenticated client with user tokens")
+        client = await get_authenticated_client(access_token, refresh_token)
+
+        # First fetch current quota
+        response = (
+            await client.table("user_quotas")
+            .select(
+                "user_id, membership_type, remaining_queries, created_at, updated_at"
+            )
+            .eq("user_id", str(request.user_id))  # Convert UUID to string
+            .limit(1)
+            .execute()
+        )
+
+        # Check if we have any data
+        data = response.data
+        if not data or len(data) == 0:
+            logger.warning(f"No quota found for user: {request.user_id}")
+            raise Exception("User quota not found")
+
+        # Get current remaining queries
+        current_remaining = data[0]["remaining_queries"]
+
+        # Calculate new remaining count (add 30 queries)
+        new_remaining = current_remaining + 30
+
+        # Update the quota
+        update_response = (
+            await client.table("user_quotas")
+            .update({"membership_type": "premium", "remaining_queries": new_remaining})
+            .eq("user_id", str(request.user_id))
+            .execute()
+        )
+
+        # Check if update was successful
+        if not update_response.data:
+            logger.error(f"Failed to upgrade user: {request.user_id}")
+            raise Exception("Failed to upgrade user membership. Please try again")
+
+        # Return updated quota response
+        logger.info(
+            f"Successfully upgraded user {request.user_id} to premium membership"
+        )
+        return UpdateUserQuotaResponse(**update_response.data[0])
+
+    except Exception as e:
+        logger.error(f"Error upgrading user membership: {str(e)}")
+        raise Exception(f"Failed to upgrade user membership: {str(e)}")

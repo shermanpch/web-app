@@ -172,7 +172,7 @@ export function DivinationForm({ userId }: DivinationFormProps) {
       try {
         // Step 1: Check Quota
         try {
-          const quotaResponse = await userApi.getUserQuota(userId);
+          const quotaResponse = await userApi.getUserQuota();
           if (!quotaResponse || quotaResponse.remaining_queries <= 0) {
             setAuthError(
               !quotaResponse

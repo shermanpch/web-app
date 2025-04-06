@@ -12,7 +12,11 @@ from ...models.users import (
     UserReadingResponse,
 )
 from ...services.auth.dependencies import get_auth_tokens, get_current_user
-from ...services.users.quota import decrement_user_quota, get_user_quota_from_db
+from ...services.users.quota import (
+    decrement_user_quota,
+    get_user_quota_from_db,
+    upgrade_user_to_premium,
+)
 from ...services.users.reading import get_user_readings_from_db
 
 router = APIRouter(prefix="/user", tags=["user"])
@@ -20,46 +24,38 @@ router = APIRouter(prefix="/user", tags=["user"])
 logger = logging.getLogger(__name__)
 
 
-@router.post("/quota", response_model=Optional[UserQuotaResponse])
+@router.get("/quota", response_model=Optional[UserQuotaResponse])
 async def get_user_quota(
-    request_data: UserQuotaRequest,
     current_user: UserData = Depends(get_current_user),
     session: AuthenticatedSession = Depends(get_auth_tokens),
 ):
     """
-    Get user quota information.
+    Get the authenticated user's quota information.
 
     If no quota exists for the user, returns None.
 
     Args:
-        request_data: UserQuotaRequest containing user_id
-        current_user: The authenticated user data obtained from the token
-        session: Authenticated session with tokens
+        current_user: The authenticated user data obtained from the token.
+        session: Authenticated session with tokens.
 
     Returns:
-        User quota information or None if not found
+        User quota information or None if not found.
 
     Raises:
-        HTTPException: If quota information cannot be retrieved or user_id mismatch
+        HTTPException: If quota information cannot be retrieved.
     """
-    # Ensure the requested user_id matches the authenticated user
-    if str(request_data.user_id) != current_user.id:
-        logger.warning(
-            f"User {current_user.id} attempted to access quota for user {request_data.user_id}"
-        )
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Cannot access quota for another user",
-        )
-
+    logger.info(f"API: Fetching quota for user ID: {current_user.id}")
     try:
+        # Create the request internally using the authenticated user's ID
+        quota_request = UserQuotaRequest(user_id=current_user.id)
+
         # Get existing quota and return it (could be None)
-        return await get_user_quota_from_db(
-            request_data, session.access_token, session.refresh_token
+        quota_info = await get_user_quota_from_db(
+            quota_request, session.access_token, session.refresh_token
         )
+        return quota_info
     except Exception as e:
-        # Log error and return a generic error message
-        logger.error(f"Error retrieving user quota: {str(e)}")
+        logger.error(f"Error retrieving user quota for {current_user.id}: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve user quota: {str(e)}",
@@ -144,4 +140,46 @@ async def get_user_readings(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=detail_message,
+        )
+
+
+@router.post("/quota/upgrade", response_model=UpdateUserQuotaResponse)
+async def upgrade_membership(
+    current_user: UserData = Depends(get_current_user),
+    session: AuthenticatedSession = Depends(get_auth_tokens),
+):
+    """
+    Upgrade the authenticated user's membership to premium and add 30 queries.
+
+    Args:
+        current_user: The authenticated user data obtained from the token
+        session: Authenticated session with tokens
+
+    Returns:
+        Updated user quota information with premium status
+
+    Raises:
+        HTTPException: If membership upgrade fails
+    """
+    logger.info(f"API: Upgrading membership for user ID: {current_user.id}")
+    try:
+        # Create request with current user's ID
+        request = UpdateUserQuotaRequest(user_id=current_user.id)
+
+        # Attempt to upgrade the membership
+        return await upgrade_user_to_premium(
+            request, session.access_token, session.refresh_token
+        )
+    except Exception as e:
+        # Map common error messages to appropriate HTTP status codes
+        error_msg = str(e).lower()
+        if "not found" in error_msg:
+            status_code = status.HTTP_404_NOT_FOUND
+        else:
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+
+        logger.error(f"Error upgrading membership for user {current_user.id}: {str(e)}")
+        raise HTTPException(
+            status_code=status_code,
+            detail=str(e),
         )
