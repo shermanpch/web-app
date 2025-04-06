@@ -1,5 +1,5 @@
 // Export all user types
-export * from './user';
+export * from "./user";
 
 // Shared component interfaces
 export interface BaseComponentProps {

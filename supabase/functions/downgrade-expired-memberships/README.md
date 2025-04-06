@@ -16,6 +16,7 @@ This function is deployed manually through the Supabase Dashboard:
 The function is scheduled to run via a cron job in the Supabase Dashboard:
 
 1. Enable the pg_net extension (if not already enabled):
+
    ```sql
    create extension if not exists pg_net with schema extensions;
    ```
@@ -24,7 +25,7 @@ The function is scheduled to run via a cron job in the Supabase Dashboard:
    - Go to Database → Jobs in the Dashboard
    - Create a new job
    - Name: "downgrade-expired-memberships"
-   - Schedule: "*/10 * * * * *" (every 10 seconds for testing)
+   - Schedule: "_/10 _ \* \* \* \*" (every 10 seconds for testing)
    - Type: Edge Function
    - Select: "downgrade-expired-memberships"
    - Headers:
@@ -35,6 +36,7 @@ The function is scheduled to run via a cron job in the Supabase Dashboard:
 ## Function Logic
 
 The function:
+
 1. Finds all premium users whose `premium_expires_at` is in the past
 2. Downgrades them to free tier
 3. Resets their query quota to 10 (free tier default)
@@ -43,11 +45,13 @@ The function:
 ## Environment Variables
 
 The function requires these environment variables (automatically set by Supabase):
+
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
 ## Monitoring
 
 Monitor the function's execution in the Supabase Dashboard:
+
 - Edge Functions → Logs: For function execution logs
-- Database → Jobs: For cron job execution status 
+- Database → Jobs: For cron job execution status

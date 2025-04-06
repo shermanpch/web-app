@@ -32,9 +32,7 @@ export const userApi = {
           errorData.detail || "Failed to fetch user readings";
         throw new Error(errorMessage);
       }
-      throw new Error(
-        "Failed to fetch user readings. Please try again later.",
-      );
+      throw new Error("Failed to fetch user readings. Please try again later.");
     }
   },
 
@@ -65,9 +63,7 @@ export const userApi = {
         const errorMessage = errorData.detail || "Failed to fetch quota";
         throw new Error(errorMessage);
       }
-      throw new Error(
-        "Failed to fetch quota. Please try again later.",
-      );
+      throw new Error("Failed to fetch quota. Please try again later.");
     }
   },
 
@@ -79,7 +75,7 @@ export const userApi = {
     try {
       const response = await axios.post<UpdateUserQuotaResponse>(
         `${API_URL}/api/user/quota/decrement`,
-        {},  // No request body needed
+        {}, // No request body needed
         {
           headers: {
             "Content-Type": "application/json",
@@ -94,13 +90,11 @@ export const userApi = {
       if (error?.response?.data) {
         const errorData = error.response.data as ErrorResponse;
         const errorMessage = errorData.detail || "Failed to decrement quota";
-        
+
         // Throw the specific error message from the backend
         throw new Error(errorMessage);
       }
-      throw new Error(
-        "Failed to decrement quota. Please try again later.",
-      );
+      throw new Error("Failed to decrement quota. Please try again later.");
     }
   },
 
@@ -112,7 +106,7 @@ export const userApi = {
     try {
       const response = await axios.post<UpdateUserQuotaResponse>(
         `${API_URL}/api/user/quota/upgrade`,
-        {},  // No request body needed
+        {}, // No request body needed
         {
           headers: {
             "Content-Type": "application/json",
@@ -127,16 +121,14 @@ export const userApi = {
       if (error?.response?.data) {
         const errorData = error.response.data as ErrorResponse;
         const errorMessage = errorData.detail || "Failed to upgrade membership";
-        
+
         // Throw the specific error message from the backend
         throw new Error(errorMessage);
       }
-      throw new Error(
-        "Failed to upgrade membership. Please try again later.",
-      );
+      throw new Error("Failed to upgrade membership. Please try again later.");
     }
   },
 
   // Add other user-related API functions here if needed (e.g., get quota)
   // async getUserQuota(userId: string): Promise<any> { ... }
-}; 
+};

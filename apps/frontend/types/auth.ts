@@ -11,7 +11,7 @@ export interface Session {
   refresh_token: string;
   expires_in: number;
   token_type: string;
-  expires_at?: number; // Absolute timestamp when token expires
+  expires_at?: number;
   [key: string]: any;
 }
 
@@ -60,13 +60,8 @@ export interface AuthFormProps {
 
 export interface AuthLayoutProps {
   children: React.ReactNode;
-  title: string;
-  error?: string | null;
 }
 
-/**
- * API error response structure
- */
 export interface ErrorResponse {
   status: string;
   detail?: string;

@@ -9,7 +9,7 @@ import {
   UpdateReadingResponse,
 } from "@/types/divination";
 
-const API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 export const divinationApi = {
   /**

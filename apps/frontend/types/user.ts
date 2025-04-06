@@ -53,4 +53,4 @@ export interface UserReadingResponse {
   clarifying_question?: string;
   clarifying_answer?: string;
   created_at: string;
-} 
+}

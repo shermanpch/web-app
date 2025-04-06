@@ -8,7 +8,7 @@ export async function fetchServerSideUser(
     return null;
   }
 
-  const INTERNAL_API_URL = process.env.INTERNAL_BACKEND_API_URL
+  const INTERNAL_API_URL = process.env.INTERNAL_BACKEND_API_URL;
 
   try {
     // Use native fetch

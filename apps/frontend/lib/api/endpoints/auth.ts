@@ -6,7 +6,7 @@ import {
   ErrorResponse,
 } from "@/types/auth";
 
-const API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 export const authApi = {
   /**
@@ -88,7 +88,11 @@ export const authApi = {
    */
   async logout(): Promise<void> {
     try {
-      await axios.post(`${API_URL}/api/auth/logout`, {}, { withCredentials: true });
+      await axios.post(
+        `${API_URL}/api/auth/logout`,
+        {},
+        { withCredentials: true },
+      );
     } catch (error) {
       console.error("Error during server logout:", error);
       // Still resolve the promise to allow client-side logout to complete
