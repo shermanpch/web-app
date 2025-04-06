@@ -1,7 +1,7 @@
 import axios from "axios";
 import { ErrorResponse } from "@/types/auth";
 import { UserReadingHistoryEntry } from "@/types/divination";
-import { UpdateUserQuotaResponse } from "@/types/user";
+import { UpdateUserQuotaResponse, UserQuotaResponse } from "@/types/user";
 
 const API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -34,6 +34,41 @@ export const userApi = {
       }
       throw new Error(
         "Failed to fetch user readings. Please try again later.",
+      );
+    }
+  },
+
+  /**
+   * Get the current quota information for a user.
+   * Returns null if no quota information is found.
+   */
+  async getUserQuota(userId: string): Promise<UserQuotaResponse | null> {
+    try {
+      const response = await axios.post<UserQuotaResponse>(
+        `${API_URL}/api/user/quota`,
+        { user_id: userId },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true, // Send cookies for authentication
+        },
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error("API Error fetching user quota:", error);
+      // If backend returns 200 with null body, return null
+      if (error?.response?.status === 200 && !error.response.data) {
+        return null;
+      }
+      // Handle axios errors
+      if (error?.response?.data) {
+        const errorData = error.response.data as ErrorResponse;
+        const errorMessage = errorData.detail || "Failed to fetch quota";
+        throw new Error(errorMessage);
+      }
+      throw new Error(
+        "Failed to fetch quota. Please try again later.",
       );
     }
   },

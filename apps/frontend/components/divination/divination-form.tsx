@@ -167,38 +167,59 @@ export function DivinationForm({ userId }: DivinationFormProps) {
     // Reset clarifying question
     setClarifyingQuestion("");
 
-    try {
-      // First decrement the quota
+    // Set main loading state at the beginning
+    withLoadingState(async () => {
       try {
-        await userApi.decrementQuota();
-      } catch (quotaError: any) {
-        // If quota decrement fails, show error and don't proceed
-        console.error("Quota error:", quotaError);
-        setAuthError(`Quota Error: ${quotaError.message}`);
-        return;
-      }
+        // Step 1: Check Quota
+        try {
+          const quotaResponse = await userApi.getUserQuota(userId);
+          if (!quotaResponse || quotaResponse.remaining_queries <= 0) {
+            setAuthError(
+              !quotaResponse
+                ? "Could not retrieve quota information."
+                : "Insufficient queries remaining."
+            );
+            return;
+          }
+          console.log("Quota check passed.");
+        } catch (quotaCheckError: any) {
+          console.error("Error checking quota:", quotaCheckError);
+          setAuthError(`Failed to check quota: ${quotaCheckError.message}`);
+          return;
+        }
 
-      const result = await withLoadingState(async () => {
-        return await divinationApi.getIchingReading({
+        // Step 2: Perform Divination
+        const result = await divinationApi.getIchingReading({
           first_number: parseInt(formState.first_number),
           second_number: parseInt(formState.second_number),
           third_number: parseInt(formState.third_number),
           language: formState.language,
           question: formState.question,
         });
-      }, "Failed to get I Ching reading");
 
-      // Update the data state with the result if we get one
-      if (result) {
-        setData(result);
+        // Update the data state with the result if we get one
+        if (result) {
+          setData(result);
 
-        // After getting a successful reading, save it to the database
-        await saveReading(result);
+          // Steps 3 & 4: Decrement Quota and Save Reading
+          try {
+            // Step 3: Decrement Quota
+            await userApi.decrementQuota();
+            
+            // Step 4: Save Reading
+            await saveReading(result);
+          } catch (postDivinationError: any) {
+            console.error("Error during quota decrement or save:", postDivinationError);
+            console.warn("Reading complete, but failed to update quota/save history.");
+            // Don't overwrite the main divinationResult data
+            setAuthError("Warning: Reading completed, but there was an issue updating your quota or saving the history.");
+          }
+        }
+      } catch (error: any) {
+        console.error("Error submitting divination:", error);
+        setAuthError(error.message);
       }
-    } catch (error: any) {
-      console.error("Error submitting divination:", error);
-      setAuthError(error.message);
-    }
+    }, "Failed to process divination request");
   };
 
   const responsePreClass = cn(
