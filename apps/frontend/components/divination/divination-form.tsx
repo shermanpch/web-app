@@ -12,7 +12,6 @@ import {
   UpdateReadingResponse,
   IChingPrediction,
 } from "@/types/divination";
-import { UpdateUserQuotaResponse } from "@/types/user";
 import { usePageState } from "@/hooks/use-page-state";
 import { cn } from "@/lib/utils";
 
