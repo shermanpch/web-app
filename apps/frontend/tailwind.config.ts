@@ -8,13 +8,14 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      spacing: {
-        100: "25rem",
-        128: "32rem",
-        160: "40rem",
-      },
       fontFamily: {
-        sans: ["var(--font-inter)"],
+        serif: ['Georgia', 'Times New Roman', 'serif'],
+      },
+      colors: {
+        'brand-input-bg': '#D8CDBA',
+        'brand-button-bg': '#5A7D60',
+        'brand-button-hover': '#4A6D50',
+        'brand-input-text': '#6b7280',
       },
     },
   },

@@ -4,10 +4,10 @@ import type { NextRequest } from "next/server";
 /**
  * Define route patterns for protected and public routes
  */
-const protectedRoutes = ["/dashboard", "/dashboard/(.*)"]; // Regex pattern for dashboard and subpaths
+const protectedRoutes = ["/try-now"]; // Regex pattern for dashboard and subpaths
 const publicAuthRoutes = [
   "/login",
-  "/signup",
+  "/register",
   "/forgot-password",
   "/reset-password",
 ];
@@ -37,12 +37,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Redirect authenticated users trying to access login/signup
+  // Redirect authenticated users trying to access login/register
   if (authToken && publicAuthRoutes.includes(pathname)) {
     console.log(
-      `[Middleware] Authenticated user accessing ${pathname}, redirecting to dashboard.`,
+      `[Middleware] Authenticated user accessing ${pathname}, redirecting to try-now.`,
     );
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/try-now", request.url));
   }
 
   // Continue normally for all other cases
@@ -55,12 +55,11 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     // Apply middleware to these paths
-    "/dashboard/:path*",
-    "/dashboard",
     "/login",
-    "/signup",
+    "/register",
     "/forgot-password",
     "/reset-password",
+    "/try-now",
     // Exclude static files, API routes etc.
     "/((?!api|_next/static|_next/image|favicon.ico|assets/.*\\..*).*)",
   ],
