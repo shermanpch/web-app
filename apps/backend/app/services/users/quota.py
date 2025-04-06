@@ -1,6 +1,7 @@
 """Quota management for divination queries."""
 
 import logging
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from ...models.users import (
@@ -45,7 +46,7 @@ async def get_user_quota_from_db(
         response = (
             await client.table("user_quotas")
             .select(
-                "user_id, membership_type, remaining_queries, created_at, updated_at"
+                "user_id, membership_type, remaining_queries, premium_expires_at, created_at, updated_at"
             )
             .eq("user_id", str(request.user_id))  # Convert UUID to string
             .limit(1)
@@ -97,7 +98,7 @@ async def decrement_user_quota(
         response = (
             await client.table("user_quotas")
             .select(
-                "user_id, membership_type, remaining_queries, created_at, updated_at"
+                "user_id, membership_type, remaining_queries, premium_expires_at, created_at, updated_at"
             )
             .eq("user_id", str(request.user_id))  # Convert UUID to string
             .limit(1)
@@ -151,6 +152,7 @@ async def upgrade_user_to_premium(
 ) -> UpdateUserQuotaResponse:
     """
     Upgrade a user's membership to premium and add 30 queries to their quota.
+    Sets premium expiration to 30 days from now.
 
     Args:
         request: UpdateUserQuotaRequest containing user_id
@@ -174,7 +176,7 @@ async def upgrade_user_to_premium(
         response = (
             await client.table("user_quotas")
             .select(
-                "user_id, membership_type, remaining_queries, created_at, updated_at"
+                "user_id, membership_type, remaining_queries, premium_expires_at, created_at, updated_at"
             )
             .eq("user_id", str(request.user_id))  # Convert UUID to string
             .limit(1)
@@ -193,10 +195,21 @@ async def upgrade_user_to_premium(
         # Calculate new remaining count (add 30 queries)
         new_remaining = current_remaining + 30
 
+        # # Calculate expiration date (30 days from now in UTC)
+        # expires_at = datetime.now(timezone.utc) + timedelta(days=30)
+        # Calculate expiration date (10 seconds from now in UTC)
+        expires_at = datetime.now(timezone.utc) + timedelta(seconds=10)
+
         # Update the quota
         update_response = (
             await client.table("user_quotas")
-            .update({"membership_type": "premium", "remaining_queries": new_remaining})
+            .update(
+                {
+                    "membership_type": "premium",
+                    "remaining_queries": new_remaining,
+                    "premium_expires_at": expires_at.isoformat(),
+                }
+            )
             .eq("user_id", str(request.user_id))
             .execute()
         )

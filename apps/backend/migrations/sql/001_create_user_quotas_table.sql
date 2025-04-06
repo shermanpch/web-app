@@ -8,7 +8,10 @@ CREATE TABLE
         user_id UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
         membership_type TEXT NOT NULL DEFAULT 'free',
         remaining_queries INTEGER NOT NULL CHECK (remaining_queries >= 0),
-        created_at TIMESTAMP
+        premium_expires_at TIMESTAMP
+        WITH
+            TIME ZONE NULL,
+            created_at TIMESTAMP
         WITH
             TIME ZONE DEFAULT NOW (),
             updated_at TIMESTAMP

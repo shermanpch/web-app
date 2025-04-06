@@ -25,6 +25,7 @@ class UpdateUserQuotaResponse(BaseModel):
     user_id: UUID
     membership_type: str
     remaining_queries: int
+    premium_expires_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -35,6 +36,7 @@ class UserQuotaResponse(BaseModel):
     user_id: UUID
     membership_type: str
     remaining_queries: int
+    premium_expires_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
