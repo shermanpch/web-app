@@ -13,6 +13,22 @@ class UserQuotaRequest(BaseModel):
     user_id: UUID
 
 
+class UpdateUserQuotaRequest(BaseModel):
+    """User quota update request model."""
+
+    user_id: UUID
+
+
+class UpdateUserQuotaResponse(BaseModel):
+    """User quota update response model."""
+
+    user_id: UUID
+    membership_type: str
+    remaining_queries: int
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+
 class UserQuotaResponse(BaseModel):
     """User quota response model."""
 

@@ -1,3 +1,6 @@
+// Export all user types
+export * from './user';
+
 // Shared component interfaces
 export interface BaseComponentProps {
   className?: string;

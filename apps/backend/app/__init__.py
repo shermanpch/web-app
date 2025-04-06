@@ -22,7 +22,12 @@ from .models.divination import (
     IChingUpdateReadingRequest,
     IChingUpdateReadingResponse,
 )
-from .models.users import UserQuotaRequest, UserQuotaResponse, UserReadingResponse
+from .models.users import (
+    UpdateUserQuotaRequest,
+    UserQuotaRequest,
+    UserQuotaResponse,
+    UserReadingResponse,
+)
 
 # Services
 from .services.auth import get_current_user
@@ -39,7 +44,7 @@ from .services.divination.iching import (
     save_iching_reading_to_db,
     update_iching_reading_in_db,
 )
-from .services.users.quota import create_user_quota, get_user_quota_from_db
+from .services.users.quota import decrement_user_quota, get_user_quota_from_db
 from .services.users.reading import get_user_readings_from_db
 
 __all__ = [
@@ -71,6 +76,7 @@ __all__ = [
     "UserQuotaRequest",
     "UserQuotaResponse",
     "UserReadingResponse",
+    "UpdateUserQuotaRequest",
     # Services
     "get_current_user",
     "get_authenticated_client",
@@ -82,6 +88,6 @@ __all__ = [
     "save_iching_reading_to_db",
     "update_iching_reading_in_db",
     "get_user_quota_from_db",
-    "create_user_quota",
     "get_user_readings_from_db",
+    "decrement_user_quota",
 ]

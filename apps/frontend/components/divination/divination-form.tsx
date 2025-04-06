@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { divinationApi } from "@/lib/api/endpoints/divination";
+import { userApi } from "@/lib/api/endpoints/user";
 import {
   DivinationResponse,
   SaveReadingResponse,
   UpdateReadingResponse,
   IChingPrediction,
 } from "@/types/divination";
+import { UpdateUserQuotaResponse } from "@/types/user";
 import { usePageState } from "@/hooks/use-page-state";
 import { cn } from "@/lib/utils";
 
@@ -166,6 +168,16 @@ export function DivinationForm({ userId }: DivinationFormProps) {
     setClarifyingQuestion("");
 
     try {
+      // First decrement the quota
+      try {
+        await userApi.decrementQuota();
+      } catch (quotaError: any) {
+        // If quota decrement fails, show error and don't proceed
+        console.error("Quota error:", quotaError);
+        setAuthError(`Quota Error: ${quotaError.message}`);
+        return;
+      }
+
       const result = await withLoadingState(async () => {
         return await divinationApi.getIchingReading({
           first_number: parseInt(formState.first_number),
