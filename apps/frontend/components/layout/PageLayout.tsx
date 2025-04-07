@@ -11,24 +11,14 @@ export default function PageLayout({ children }: PageLayoutProps) {
   return (
     <>
       {/* Background image */}
-      <div
-        className="fixed inset-0 z-0 w-full h-full"
-        style={{
-          position: "fixed",
-          left: "50%",
-          top: "50%",
-          transform: "translate(-50%, -50%)",
-          minWidth: "100%",
-          minHeight: "100%",
-        }}
-      >
+      <div className="fixed inset-0 z-0 w-full h-full">
         <Image
           src="/assets/background.png"
           alt="Background"
           fill
           priority
           quality={100}
-          sizes="100vw"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
           style={{
             objectFit: "cover",
             objectPosition: "center",
@@ -36,11 +26,11 @@ export default function PageLayout({ children }: PageLayoutProps) {
         />
       </div>
 
-      {/* Content container - just render the children, 
-          don't create another full min-h-screen container 
-          that would overlap with the navigation bar */}
-      <div className="relative z-10 w-full flex-grow flex flex-col items-center justify-center px-4 overflow-auto">
-        {children}
+      {/* Content container */}
+      <div className="relative z-10 w-full flex-grow flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-6 md:py-8 lg:py-12">
+        <div className="w-full max-w-7xl mx-auto">
+          {children}
+        </div>
       </div>
     </>
   );

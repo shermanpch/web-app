@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { User, Settings, LogOut, History } from "lucide-react";
+import { User, Settings, LogOut, History, Menu, X } from "lucide-react";
 import { authApi } from "@/lib/api/endpoints/auth";
 import { User as AuthUser } from "@/types/auth";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useState } from "react";
 
 interface NavigationBarProps {
   user: AuthUser | null;
@@ -20,6 +21,7 @@ interface NavigationBarProps {
 
 export default function NavigationBar({ user }: NavigationBarProps) {
   const router = useRouter();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -31,91 +33,114 @@ export default function NavigationBar({ user }: NavigationBarProps) {
     }
   };
 
+  const navLinks = [
+    { href: "/", label: "Home" },
+    { href: "/about", label: "About" },
+    { href: "/try-now", label: "Try Now" },
+    { href: "/how-it-works", label: "How It Works" },
+    { href: "/pricing", label: "Pricing" },
+  ];
+
   return (
-    <nav className="flex justify-between items-center py-4 px-8 w-full bg-gray-900/80 backdrop-blur-sm">
-      <div className="flex items-center space-x-8 font-serif">
-        <Link
-          href="/"
-          className="text-gray-200 hover:text-white transition-colors text-lg"
+    <nav className="relative">
+      <div className="flex justify-between items-center py-4 px-4 md:px-8 w-full bg-gray-900/80 backdrop-blur-sm">
+        {/* Hamburger menu button - only visible on mobile */}
+        <button
+          className="md:hidden text-gray-200 hover:text-white"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         >
-          Home
-        </Link>
-        <Link
-          href="/about"
-          className="text-gray-200 hover:text-white transition-colors text-lg"
-        >
-          About
-        </Link>
-        <Link
-          href="/try-now"
-          className="text-gray-200 hover:text-white transition-colors text-lg"
-        >
-          Try Now
-        </Link>
-        <Link
-          href="/how-it-works"
-          className="text-gray-200 hover:text-white transition-colors text-lg"
-        >
-          How It Works
-        </Link>
-        <Link
-          href="/pricing"
-          className="text-gray-200 hover:text-white transition-colors text-lg"
-        >
-          Pricing
-        </Link>
+          {isMobileMenuOpen ? (
+            <X className="h-6 w-6" />
+          ) : (
+            <Menu className="h-6 w-6" />
+          )}
+        </button>
+
+        {/* Desktop navigation - hidden on mobile */}
+        <div className="hidden md:flex items-center space-x-8 font-serif">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-gray-200 hover:text-white transition-colors text-lg"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+
+        {/* Account dropdown - aligned right on desktop */}
+        <div className="font-serif">
+          {user && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="text-gray-200 hover:text-white hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 font-serif p-0 h-auto font-normal text-lg"
+                >
+                  Account
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 mr-4 bg-[#F0E6D6]" align="end">
+                <DropdownMenuItem
+                  asChild
+                  className="cursor-pointer text-gray-800 focus:bg-[#e0d6c6]"
+                >
+                  <Link href="/profile" className="flex items-center">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  asChild
+                  className="cursor-pointer text-gray-800 focus:bg-[#e0d6c6]"
+                >
+                  <Link href="/readings" className="flex items-center">
+                    <History className="mr-2 h-4 w-4" />
+                    <span>Readings</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  asChild
+                  className="cursor-pointer text-gray-800 focus:bg-[#e0d6c6]"
+                >
+                  <Link href="/settings" className="flex items-center">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-gray-300" />
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="cursor-pointer text-gray-800 focus:bg-[#e0d6c6] flex items-center"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
 
-      <div className="font-serif">
-        {user && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="text-gray-200 hover:text-white hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 font-serif p-0 h-auto font-normal text-lg"
-              >
-                Account
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 mr-4 bg-[#F0E6D6]" align="end">
-              <DropdownMenuItem
-                asChild
-                className="cursor-pointer text-gray-800 focus:bg-[#e0d6c6]"
-              >
-                <Link href="/profile" className="flex items-center">
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                asChild
-                className="cursor-pointer text-gray-800 focus:bg-[#e0d6c6]"
-              >
-                <Link href="/readings" className="flex items-center">
-                  <History className="mr-2 h-4 w-4" />
-                  <span>Readings</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                asChild
-                className="cursor-pointer text-gray-800 focus:bg-[#e0d6c6]"
-              >
-                <Link href="/settings" className="flex items-center">
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-gray-300" />
-              <DropdownMenuItem
-                onClick={handleLogout}
-                className="cursor-pointer text-gray-800 focus:bg-[#e0d6c6] flex items-center"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Log Out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+      {/* Mobile menu - slides down when hamburger is clicked */}
+      <div
+        className={`md:hidden absolute top-full left-0 right-0 bg-gray-900/95 backdrop-blur-sm transition-all duration-300 ${
+          isMobileMenuOpen ? "max-h-screen py-4" : "max-h-0 overflow-hidden"
+        }`}
+      >
+        <div className="flex flex-col space-y-4 px-4">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-gray-200 hover:text-white transition-colors text-lg font-serif"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
       </div>
     </nav>
   );

@@ -8,8 +8,8 @@ html {
 }
 
 body {
-  width: 100vw;
-  overflow-x: hidden;
+  min-height: 100vh;
   margin: 0;
   padding: 0;
+  /* Remove fixed width and overflow-x to let content flow naturally */
 } 

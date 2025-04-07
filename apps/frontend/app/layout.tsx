@@ -58,6 +58,9 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
       <body className="font-serif bg-gray-900">
         <div className="min-h-screen flex flex-col">
           <div className="relative z-20">

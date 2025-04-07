@@ -1,12 +1,20 @@
+"use client";
+
+import ChangePasswordForm from "@/components/settings/ChangePasswordForm";
+import PageLayout from "@/components/layout/PageLayout";
+
 export default function SettingsPage() {
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-serif mb-6">Settings</h1>
-      <div className="bg-[#F0E6D6] rounded-lg p-6">
-        <p className="text-gray-800">
-          Your account settings and preferences will appear here.
-        </p>
+    <PageLayout>
+      <div className="flex min-h-screen">
+        <div className="flex flex-col items-center justify-center text-center w-full max-w-4xl mx-auto px-4 py-12">
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-12 font-serif">
+            Change Password
+          </h1>
+          
+          <ChangePasswordForm />
+        </div>
       </div>
-    </div>
+    </PageLayout>
   );
 }

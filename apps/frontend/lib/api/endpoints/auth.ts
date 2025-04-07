@@ -101,12 +101,24 @@ export const authApi = {
 
   /**
    * Change user password
+   * @param newPassword - The new password to set
+   * @param currentPassword - The current password for verification (required for logged-in users)
+   * @param accessToken - Optional access token for password reset flow
    */
-  async changePassword(password: string, accessToken?: string): Promise<void> {
+  async changePassword(newPassword: string, currentPassword?: string, accessToken?: string): Promise<void> {
     try {
-      const payload = accessToken
-        ? { password, access_token: accessToken }
-        : { password };
+      let payload: any = {};
+      
+      // The backend endpoint expects a simple { password: string } for logged-in users
+      // and { password: string, access_token: string } for password reset flow
+      if (accessToken) {
+        // Password reset flow
+        payload = { password: newPassword, access_token: accessToken };
+      } else {
+        // For logged-in users, we only need to send the new password
+        // The backend uses the auth cookies for verification
+        payload = { password: newPassword };
+      }
 
       await axios.post(`${API_URL}/api/auth/password/change`, payload, {
         headers: {

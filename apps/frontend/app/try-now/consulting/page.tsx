@@ -99,19 +99,19 @@ export default function ConsultingPage() {
   return (
     <PageLayout>
       <div className="flex min-h-screen bg-[#0A0D0A] absolute inset-0">
-        <div className="flex flex-col items-center justify-center text-center w-full max-w-4xl mx-auto px-4 py-12 relative z-10">
+        <div className="flex flex-col items-center justify-center text-center w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10">
           {error ? (
             <div className="text-red-500 mb-4">{error}</div>
           ) : (
             <>
-              <h1 className="text-4xl md:text-5xl font-bold text-white mb-16 font-serif">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-8 sm:mb-12 md:mb-16 font-serif">
                 Consulting the Oracle...
               </h1>
 
-              <div className="flex items-center justify-center space-x-24">
+              <div className="flex flex-col md:flex-row items-center justify-center md:space-x-8 lg:space-x-24 space-y-8 md:space-y-0">
                 {/* Turtle Shell */}
                 <motion.div
-                  className="relative w-[36rem] h-[36rem]"
+                  className="relative w-[16rem] h-[16rem] sm:w-[24rem] sm:h-[24rem] md:w-[32rem] md:h-[32rem] lg:w-[36rem] lg:h-[36rem]"
                   animate={{
                     rotate: [-15, 15, -15, 15, -15, 15, -15],
                   }}
@@ -131,15 +131,15 @@ export default function ConsultingPage() {
                     priority
                   />
                   {/* Add a subtle shadow that moves with the shell */}
-                  <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-[30rem] h-6 bg-black/20 rounded-full blur-md" />
+                  <div className="absolute -bottom-4 sm:-bottom-6 left-1/2 -translate-x-1/2 w-[80%] sm:w-[85%] h-4 sm:h-6 bg-black/20 rounded-full blur-md" />
                 </motion.div>
 
                 {/* Coins */}
-                <div className="flex space-x-12">
+                <div className="flex flex-row space-x-4 sm:space-x-8 md:space-x-12">
                   {[0, 1, 2].map((index) => (
                     <motion.div
                       key={index}
-                      className="relative w-40 h-40"
+                      className="relative w-20 h-20 sm:w-32 sm:h-32 md:w-40 md:h-40"
                       initial={{ opacity: 0, scale: 0.5 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{
