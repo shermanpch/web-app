@@ -36,7 +36,7 @@ export default function LoginPage() {
       // Prefetch first page of readings data immediately after login
       queryClient.prefetchQuery({
         queryKey: ["userReadings", 1],
-        queryFn: () => userApi.getUserReadings({ page: 1, limit: 10 }),
+        queryFn: () => userApi.getUserReadings({ page: 1, limit: 5 }),
         staleTime: 1000 * 60 * 5, // Keep prefetched data fresh for 5 minutes
       });
 
