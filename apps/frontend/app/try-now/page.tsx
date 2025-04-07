@@ -23,10 +23,10 @@ export default function TryNowPage() {
           </h1>
 
           {/* Instructions */}
-          <p className="text-lg text-gray-300 mb-6 font-serif">
+          <p className="text-xl text-gray-300 mb-6 font-serif">
             Take a moment, breathe deeply and clearly formulate your question.
           </p>
-          <p className="text-lg text-gray-300 mb-12 font-serif">
+          <p className="text-xl text-gray-300 mb-12 font-serif">
             Focus your intent on the question for as long as you need
           </p>
 
@@ -35,7 +35,7 @@ export default function TryNowPage() {
             placeholder="Enter your question clearly here...."
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            className="w-full min-h-[120px] bg-brand-input-bg text-gray-800 placeholder:text-brand-input-text border-none rounded-xl p-6 focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none font-serif text-lg"
+            className="w-full min-h-[120px] bg-brand-input-bg text-gray-800 placeholder:text-brand-input-text border-none rounded-xl p-6 focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none font-serif text-xl"
             rows={4}
           />
 
