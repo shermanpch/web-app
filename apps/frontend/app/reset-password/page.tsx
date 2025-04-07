@@ -6,13 +6,13 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import PageLayout from "@/components/layout/PageLayout";
 import { authApi } from "@/lib/api/endpoints/auth";
 import { useMutation } from "@tanstack/react-query";
 import ContentContainer from "@/components/layout/ContentContainer";
 import Heading from "@/components/ui/heading";
+import AuthInput from "@/components/auth/AuthInput";
+import AuthFormWrapper from "@/components/auth/AuthFormWrapper";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -23,7 +23,6 @@ export default function ResetPasswordPage() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [tokenChecked, setTokenChecked] = useState(false);
 
-  // Extract the token from the URL on component mount
   useEffect(() => {
     if (tokenChecked) return;
 
@@ -143,91 +142,67 @@ export default function ResetPasswordPage() {
     });
   };
 
+  const footerContent = (
+    <>
+      Remember your password?{" "}
+      <Link
+        href="/login"
+        className="text-[#B88A6A] hover:text-[#a87a5a] font-medium"
+      >
+        Login
+      </Link>
+    </>
+  );
+
   return (
     <PageLayout>
-      {/* Header */}
-      <ContentContainer className="mb-8">
-        <Heading>I Ching Divination</Heading>
-        <p className="text-xl text-gray-300 font-serif text-center">
-          Reset your password
-        </p>
+      <ContentContainer>
+        {/* Header */}
+        <div className="mb-8">
+          <Heading>I Ching Divination</Heading>
+          <p className="text-xl text-gray-300 font-serif text-center">
+            Reset your password
+          </p>
+        </div>
+
+        <AuthFormWrapper
+          title="Reset Password"
+          error={validationError || (resetPasswordMutation.error as Error)?.message}
+          footerContent={footerContent}
+        >
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <AuthInput
+              id="newPassword"
+              label="New Password"
+              type="password"
+              placeholder="Enter new password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              icon={Lock}
+            />
+
+            <AuthInput
+              id="confirmPassword"
+              label="Confirm Password"
+              type="password"
+              placeholder="Confirm new password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              icon={Lock}
+            />
+
+            <Button
+              type="submit"
+              disabled={resetPasswordMutation.isPending || !accessToken}
+              className="w-full bg-[#B88A6A] hover:bg-[#a87a5a] text-white font-semibold py-6 rounded-lg text-lg mt-8 h-auto disabled:opacity-50"
+            >
+              {resetPasswordMutation.isPending
+                ? "Resetting Password..."
+                : "Reset Password"}
+            </Button>
+          </form>
+        </AuthFormWrapper>
       </ContentContainer>
-
-      {/* Form */}
-      <div className="max-w-md w-full mx-auto mt-12 p-8 bg-[#D8CDBA] rounded-2xl shadow-lg">
-        <h2 className="text-3xl font-semibold text-gray-800 mb-8 text-center font-serif">
-          Reset Password
-        </h2>
-
-        {(validationError || resetPasswordMutation.error) && (
-          <p className="text-sm text-red-600 text-center font-medium mb-6">
-            {validationError || (resetPasswordMutation.error as Error)?.message}
-          </p>
-        )}
-
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-2">
-            <Label htmlFor="newPassword" className="text-gray-700 font-serif">
-              New Password
-            </Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
-              <Input
-                id="newPassword"
-                name="newPassword"
-                type="password"
-                placeholder="Enter new password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                className="pl-10 w-full bg-[#EDE6D6] border-none rounded-lg h-12 text-gray-800 placeholder:text-gray-500 focus:ring-2 focus:ring-[#B88A6A] focus:ring-offset-2 focus:ring-offset-[#D8CDBA]"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label
-              htmlFor="confirmPassword"
-              className="text-gray-700 font-serif"
-            >
-              Confirm Password
-            </Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                placeholder="Confirm new password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                className="pl-10 w-full bg-[#EDE6D6] border-none rounded-lg h-12 text-gray-800 placeholder:text-gray-500 focus:ring-2 focus:ring-[#B88A6A] focus:ring-offset-2 focus:ring-offset-[#D8CDBA]"
-              />
-            </div>
-          </div>
-
-          <Button
-            type="submit"
-            disabled={resetPasswordMutation.isPending || !accessToken}
-            className="w-full bg-[#B88A6A] hover:bg-[#a87a5a] text-white font-semibold py-6 rounded-lg text-lg mt-8 h-auto disabled:opacity-50"
-          >
-            {resetPasswordMutation.isPending
-              ? "Resetting Password..."
-              : "Reset Password"}
-          </Button>
-
-          <p className="mt-6 text-center text-sm text-gray-700 font-serif">
-            Remember your password?{" "}
-            <Link
-              href="/login"
-              className="text-[#B88A6A] hover:text-[#a87a5a] font-medium"
-            >
-              Login
-            </Link>
-          </p>
-        </form>
-      </div>
     </PageLayout>
   );
 }

@@ -38,9 +38,6 @@ export default function ConsultingPage() {
           language: "English", // Default to English
         });
 
-        // Only decrement quota after successful reading
-        await userApi.decrementQuota();
-
         return {
           readingData,
           params: {
@@ -71,6 +68,9 @@ export default function ConsultingPage() {
             language: "English",
             prediction: readingData,
           });
+
+          // Only decrement quota after successful save
+          await userApi.decrementQuota();
 
           // Navigate to result page with both reading data and ID
           const readingDataString = JSON.stringify({

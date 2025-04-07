@@ -3,11 +3,10 @@
 import React, { useState, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, AlertCircle } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import PageLayout from "@/components/layout/PageLayout";
 import { authApi } from "@/lib/api/endpoints/auth";
 import { userApi } from "@/lib/api/endpoints/user";
@@ -16,6 +15,8 @@ import { SignUpCredentials } from "@/types/auth";
 import { toast } from "sonner";
 import ContentContainer from "@/components/layout/ContentContainer";
 import Heading from "@/components/ui/heading";
+import AuthInput from "@/components/auth/AuthInput";
+import AuthFormWrapper from "@/components/auth/AuthFormWrapper";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -29,8 +30,6 @@ export default function RegisterPage() {
   const signupMutation = useMutation({
     mutationFn: authApi.signup,
     onSuccess: async (response) => {
-      console.log("Registration successful:", response);
-
       // Update the user data in the cache
       queryClient.setQueryData(["currentUser"], response.data.user);
 
@@ -89,6 +88,18 @@ export default function RegisterPage() {
     signupMutation.mutate(credentials);
   };
 
+  const footerContent = (
+    <>
+      Already have an account?{" "}
+      <Link
+        href="/login"
+        className="text-[#B88A6A] hover:text-[#a87a5a] font-medium"
+      >
+        Login
+      </Link>
+    </>
+  );
+
   return (
     <PageLayout>
       <ContentContainer>
@@ -100,84 +111,41 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        {/* Registration Form */}
-        <div className="max-w-md w-full mx-auto mt-12 p-8 bg-[#D8CDBA] rounded-2xl shadow-lg">
-          <h2 className="text-3xl font-semibold text-gray-800 mb-8 text-center font-serif">
-            Create Account
-          </h2>
-
-          {(validationError || signupMutation.error) && (
-            <div className="flex items-center gap-2 text-sm text-red-600 font-medium mb-6 p-2 bg-red-50 rounded-lg">
-              <AlertCircle className="h-4 w-4" />
-              <p>
-                {validationError || (signupMutation.error as Error)?.message}
-              </p>
-            </div>
-          )}
-
+        <AuthFormWrapper
+          title="Create Account"
+          error={validationError || (signupMutation.error as Error)?.message}
+          footerContent={footerContent}
+        >
           <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* Email Field */}
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-700 font-serif">
-                Email
-              </Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="Enter your Email here"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="pl-10 w-full bg-[#EDE6D6] border-none rounded-lg h-12 text-gray-800 placeholder:text-gray-500 focus:ring-2 focus:ring-[#B88A6A] focus:ring-offset-2 focus:ring-offset-[#D8CDBA]"
-                />
-              </div>
-            </div>
+            <AuthInput
+              id="email"
+              label="Email"
+              type="email"
+              placeholder="Enter your Email here"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              icon={Mail}
+            />
 
-            {/* Password Field */}
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-700 font-serif">
-                Password
-              </Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="Create a Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="pl-10 w-full bg-[#EDE6D6] border-none rounded-lg h-12 text-gray-800 placeholder:text-gray-500 focus:ring-2 focus:ring-[#B88A6A] focus:ring-offset-2 focus:ring-offset-[#D8CDBA]"
-                />
-              </div>
-            </div>
+            <AuthInput
+              id="password"
+              label="Password"
+              type="password"
+              placeholder="Create a Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              icon={Lock}
+            />
 
-            {/* Confirm Password Field */}
-            <div className="space-y-2">
-              <Label
-                htmlFor="confirmPassword"
-                className="text-gray-700 font-serif"
-              >
-                Confirm Password
-              </Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
-                <Input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  placeholder="Confirm your Password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="pl-10 w-full bg-[#EDE6D6] border-none rounded-lg h-12 text-gray-800 placeholder:text-gray-500 focus:ring-2 focus:ring-[#B88A6A] focus:ring-offset-2 focus:ring-offset-[#D8CDBA]"
-                />
-              </div>
-            </div>
+            <AuthInput
+              id="confirmPassword"
+              label="Confirm Password"
+              type="password"
+              placeholder="Confirm your Password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              icon={Lock}
+            />
 
             {/* Terms and Conditions */}
             <div className="flex items-center space-x-2">
@@ -220,19 +188,8 @@ export default function RegisterPage() {
                 ? "Creating Account..."
                 : "Create Account"}
             </Button>
-
-            {/* Login Link */}
-            <p className="mt-6 text-center text-sm text-gray-700 font-serif">
-              Already have an account?{" "}
-              <Link
-                href="/login"
-                className="text-[#B88A6A] hover:text-[#a87a5a] font-medium"
-              >
-                Login
-              </Link>
-            </p>
           </form>
-        </div>
+        </AuthFormWrapper>
       </ContentContainer>
     </PageLayout>
   );

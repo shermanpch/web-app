@@ -5,9 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import PageLayout from "@/components/layout/PageLayout";
 import { authApi } from "@/lib/api/endpoints/auth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,6 +14,8 @@ import { LoginCredentials } from "@/types/auth";
 import { userApi } from "@/lib/api/endpoints/user";
 import ContentContainer from "@/components/layout/ContentContainer";
 import Heading from "@/components/ui/heading";
+import AuthInput from "@/components/auth/AuthInput";
+import AuthFormWrapper from "@/components/auth/AuthFormWrapper";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,8 +27,6 @@ export default function LoginPage() {
   const loginMutation = useMutation({
     mutationFn: authApi.login,
     onSuccess: async (response) => {
-      console.log("Login successful:", response);
-
       // Update the user data in the cache
       queryClient.setQueryData(["currentUser"], response.data.user);
 
@@ -37,7 +36,7 @@ export default function LoginPage() {
       // Prefetch first page of readings data immediately after login
       queryClient.prefetchQuery({
         queryKey: ["userReadings", 1],
-        queryFn: () => userApi.getUserReadings({ page: 1, limit: 5 }),
+        queryFn: () => userApi.getUserReadings({ page: 1, limit: 10 }),
         staleTime: 1000 * 60 * 5, // Keep prefetched data fresh for 5 minutes
       });
 
@@ -63,6 +62,18 @@ export default function LoginPage() {
     loginMutation.mutate(credentials);
   };
 
+  const footerContent = (
+    <>
+      Don&apos;t have an account?{" "}
+      <Link
+        href="/register"
+        className="text-[#B88A6A] hover:text-[#a87a5a] font-medium"
+      >
+        Register Now
+      </Link>
+    </>
+  );
+
   return (
     <PageLayout>
       <ContentContainer>
@@ -74,58 +85,31 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Login Form */}
-        <div className="max-w-md w-full mx-auto mt-12 p-8 bg-[#D8CDBA] rounded-2xl shadow-lg">
-          <h2 className="text-3xl font-semibold text-gray-800 mb-8 text-center font-serif">
-            Welcome Back!
-          </h2>
-
-          {loginMutation.error && (
-            <p className="text-sm text-red-600 text-center font-medium mb-6">
-              {(loginMutation.error as Error).message}
-            </p>
-          )}
-
+        <AuthFormWrapper
+          title="Welcome Back!"
+          error={loginMutation.error ? (loginMutation.error as Error).message : null}
+          footerContent={footerContent}
+        >
           <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* Email Field */}
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-700 font-serif">
-                Email
-              </Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="Enter your Email here"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="pl-10 w-full bg-[#EDE6D6] border-none rounded-lg h-12 text-gray-800 placeholder:text-gray-500 focus:ring-2 focus:ring-[#B88A6A] focus:ring-offset-2 focus:ring-offset-[#D8CDBA]"
-                />
-              </div>
-            </div>
+            <AuthInput
+              id="email"
+              label="Email"
+              type="email"
+              placeholder="Enter your Email here"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              icon={Mail}
+            />
 
-            {/* Password Field */}
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-700 font-serif">
-                Password
-              </Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="Enter your Password here"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="pl-10 w-full bg-[#EDE6D6] border-none rounded-lg h-12 text-gray-800 placeholder:text-gray-500 focus:ring-2 focus:ring-[#B88A6A] focus:ring-offset-2 focus:ring-offset-[#D8CDBA]"
-                />
-              </div>
-            </div>
+            <AuthInput
+              id="password"
+              label="Password"
+              type="password"
+              placeholder="Enter your Password here"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              icon={Lock}
+            />
 
             {/* Options Row */}
             <div className="flex items-center justify-between">
@@ -161,19 +145,8 @@ export default function LoginPage() {
             >
               {loginMutation.isPending ? "Logging in..." : "Login"}
             </Button>
-
-            {/* Register Link */}
-            <p className="mt-6 text-center text-sm text-gray-700 font-serif">
-              Don&apos;t have an account?{" "}
-              <Link
-                href="/register"
-                className="text-[#B88A6A] hover:text-[#a87a5a] font-medium"
-              >
-                Register Now
-              </Link>
-            </p>
           </form>
-        </div>
+        </AuthFormWrapper>
       </ContentContainer>
     </PageLayout>
   );
