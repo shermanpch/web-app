@@ -1,35 +1,19 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import Image from "next/image";
-import NavigationBar from "./NavigationBar";
 
 interface PageLayoutProps {
   children: React.ReactNode;
 }
 
 export default function PageLayout({ children }: PageLayoutProps) {
-  // Lock the body scroll position to prevent shifts
-  useEffect(() => {
-    // Save the original body overflow
-    const originalStyle = window.getComputedStyle(document.body).overflow;
-
-    // Force a consistent viewport width by preventing body scrolling
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      // Restore original overflow when component unmounts
-      document.body.style.overflow = originalStyle;
-    };
-  }, []);
-
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col relative overflow-auto">
-      {/* Background image with fixed positioning */}
+    <>
+      {/* Background image */}
       <div
         className="fixed inset-0 z-0 w-full h-full"
         style={{
-          // Apply absolute positioning with transform to center the background
           position: "fixed",
           left: "50%",
           top: "50%",
@@ -52,13 +36,12 @@ export default function PageLayout({ children }: PageLayoutProps) {
         />
       </div>
 
-      {/* Content container with relative positioning */}
-      <div className="relative z-10 flex flex-col min-h-screen w-full">
-        <NavigationBar />
-        <main className="flex-grow flex flex-col items-center justify-center px-4 overflow-auto">
-          {children}
-        </main>
+      {/* Content container - just render the children, 
+          don't create another full min-h-screen container 
+          that would overlap with the navigation bar */}
+      <div className="relative z-10 w-full flex-grow flex flex-col items-center justify-center px-4 overflow-auto">
+        {children}
       </div>
-    </div>
+    </>
   );
 }

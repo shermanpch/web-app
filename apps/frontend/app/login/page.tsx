@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,6 @@ import { usePageState } from "@/hooks/use-page-state";
 import { LoginCredentials } from "@/types/auth";
 
 export default function LoginPage() {
-  const router = useRouter();
   const { isLoading, error, setError, withLoadingState } = usePageState();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,7 +27,7 @@ export default function LoginPage() {
     await withLoadingState(async () => {
       const response = await authApi.login(credentials);
       console.log("Login successful:", response);
-      router.push("/try-now");
+      window.location.href = "/try-now";
     }, "Login failed. Please check your credentials and try again.");
   };
 

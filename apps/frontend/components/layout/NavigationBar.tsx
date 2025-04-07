@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { User, Settings, LogOut, History } from "lucide-react";
 import { authApi } from "@/lib/api/endpoints/auth";
@@ -15,45 +14,25 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export default function NavigationBar() {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const pathname = usePathname();
+interface NavigationBarProps {
+  user: AuthUser | null;
+}
+
+export default function NavigationBar({ user }: NavigationBarProps) {
   const router = useRouter();
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      setIsLoading(true);
-      try {
-        const currentUser = await authApi.getCurrentUser();
-        setUser(currentUser);
-      } catch (error) {
-        console.error("Failed to fetch user:", error);
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (pathname !== "/login") {
-      fetchUser();
-    } else {
-      setIsLoading(false);
-    }
-  }, [pathname]);
 
   const handleLogout = async () => {
     try {
       await authApi.logout();
-      setUser(null);
       router.push("/login");
+      router.refresh();
     } catch (error) {
       console.error("Logout failed:", error);
     }
   };
 
   return (
-    <nav className="flex justify-between items-center py-4 px-8 w-full">
+    <nav className="flex justify-between items-center py-4 px-8 w-full bg-gray-900/80 backdrop-blur-sm">
       <div className="flex items-center space-x-8 font-serif">
         <Link
           href="/"
@@ -88,7 +67,7 @@ export default function NavigationBar() {
       </div>
 
       <div className="font-serif">
-        {!isLoading && user && pathname !== "/login" && (
+        {user && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
