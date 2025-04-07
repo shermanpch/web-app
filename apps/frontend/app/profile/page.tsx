@@ -17,7 +17,7 @@ export default function ProfilePage() {
     error: userError,
   } = useQuery({
     queryKey: ["currentUser"],
-    queryFn: authApi.getCurrentUser,
+    queryFn: () => authApi.getCurrentUser(),
   });
 
   // Fetch user quota using React Query
