@@ -179,7 +179,9 @@ export default function ResultPage() {
               <h3 className="font-bold mb-1 sm:mb-2 text-gray-800">
                 Initial Hexagram Interpretation
               </h3>
-              <p className="text-justify text-gray-800">{reading.interpretation}</p>
+              <p className="text-justify text-gray-800">
+                {reading.interpretation}
+              </p>
             </div>
 
             <div>
@@ -195,7 +197,9 @@ export default function ResultPage() {
               <h3 className="font-bold mb-1 sm:mb-2 text-gray-800">
                 Resulting Hexagram ({reading.result.name})
               </h3>
-              <p className="text-justify text-gray-800">{reading.result.interpretation}</p>
+              <p className="text-justify text-gray-800">
+                {reading.result.interpretation}
+              </p>
             </div>
 
             <div>

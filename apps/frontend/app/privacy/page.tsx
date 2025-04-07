@@ -19,9 +19,9 @@ export default function PrivacyPolicyPage() {
           <div className="prose prose-lg max-w-none text-gray-800">
             <p className="lead">
               This Privacy Policy describes how I Ching Divination
-              (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) collects, uses,
-              and discloses your personal information when you use our website and
-              services.
+              (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) collects,
+              uses, and discloses your personal information when you use our
+              website and services.
             </p>
 
             <h2 className="text-2xl font-semibold mt-8 mb-6 font-serif">
@@ -81,7 +81,8 @@ export default function PrivacyPolicyPage() {
               <li>To comply with legal obligations</li>
               <li>To protect our rights, privacy, safety, or property</li>
               <li>
-                In connection with a business transfer (merger, acquisition, etc.)
+                In connection with a business transfer (merger, acquisition,
+                etc.)
               </li>
             </ul>
 
@@ -89,10 +90,10 @@ export default function PrivacyPolicyPage() {
               4. Data Security
             </h2>
             <p>
-              We implement appropriate security measures to protect your personal
-              information against unauthorized access, alteration, disclosure, or
-              destruction. However, no method of transmission over the Internet or
-              electronic storage is 100% secure.
+              We implement appropriate security measures to protect your
+              personal information against unauthorized access, alteration,
+              disclosure, or destruction. However, no method of transmission
+              over the Internet or electronic storage is 100% secure.
             </p>
 
             <h2 className="text-2xl font-semibold mt-8 mb-6 font-serif">
@@ -100,9 +101,9 @@ export default function PrivacyPolicyPage() {
             </h2>
             <p>
               You can access, update, or delete your account information by
-              logging into your account settings. You may also contact us directly
-              to request access to, correction of, or deletion of any personal
-              information we have about you.
+              logging into your account settings. You may also contact us
+              directly to request access to, correction of, or deletion of any
+              personal information we have about you.
             </p>
 
             <h2 className="text-2xl font-semibold mt-8 mb-6 font-serif">
@@ -111,19 +112,19 @@ export default function PrivacyPolicyPage() {
             <p>
               We use cookies and similar tracking technologies to track activity
               on our Service and hold certain information. You can instruct your
-              browser to refuse all cookies or to indicate when a cookie is being
-              sent.
+              browser to refuse all cookies or to indicate when a cookie is
+              being sent.
             </p>
 
             <h2 className="text-2xl font-semibold mt-8 mb-6 font-serif">
               7. Children&apos;s Privacy
             </h2>
             <p>
-              Our Service is not intended for children under the age of 13. We do
-              not knowingly collect personal information from children under 13.
-              If we become aware that we have collected personal information from
-              children without verification of parental consent, we take steps to
-              remove that information.
+              Our Service is not intended for children under the age of 13. We
+              do not knowingly collect personal information from children under
+              13. If we become aware that we have collected personal information
+              from children without verification of parental consent, we take
+              steps to remove that information.
             </p>
 
             <h2 className="text-2xl font-semibold mt-8 mb-6 font-serif">
@@ -139,8 +140,8 @@ export default function PrivacyPolicyPage() {
               9. Contact Us
             </h2>
             <p>
-              If you have any questions about this Privacy Policy, please contact
-              us at:
+              If you have any questions about this Privacy Policy, please
+              contact us at:
               <br />
               <a
                 href="mailto:support@ichingdivination.com"

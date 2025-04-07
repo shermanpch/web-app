@@ -89,8 +89,12 @@ export default function PricingPage() {
               )}
 
               <div className="mb-6">
-                <h2 className="text-2xl font-bold mb-2 text-gray-800">{tier.name}</h2>
-                <div className="text-3xl font-bold mb-3 text-gray-800">{tier.price}</div>
+                <h2 className="text-2xl font-bold mb-2 text-gray-800">
+                  {tier.name}
+                </h2>
+                <div className="text-3xl font-bold mb-3 text-gray-800">
+                  {tier.price}
+                </div>
                 <p className="text-gray-600">{tier.description}</p>
               </div>
 

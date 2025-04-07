@@ -148,7 +148,9 @@ export default function ResetPasswordPage() {
       {/* Header */}
       <ContentContainer className="mb-8">
         <Heading>I Ching Divination</Heading>
-        <p className="text-xl text-gray-300 font-serif text-center">Reset your password</p>
+        <p className="text-xl text-gray-300 font-serif text-center">
+          Reset your password
+        </p>
       </ContentContainer>
 
       {/* Form */}

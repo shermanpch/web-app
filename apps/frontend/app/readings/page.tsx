@@ -182,7 +182,9 @@ export default function ReadingsPage() {
         )}
 
         {isLoading ? (
-          <div className="text-gray-200 text-center mt-6">Loading your readings...</div>
+          <div className="text-gray-200 text-center mt-6">
+            Loading your readings...
+          </div>
         ) : error ? (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mt-6">
             <p className="font-medium">Error loading readings</p>
@@ -387,7 +389,7 @@ export default function ReadingsPage() {
                   </div>
                 ))}
             </div>
-            
+
             {/* Pagination Controls */}
             <div className="flex justify-center items-center space-x-4 mt-8">
               <Button
@@ -412,7 +414,7 @@ export default function ReadingsPage() {
             </div>
           </>
         )}
-        
+
         {/* Delete Confirmation Dialogs */}
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <DialogContent>
@@ -463,7 +465,10 @@ export default function ReadingsPage() {
           </DialogContent>
         </Dialog>
 
-        <Dialog open={showDeleteAllDialog} onOpenChange={setShowDeleteAllDialog}>
+        <Dialog
+          open={showDeleteAllDialog}
+          onOpenChange={setShowDeleteAllDialog}
+        >
           <DialogContent>
             <DialogHeader>
               <DialogTitle className="flex items-center text-red-600">
@@ -471,8 +476,8 @@ export default function ReadingsPage() {
                 Delete All Readings
               </DialogTitle>
               <DialogDescription className="pt-2">
-                Are you sure you want to delete <strong>all</strong> your I Ching
-                readings? This action <strong>cannot</strong> be undone.
+                Are you sure you want to delete <strong>all</strong> your I
+                Ching readings? This action <strong>cannot</strong> be undone.
               </DialogDescription>
             </DialogHeader>
 

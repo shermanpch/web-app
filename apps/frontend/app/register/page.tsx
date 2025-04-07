@@ -109,7 +109,9 @@ export default function RegisterPage() {
           {(validationError || signupMutation.error) && (
             <div className="flex items-center gap-2 text-sm text-red-600 font-medium mb-6 p-2 bg-red-50 rounded-lg">
               <AlertCircle className="h-4 w-4" />
-              <p>{validationError || (signupMutation.error as Error)?.message}</p>
+              <p>
+                {validationError || (signupMutation.error as Error)?.message}
+              </p>
             </div>
           )}
 
@@ -187,7 +189,10 @@ export default function RegisterPage() {
                 }
                 className="border-gray-400 data-[state=checked]:bg-[#B88A6A] data-[state=checked]:border-[#B88A6A]"
               />
-              <Label htmlFor="terms" className="text-sm text-gray-700 font-serif">
+              <Label
+                htmlFor="terms"
+                className="text-sm text-gray-700 font-serif"
+              >
                 I agree to the{" "}
                 <Link
                   href="/terms"

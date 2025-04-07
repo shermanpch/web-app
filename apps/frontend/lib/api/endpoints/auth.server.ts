@@ -8,8 +8,8 @@ export const serverAuthApi = {
   async getCurrentUser() {
     try {
       const cookieStore = await cookies();
-      const authToken = cookieStore.get('auth_token')?.value;
-      
+      const authToken = cookieStore.get("auth_token")?.value;
+
       if (!authToken) {
         return null;
       }
@@ -20,4 +20,4 @@ export const serverAuthApi = {
       return null;
     }
   },
-}; 
+};

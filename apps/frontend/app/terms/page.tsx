@@ -22,8 +22,8 @@ export default function TermsOfServicePage() {
             </h2>
             <p>
               Welcome to I Ching Divination. These Terms of Service govern your
-              use of our website and services. By accessing or using our service,
-              you agree to be bound by these Terms.
+              use of our website and services. By accessing or using our
+              service, you agree to be bound by these Terms.
             </p>
 
             <h2 className="text-2xl font-semibold mt-8 mb-6 font-serif">
@@ -45,9 +45,9 @@ export default function TermsOfServicePage() {
             </h2>
             <p>
               When you create an account with us, you must provide information
-              that is accurate, complete, and current at all times. Failure to do
-              so constitutes a breach of the Terms, which may result in immediate
-              termination of your account on our Service.
+              that is accurate, complete, and current at all times. Failure to
+              do so constitutes a breach of the Terms, which may result in
+              immediate termination of your account on our Service.
             </p>
             <p>
               You are responsible for safeguarding the password that you use to
@@ -87,12 +87,12 @@ export default function TermsOfServicePage() {
               6. Limitation of Liability
             </h2>
             <p>
-              In no event shall I Ching Divination, nor its directors, employees,
-              partners, agents, suppliers, or affiliates, be liable for any
-              indirect, incidental, special, consequential or punitive damages,
-              including without limitation, loss of profits, data, use, goodwill,
-              or other intangible losses, resulting from your access to or use of
-              or inability to access or use the Service.
+              In no event shall I Ching Divination, nor its directors,
+              employees, partners, agents, suppliers, or affiliates, be liable
+              for any indirect, incidental, special, consequential or punitive
+              damages, including without limitation, loss of profits, data, use,
+              goodwill, or other intangible losses, resulting from your access
+              to or use of or inability to access or use the Service.
             </p>
 
             <h2 className="text-2xl font-semibold mt-8 mb-6 font-serif">
@@ -101,9 +101,9 @@ export default function TermsOfServicePage() {
             <p>
               We reserve the right, at our sole discretion, to modify or replace
               these Terms at any time. If a revision is material, we will try to
-              provide at least 30 days&apos; notice prior to any new terms taking
-              effect. What constitutes a material change will be determined at our
-              sole discretion.
+              provide at least 30 days&apos; notice prior to any new terms
+              taking effect. What constitutes a material change will be
+              determined at our sole discretion.
             </p>
 
             <h2 className="text-2xl font-semibold mt-8 mb-6 font-serif">

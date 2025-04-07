@@ -246,7 +246,8 @@ export const authApi = {
       }
 
       // Use internal URL for server-side calls
-      const baseUrl = typeof window === 'undefined' ? INTERNAL_API_URL : API_URL;
+      const baseUrl =
+        typeof window === "undefined" ? INTERNAL_API_URL : API_URL;
       const response = await axios.get(`${baseUrl}/api/auth/me`, config);
       return response.data;
     } catch (error: any) {
@@ -254,7 +255,7 @@ export const authApi = {
       if (error?.response?.status === 401) {
         return null;
       }
-      
+
       // For other errors, log and rethrow
       console.error("Error fetching current user:", error);
       throw error;

@@ -83,7 +83,9 @@ export default function ProfilePage() {
         )}
 
         {isLoading ? (
-          <div className="text-gray-200 text-center mt-6">Loading profile data...</div>
+          <div className="text-gray-200 text-center mt-6">
+            Loading profile data...
+          </div>
         ) : (
           <>
             {/* Account Info Section */}
