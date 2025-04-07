@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, FormEvent, useEffect } from "react";
+import React, { useState, FormEvent, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -14,7 +14,8 @@ import Heading from "@/components/ui/heading";
 import AuthInput from "@/components/auth/AuthInput";
 import AuthFormWrapper from "@/components/auth/AuthFormWrapper";
 
-export default function ResetPasswordPage() {
+// Separate component that uses useSearchParams
+function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -155,6 +156,55 @@ export default function ResetPasswordPage() {
   );
 
   return (
+    <AuthFormWrapper
+      title="Reset Password"
+      error={validationError || (resetPasswordMutation.error as Error)?.message}
+      footerContent={footerContent}
+    >
+      <form className="space-y-6" onSubmit={handleSubmit}>
+        <AuthInput
+          id="newPassword"
+          label="New Password"
+          type="password"
+          placeholder="Enter new password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          icon={Lock}
+        />
+
+        <AuthInput
+          id="confirmPassword"
+          label="Confirm Password"
+          type="password"
+          placeholder="Confirm new password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          icon={Lock}
+        />
+
+        <Button
+          type="submit"
+          disabled={resetPasswordMutation.isPending || !accessToken}
+          className="w-full bg-[#B88A6A] hover:bg-[#a87a5a] text-white font-semibold py-6 rounded-lg text-lg mt-8 h-auto disabled:opacity-50"
+        >
+          {resetPasswordMutation.isPending ? "Resetting..." : "Reset Password"}
+        </Button>
+      </form>
+    </AuthFormWrapper>
+  );
+}
+
+// Loading fallback component
+function LoadingFallback() {
+  return (
+    <div className="flex items-center justify-center p-8">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#B88A6A]"></div>
+    </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
     <PageLayout>
       <ContentContainer>
         {/* Header */}
@@ -165,45 +215,9 @@ export default function ResetPasswordPage() {
           </p>
         </div>
 
-        <AuthFormWrapper
-          title="Reset Password"
-          error={
-            validationError || (resetPasswordMutation.error as Error)?.message
-          }
-          footerContent={footerContent}
-        >
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <AuthInput
-              id="newPassword"
-              label="New Password"
-              type="password"
-              placeholder="Enter new password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              icon={Lock}
-            />
-
-            <AuthInput
-              id="confirmPassword"
-              label="Confirm Password"
-              type="password"
-              placeholder="Confirm new password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              icon={Lock}
-            />
-
-            <Button
-              type="submit"
-              disabled={resetPasswordMutation.isPending || !accessToken}
-              className="w-full bg-[#B88A6A] hover:bg-[#a87a5a] text-white font-semibold py-6 rounded-lg text-lg mt-8 h-auto disabled:opacity-50"
-            >
-              {resetPasswordMutation.isPending
-                ? "Resetting Password..."
-                : "Reset Password"}
-            </Button>
-          </form>
-        </AuthFormWrapper>
+        <Suspense fallback={<LoadingFallback />}>
+          <ResetPasswordContent />
+        </Suspense>
       </ContentContainer>
     </PageLayout>
   );
