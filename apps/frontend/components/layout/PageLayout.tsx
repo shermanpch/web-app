@@ -13,7 +13,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
       {/* Background image */}
       <div className="fixed inset-0 z-0 w-full h-full">
         <Image
-          src="/assets/background.png"
+          src="/assets/background.png?v=2"
           alt="Background"
           fill
           priority

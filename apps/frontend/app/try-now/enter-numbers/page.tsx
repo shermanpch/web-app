@@ -6,6 +6,8 @@ import PageLayout from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import ContentContainer from "@/components/layout/ContentContainer";
+import Heading from "@/components/ui/heading";
 
 export default function EnterNumbersPage() {
   const router = useRouter();
@@ -39,82 +41,79 @@ export default function EnterNumbersPage() {
 
   return (
     <PageLayout>
-      <div className="flex min-h-screen">
-        <div className="flex flex-col items-center justify-center text-center w-full max-w-2xl mx-auto px-4 py-12">
-          {/* Title */}
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-12 font-serif">
-            Focus Your Mind
-          </h1>
+      <ContentContainer>
+        <Heading>Focus Your Mind</Heading>
 
-          {/* Instructions */}
-          <p className="text-xl text-gray-300 mb-6 font-serif text-justify">
-            Take a moment, breathe deeply, and focus on your question.
-          </p>
-          <p className="text-xl text-gray-300 mb-12 font-serif text-justify">
-            Then, think of three random 3-digit numbers and enter them below.
-          </p>
+        {/* Instructions */}
+        <p className="text-xl text-gray-200 font-serif leading-relaxed text-left mb-6">
+          Take a moment, breathe deeply, and focus on your question.
+        </p>
+        <p className="text-xl text-gray-200 font-serif leading-relaxed text-left mb-12">
+          Then, think of three random 3-digit numbers and enter them below.
+        </p>
 
-          {/* Number Inputs */}
-          <div className="w-full max-w-xs mx-auto space-y-8">
-            <div>
-              <Label
-                htmlFor="firstNumber"
-                className="text-gray-400 font-serif mb-2 block"
-              >
-                First Number
-              </Label>
-              <Input
-                id="firstNumber"
-                type="number"
-                min="0"
-                max="999"
-                placeholder="Enter first number (0-999)"
-                value={firstNumber}
-                onChange={(e) => setFirstNumber(e.target.value)}
-                className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-800 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
-              />
-            </div>
-
-            <div>
-              <Label
-                htmlFor="secondNumber"
-                className="text-gray-400 font-serif mb-2 block"
-              >
-                Second Number
-              </Label>
-              <Input
-                id="secondNumber"
-                type="number"
-                min="0"
-                max="999"
-                placeholder="Enter second number (0-999)"
-                value={secondNumber}
-                onChange={(e) => setSecondNumber(e.target.value)}
-                className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-800 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
-              />
-            </div>
-
-            <div>
-              <Label
-                htmlFor="thirdNumber"
-                className="text-gray-400 font-serif mb-2 block"
-              >
-                Third Number
-              </Label>
-              <Input
-                id="thirdNumber"
-                type="number"
-                min="0"
-                max="999"
-                placeholder="Enter third number (0-999)"
-                value={thirdNumber}
-                onChange={(e) => setThirdNumber(e.target.value)}
-                className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-800 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
-              />
-            </div>
+        {/* Number Inputs */}
+        <div className="w-full max-w-xs mx-auto space-y-8">
+          <div>
+            <Label
+              htmlFor="firstNumber"
+              className="text-gray-400 font-serif mb-2 block"
+            >
+              First Number
+            </Label>
+            <Input
+              id="firstNumber"
+              type="number"
+              min="0"
+              max="999"
+              placeholder="Enter first number (0-999)"
+              value={firstNumber}
+              onChange={(e) => setFirstNumber(e.target.value)}
+              className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-800 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
+            />
           </div>
 
-          {/* Next Button */}
+          <div>
+            <Label
+              htmlFor="secondNumber"
+              className="text-gray-400 font-serif mb-2 block"
+            >
+              Second Number
+            </Label>
+            <Input
+              id="secondNumber"
+              type="number"
+              min="0"
+              max="999"
+              placeholder="Enter second number (0-999)"
+              value={secondNumber}
+              onChange={(e) => setSecondNumber(e.target.value)}
+              className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-800 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
+            />
+          </div>
+
+          <div>
+            <Label
+              htmlFor="thirdNumber"
+              className="text-gray-400 font-serif mb-2 block"
+            >
+              Third Number
+            </Label>
+            <Input
+              id="thirdNumber"
+              type="number"
+              min="0"
+              max="999"
+              placeholder="Enter third number (0-999)"
+              value={thirdNumber}
+              onChange={(e) => setThirdNumber(e.target.value)}
+              className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-800 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
+            />
+          </div>
+        </div>
+
+        {/* Next Button */}
+        <div className="text-center">
           <Button
             onClick={handleNumberSubmit}
             disabled={!isFormValid}
@@ -123,7 +122,7 @@ export default function EnterNumbersPage() {
             Next
           </Button>
         </div>
-      </div>
+      </ContentContainer>
     </PageLayout>
   );
 }

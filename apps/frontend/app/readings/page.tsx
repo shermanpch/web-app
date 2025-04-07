@@ -4,6 +4,8 @@ import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { Trash2, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import PageLayout from "@/components/layout/PageLayout";
+import ContentContainer from "@/components/layout/ContentContainer";
+import Heading from "@/components/ui/heading";
 import { userApi } from "@/lib/api/endpoints/user";
 import { UserReadingHistoryEntry } from "@/types/divination";
 import { Button } from "@/components/ui/button";
@@ -21,7 +23,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 export default function ReadingsPage() {
   const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+  const pageSize = 5;
 
   // Fetch readings using React Query with pagination
   const {
@@ -134,14 +136,11 @@ export default function ReadingsPage() {
 
   return (
     <PageLayout>
-      <div className="w-full max-w-5xl mx-auto px-4 py-12">
-        {/* Centered title */}
-        <h1 className="text-4xl md:text-5xl font-bold text-white mb-8 font-serif text-center">
-          Your Reading History
-        </h1>
+      <ContentContainer className="max-w-5xl">
+        <Heading>Your Reading History</Heading>
 
         {/* Search Bar */}
-        <div className="mb-4 mx-auto max-w-lg">
+        <div className="mt-6">
           <div className="relative">
             <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
               <svg
@@ -169,7 +168,7 @@ export default function ReadingsPage() {
 
         {/* Delete All button moved below search */}
         {readings.length > 0 && (
-          <div className="flex justify-end mb-6">
+          <div className="flex justify-end mt-4">
             <Button
               variant="destructive"
               onClick={handleDeleteAllClick}
@@ -183,9 +182,9 @@ export default function ReadingsPage() {
         )}
 
         {isLoading ? (
-          <div className="text-white text-center">Loading your readings...</div>
+          <div className="text-gray-200 text-center mt-6">Loading your readings...</div>
         ) : error ? (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mt-6">
             <p className="font-medium">Error loading readings</p>
             <p className="text-sm">{(error as Error).message}</p>
             <Button
@@ -197,7 +196,7 @@ export default function ReadingsPage() {
             </Button>
           </div>
         ) : readings.length === 0 && currentPage === 1 ? (
-          <div className="bg-[#EDE6D6] rounded-2xl p-8 text-center shadow-lg">
+          <div className="bg-[#EDE6D6] rounded-2xl p-8 text-center shadow-lg mt-6">
             <p className="text-gray-800 text-lg font-serif">
               You haven&apos;t made any I Ching readings yet.
             </p>
@@ -209,7 +208,7 @@ export default function ReadingsPage() {
             </Button>
           </div>
         ) : filteredReadings.length === 0 ? (
-          <div className="bg-[#EDE6D6] rounded-2xl p-8 text-center shadow-lg">
+          <div className="bg-[#EDE6D6] rounded-2xl p-8 text-center shadow-lg mt-6">
             <p className="text-gray-800 text-lg font-serif">
               No readings match your search.
             </p>
@@ -223,7 +222,7 @@ export default function ReadingsPage() {
           </div>
         ) : (
           <>
-            <div className="space-y-6">
+            <div className="space-y-6 mt-6">
               {filteredReadings
                 .sort(
                   (a: UserReadingHistoryEntry, b: UserReadingHistoryEntry) =>
@@ -388,134 +387,131 @@ export default function ReadingsPage() {
                   </div>
                 ))}
             </div>
-
+            
             {/* Pagination Controls */}
-            <div className="mt-8 flex justify-center items-center space-x-4">
+            <div className="flex justify-center items-center space-x-4 mt-8">
               <Button
                 onClick={goToPreviousPage}
                 disabled={currentPage === 1 || isLoading}
-                variant="outline"
-                className="flex items-center space-x-2 bg-[#EDE6D6] hover:bg-[#e0d9c9] text-gray-800"
+                className="bg-[#D8CDBA] hover:bg-[#C8BDA9] text-gray-800"
               >
-                <ChevronLeft className="h-4 w-4" />
-                <span>Previous</span>
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Previous
               </Button>
-
-              <span className="text-white">Page {currentPage}</span>
-
+              <span className="text-gray-200 font-serif">
+                Page {currentPage}
+              </span>
               <Button
                 onClick={goToNextPage}
-                disabled={isFetching || readings.length < pageSize || isLoading}
-                variant="outline"
-                className="flex items-center space-x-2 bg-[#EDE6D6] hover:bg-[#e0d9c9] text-gray-800"
+                disabled={readings.length < pageSize || isLoading}
+                className="bg-[#D8CDBA] hover:bg-[#C8BDA9] text-gray-800"
               >
-                <span>Next</span>
-                <ChevronRight className="h-4 w-4" />
+                Next
+                <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </>
         )}
-      </div>
+        
+        {/* Delete Confirmation Dialogs */}
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center text-red-600">
+                <AlertTriangle className="h-5 w-5 mr-2" />
+                Delete Reading
+              </DialogTitle>
+              <DialogDescription className="pt-2">
+                Are you sure you want to delete this reading? This action cannot
+                be undone.
+              </DialogDescription>
+            </DialogHeader>
 
-      {/* Delete Single Reading Confirmation Dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center text-red-600">
-              <AlertTriangle className="h-5 w-5 mr-2" />
-              Delete Reading
-            </DialogTitle>
-            <DialogDescription className="pt-2">
-              Are you sure you want to delete this reading? This action cannot
-              be undone.
-            </DialogDescription>
-          </DialogHeader>
+            {deleteReadingMutation.error && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
+                <p className="text-sm">
+                  {(deleteReadingMutation.error as Error).message}
+                </p>
+              </div>
+            )}
 
-          {deleteReadingMutation.error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
-              <p className="text-sm">
-                {(deleteReadingMutation.error as Error).message}
-              </p>
-            </div>
-          )}
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(false)}
+                disabled={deleteReadingMutation.isPending}
+                className="border-gray-300"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmDeleteReading}
+                disabled={deleteReadingMutation.isPending}
+                className="ml-2 bg-red-600 hover:bg-red-700"
+              >
+                {deleteReadingMutation.isPending ? (
+                  <div className="flex items-center">
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
+                    Deleting...
+                  </div>
+                ) : (
+                  "Delete"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteDialog(false)}
-              disabled={deleteReadingMutation.isPending}
-              className="border-gray-300"
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={confirmDeleteReading}
-              disabled={deleteReadingMutation.isPending}
-              className="ml-2 bg-red-600 hover:bg-red-700"
-            >
-              {deleteReadingMutation.isPending ? (
-                <div className="flex items-center">
-                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
-                  Deleting...
-                </div>
-              ) : (
-                "Delete"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <Dialog open={showDeleteAllDialog} onOpenChange={setShowDeleteAllDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center text-red-600">
+                <AlertTriangle className="h-5 w-5 mr-2" />
+                Delete All Readings
+              </DialogTitle>
+              <DialogDescription className="pt-2">
+                Are you sure you want to delete <strong>all</strong> your I Ching
+                readings? This action <strong>cannot</strong> be undone.
+              </DialogDescription>
+            </DialogHeader>
 
-      {/* Delete All Readings Confirmation Dialog */}
-      <Dialog open={showDeleteAllDialog} onOpenChange={setShowDeleteAllDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center text-red-600">
-              <AlertTriangle className="h-5 w-5 mr-2" />
-              Delete All Readings
-            </DialogTitle>
-            <DialogDescription className="pt-2">
-              Are you sure you want to delete <strong>all</strong> your I Ching
-              readings? This action <strong>cannot</strong> be undone.
-            </DialogDescription>
-          </DialogHeader>
+            {deleteAllReadingsMutation.error && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
+                <p className="text-sm">
+                  {(deleteAllReadingsMutation.error as Error).message}
+                </p>
+              </div>
+            )}
 
-          {deleteAllReadingsMutation.error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
-              <p className="text-sm">
-                {(deleteAllReadingsMutation.error as Error).message}
-              </p>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteAllDialog(false)}
-              disabled={deleteAllReadingsMutation.isPending}
-              className="border-gray-300"
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={confirmDeleteAllReadings}
-              disabled={deleteAllReadingsMutation.isPending}
-              className="ml-2 bg-red-600 hover:bg-red-700"
-            >
-              {deleteAllReadingsMutation.isPending ? (
-                <div className="flex items-center">
-                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
-                  Deleting...
-                </div>
-              ) : (
-                "Delete All"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteAllDialog(false)}
+                disabled={deleteAllReadingsMutation.isPending}
+                className="border-gray-300"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmDeleteAllReadings}
+                disabled={deleteAllReadingsMutation.isPending}
+                className="ml-2 bg-red-600 hover:bg-red-700"
+              >
+                {deleteAllReadingsMutation.isPending ? (
+                  <div className="flex items-center">
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
+                    Deleting...
+                  </div>
+                ) : (
+                  "Delete All"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </ContentContainer>
     </PageLayout>
   );
 }

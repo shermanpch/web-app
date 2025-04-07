@@ -7,6 +7,7 @@ import {
 } from "@/types/auth";
 
 const API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+const INTERNAL_API_URL = process.env.INTERNAL_BACKEND_API_URL || API_URL;
 
 export const authApi = {
   /**
@@ -228,17 +229,35 @@ export const authApi = {
   },
 
   /**
-   * Get current user information using auth cookie
+   * Get current user data - can be used both client and server side
+   * @param authToken Optional auth token for server-side calls
    */
-  async getCurrentUser() {
+  async getCurrentUser(authToken?: string) {
     try {
-      const response = await axios.get(`${API_URL}/api/auth/me`, {
+      const config: any = {
         withCredentials: true,
-      });
+      };
+
+      // If auth token is provided (server-side), add it to headers
+      if (authToken) {
+        config.headers = {
+          Cookie: `auth_token=${authToken}`,
+        };
+      }
+
+      // Use internal URL for server-side calls
+      const baseUrl = typeof window === 'undefined' ? INTERNAL_API_URL : API_URL;
+      const response = await axios.get(`${baseUrl}/api/auth/me`, config);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
+      // Return null for 401 Unauthorized (not logged in)
+      if (error?.response?.status === 401) {
+        return null;
+      }
+      
+      // For other errors, log and rethrow
       console.error("Error fetching current user:", error);
-      return null;
+      throw error;
     }
   },
 };

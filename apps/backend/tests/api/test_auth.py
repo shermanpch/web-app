@@ -254,3 +254,191 @@ class TestAuthentication(BaseTest):
         # Verify user is gone by trying to login
         verify_login = client.post("/api/auth/login", json=test_user)
         assert verify_login.status_code == 401, "User should no longer exist"
+
+    def test_login_with_remember_me(self, client, test_user):
+        """Test user login with remember_me flag set to True."""
+        # ARRANGE
+        self.logger.info("Testing user login with remember_me=True")
+        new_test_user = {
+            "email": f"remember_me_test_{test_user['email']}",
+            "password": test_user["password"],
+        }
+
+        # Create a user for this test
+        signup_response = client.post("/api/auth/signup", json=new_test_user)
+        assert signup_response.status_code == 200, "Failed to create test user"
+
+        # ACT - Login with remember_me=True
+        login_data = {**new_test_user, "remember_me": True}
+        response = client.post("/api/auth/login", json=login_data)
+
+        # ASSERT
+        data = assert_successful_response(response)
+        assert_has_fields(data, ["data"])
+        assert_has_fields(data["data"], ["user"])
+
+        # Check for cookies in response
+        assert "Set-Cookie" in response.headers, "Response should set cookies"
+        cookies = response.cookies
+        assert "auth_token" in cookies, "Response should set auth_token cookie"
+        assert "refresh_token" in cookies, "Response should set refresh_token cookie"
+
+        # Get all Set-Cookie headers
+        cookie_headers = [
+            v for k, v in response.headers.items() if k.lower() == "set-cookie"
+        ]
+        self.logger.info(f"Cookie headers: {cookie_headers}")
+
+        # Handle case where both cookies are in a single header separated by comma
+        all_cookie_parts = []
+        for header in cookie_headers:
+            # Split by comma, but only if not inside quotes (to handle commas in cookie values)
+            parts = header.split(", ")
+            all_cookie_parts.extend(parts)
+
+        # Check both cookies for max-age attribute
+        auth_cookie = next(
+            (c for c in all_cookie_parts if c.startswith("auth_token=")), None
+        )
+        refresh_cookie = next(
+            (c for c in all_cookie_parts if c.startswith("refresh_token=")), None
+        )
+
+        assert auth_cookie, "auth_token cookie not found"
+        assert refresh_cookie, "refresh_token cookie not found"
+
+        # Verify max-age values
+        auth_max_age = next(
+            (
+                attr.split("=")[1]
+                for attr in auth_cookie.split("; ")
+                if attr.startswith("Max-Age=")
+            ),
+            None,
+        )
+        refresh_max_age = next(
+            (
+                attr.split("=")[1]
+                for attr in refresh_cookie.split("; ")
+                if attr.startswith("Max-Age=")
+            ),
+            None,
+        )
+
+        assert auth_max_age, "Max-Age not found in auth_token cookie"
+        assert refresh_max_age, "Max-Age not found in refresh_token cookie"
+
+        # Verify the cookies have 30-day expiry (2592000 seconds)
+        assert (
+            auth_max_age == "2592000"
+        ), f"auth_token should have 30-day expiry, got {auth_max_age}"
+        assert (
+            refresh_max_age == "2592000"
+        ), f"refresh_token should have 30-day expiry, got {refresh_max_age}"
+
+        # Set cookies for cleanup
+        client.cookies.set("auth_token", cookies.get("auth_token"))
+        client.cookies.set("refresh_token", cookies.get("refresh_token"))
+
+        # Cleanup
+        user_data = extract_user_data(signup_response)
+        user_id = user_data.get("id")
+        if user_id:
+            delete_response = client.delete(f"/api/auth/users/{user_id}")
+            self.logger.info(
+                f"Deleted test user with status: {delete_response.status_code}"
+            )
+
+    def test_login_without_remember_me(self, client, test_user):
+        """Test user login with remember_me flag set to False."""
+        # ARRANGE
+        self.logger.info("Testing user login with remember_me=False")
+        new_test_user = {
+            "email": f"no_remember_test_{test_user['email']}",
+            "password": test_user["password"],
+        }
+
+        # Create a user for this test
+        signup_response = client.post("/api/auth/signup", json=new_test_user)
+        assert signup_response.status_code == 200, "Failed to create test user"
+
+        # ACT - Login with remember_me=False
+        login_data = {**new_test_user, "remember_me": False}
+        response = client.post("/api/auth/login", json=login_data)
+
+        # ASSERT
+        data = assert_successful_response(response)
+        assert_has_fields(data, ["data"])
+        assert_has_fields(data["data"], ["user"])
+
+        # Check for cookies in response
+        assert "Set-Cookie" in response.headers, "Response should set cookies"
+        cookies = response.cookies
+        assert "auth_token" in cookies, "Response should set auth_token cookie"
+        assert "refresh_token" in cookies, "Response should set refresh_token cookie"
+
+        # Get all Set-Cookie headers
+        cookie_headers = [
+            v for k, v in response.headers.items() if k.lower() == "set-cookie"
+        ]
+        self.logger.info(f"Cookie headers: {cookie_headers}")
+
+        # Handle case where both cookies are in a single header separated by comma
+        all_cookie_parts = []
+        for header in cookie_headers:
+            # Split by comma, but only if not inside quotes (to handle commas in cookie values)
+            parts = header.split(", ")
+            all_cookie_parts.extend(parts)
+
+        # Check both cookies for max-age attribute
+        auth_cookie = next(
+            (c for c in all_cookie_parts if c.startswith("auth_token=")), None
+        )
+        refresh_cookie = next(
+            (c for c in all_cookie_parts if c.startswith("refresh_token=")), None
+        )
+
+        assert auth_cookie, "auth_token cookie not found"
+        assert refresh_cookie, "refresh_token cookie not found"
+
+        # Verify max-age values
+        auth_max_age = next(
+            (
+                attr.split("=")[1]
+                for attr in auth_cookie.split("; ")
+                if attr.startswith("Max-Age=")
+            ),
+            None,
+        )
+        refresh_max_age = next(
+            (
+                attr.split("=")[1]
+                for attr in refresh_cookie.split("; ")
+                if attr.startswith("Max-Age=")
+            ),
+            None,
+        )
+
+        assert auth_max_age, "Max-Age not found in auth_token cookie"
+        assert refresh_max_age, "Max-Age not found in refresh_token cookie"
+
+        # Verify the cookies have standard expiry
+        assert (
+            auth_max_age == "3600"
+        ), f"auth_token should have 1-hour expiry, got {auth_max_age}"
+        assert (
+            refresh_max_age == "604800"
+        ), f"refresh_token should have 7-day expiry, got {refresh_max_age}"
+
+        # Set cookies for cleanup
+        client.cookies.set("auth_token", cookies.get("auth_token"))
+        client.cookies.set("refresh_token", cookies.get("refresh_token"))
+
+        # Cleanup
+        user_data = extract_user_data(signup_response)
+        user_id = user_data.get("id")
+        if user_id:
+            delete_response = client.delete(f"/api/auth/users/{user_id}")
+            self.logger.info(
+                f"Deleted test user with status: {delete_response.status_code}"
+            )

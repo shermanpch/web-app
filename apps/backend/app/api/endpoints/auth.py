@@ -38,6 +38,7 @@ def set_auth_cookies(
     access_token: str,
     refresh_token: str,
     expires_in: int = 3600,
+    remember_me: bool = False,
 ) -> None:
     """
     Set secure HTTP-only cookies for authentication.
@@ -47,13 +48,17 @@ def set_auth_cookies(
         access_token: JWT access token
         refresh_token: JWT refresh token
         expires_in: Token expiration time in seconds
+        remember_me: Whether to set a longer expiration time
     """
 
     # Set access token cookie (shorter lifespan)
+    access_token_max_age = (
+        30 * 24 * 60 * 60 if remember_me else expires_in
+    )  # 30 days if remember_me
     response.set_cookie(
         key="auth_token",
         value=access_token,
-        max_age=expires_in,
+        max_age=access_token_max_age,
         httponly=True,
         secure=True,
         samesite="None",
@@ -61,7 +66,9 @@ def set_auth_cookies(
     )
 
     # Set refresh token cookie (longer lifespan)
-    refresh_token_max_age = 7 * 24 * 60 * 60  # 7 days
+    refresh_token_max_age = (
+        30 * 24 * 60 * 60 if remember_me else 7 * 24 * 60 * 60
+    )  # 30 days if remember_me, else 7 days
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
@@ -124,6 +131,13 @@ async def refresh_session(response: Response, request: Request) -> UserSessionRe
                 detail="Refresh token required",
             )
 
+        # Get the current auth_token cookie to check its expiration
+        auth_token = request.cookies.get("auth_token")
+        auth_token_max_age = request.cookies.get("auth_token", {}).get("max-age", 3600)
+
+        # If auth_token max-age is greater than default, it means remember_me was true
+        remember_me = auth_token_max_age > 3600
+
         # Attempt to refresh the session
         result = await refresh_user_session(refresh_token)
 
@@ -131,12 +145,13 @@ async def refresh_session(response: Response, request: Request) -> UserSessionRe
         session_data = result.get("session", {})
         user_data = result.get("user", {})
 
-        # Set new cookies
+        # Set new cookies with the same remember_me state
         set_auth_cookies(
             response,
             access_token=session_data.get("access_token", ""),
             refresh_token=session_data.get("refresh_token", ""),
             expires_in=session_data.get("expires_in", 3600),
+            remember_me=remember_me,
         )
 
         return UserSessionResponse(
@@ -253,12 +268,13 @@ async def login(user: UserLogin, response: Response) -> UserSessionResponse:
 
         logger.info(f"Successful login for user: {user.email}")
 
-        # Set authentication cookies
+        # Set authentication cookies with remember_me flag
         set_auth_cookies(
             response,
             access_token=session_data.get("access_token", ""),
             refresh_token=session_data.get("refresh_token", ""),
             expires_in=session_data.get("expires_in", 3600),
+            remember_me=user.remember_me,
         )
 
         return UserSessionResponse(

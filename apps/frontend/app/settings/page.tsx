@@ -2,19 +2,18 @@
 
 import ChangePasswordForm from "@/components/settings/ChangePasswordForm";
 import PageLayout from "@/components/layout/PageLayout";
+import ContentContainer from "@/components/layout/ContentContainer";
+import Heading from "@/components/ui/heading";
 
 export default function SettingsPage() {
   return (
     <PageLayout>
-      <div className="flex min-h-screen">
-        <div className="flex flex-col items-center justify-center text-center w-full max-w-4xl mx-auto px-4 py-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-12 font-serif">
-            Change Password
-          </h1>
-
+      <ContentContainer className="max-w-4xl">
+        <Heading>Change Password</Heading>
+        <div className="mt-8">
           <ChangePasswordForm />
         </div>
-      </div>
+      </ContentContainer>
     </PageLayout>
   );
 }

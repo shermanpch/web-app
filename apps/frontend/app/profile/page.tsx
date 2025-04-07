@@ -2,6 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 import PageLayout from "@/components/layout/PageLayout";
+import ContentContainer from "@/components/layout/ContentContainer";
+import Heading from "@/components/ui/heading";
 import { authApi } from "@/lib/api/endpoints/auth";
 import { userApi } from "@/lib/api/endpoints/user";
 import { UserQuotaResponse } from "@/types/user";
@@ -71,23 +73,21 @@ export default function ProfilePage() {
 
   return (
     <PageLayout>
-      <div className="w-full max-w-5xl mx-auto px-4 py-12">
-        <h1 className="text-4xl md:text-5xl font-bold text-white mb-12 font-serif text-center">
-          My Profile
-        </h1>
+      <ContentContainer className="max-w-5xl">
+        <Heading>My Profile</Heading>
 
         {error && (
-          <div className="text-red-400 bg-red-900/20 py-2 px-4 rounded-lg mb-6 text-center">
+          <div className="text-red-400 bg-red-900/20 py-2 px-4 rounded-lg text-center mt-6">
             {(error as Error).message || "Error loading profile data"}
           </div>
         )}
 
         {isLoading ? (
-          <div className="text-white text-center">Loading profile data...</div>
+          <div className="text-gray-200 text-center mt-6">Loading profile data...</div>
         ) : (
           <>
             {/* Account Info Section */}
-            <div className="bg-[#EDE6D6] rounded-2xl p-8 mb-8 shadow-lg w-full">
+            <div className="bg-[#EDE6D6] rounded-2xl p-8 shadow-lg w-full text-gray-800 mt-8">
               <h2 className="text-2xl font-serif text-gray-800 mb-6">
                 Account Info
               </h2>
@@ -114,7 +114,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Subscription Section */}
-            <div className="bg-[#EDE6D6] rounded-2xl p-8 shadow-lg w-full">
+            <div className="bg-[#EDE6D6] rounded-2xl p-8 shadow-lg w-full text-gray-800 mt-8">
               <h2 className="text-2xl font-serif text-gray-800 mb-6">
                 Subscription and Credits
               </h2>
@@ -127,7 +127,7 @@ export default function ProfilePage() {
             </div>
           </>
         )}
-      </div>
+      </ContentContainer>
     </PageLayout>
   );
 }

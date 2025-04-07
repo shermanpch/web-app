@@ -14,9 +14,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { userApi } from "@/lib/api/endpoints/user";
 
 interface NavigationBarProps {
   user: AuthUser | null;
@@ -30,36 +29,49 @@ export default function NavigationBar({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Fetch user data client-side with better error handling
-  const {
-    data: user,
-    isLoading,
-    isError,
-  } = useQuery({
+  const { data: user } = useQuery({
     queryKey: ["currentUser"],
     queryFn: async () => {
       try {
-        return await authApi.getCurrentUser();
+        const userData = await authApi.getCurrentUser();
+        // If we get null from the API, invalidate the query to ensure proper state
+        if (!userData) {
+          queryClient.setQueryData(["currentUser"], null);
+        }
+        return userData;
       } catch (error) {
         console.error("Error fetching user data:", error);
-        return null; // Return null on error to avoid breaking the UI
+        // On error, invalidate the query and return null
+        queryClient.setQueryData(["currentUser"], null);
+        return null;
       }
     },
-    staleTime: 1000 * 60 * 15, // Cache for 15 minutes
-    refetchOnMount: true, // Always refetch when component mounts
+    staleTime: 1000 * 60 * 5, // Reduce cache time to 5 minutes for more frequent checks
+    refetchOnMount: "always", // Always refetch when component mounts
     refetchOnWindowFocus: true, // Refetch when window gains focus
-    retry: 1, // Retry once if fetch fails
+    refetchOnReconnect: true, // Refetch when reconnecting to network
+    retry: 2, // Retry twice if fetch fails
+    retryDelay: 1000, // Wait 1 second between retries
     initialData: initialUser,
   });
 
   const handleLogout = async () => {
     try {
       await authApi.logout();
-      // Invalidate the user query
+      // Clear all queries to ensure clean state
+      queryClient.clear();
+      // Specifically invalidate user query
       queryClient.setQueryData(["currentUser"], null);
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+      // Navigate and refresh
       router.push("/login");
       router.refresh();
     } catch (error) {
       console.error("Logout failed:", error);
+      // Even if server logout fails, clear client state
+      queryClient.setQueryData(["currentUser"], null);
+      router.push("/login");
+      router.refresh();
     }
   };
 

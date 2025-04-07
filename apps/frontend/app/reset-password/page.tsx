@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import PageLayout from "@/components/layout/PageLayout";
 import { authApi } from "@/lib/api/endpoints/auth";
 import { useMutation } from "@tanstack/react-query";
+import ContentContainer from "@/components/layout/ContentContainer";
+import Heading from "@/components/ui/heading";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -21,67 +23,69 @@ export default function ResetPasswordPage() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [tokenChecked, setTokenChecked] = useState(false);
 
-  // Function to parse token from Supabase magic link
-  const parseSupabaseToken = (): string | null => {
-    // Check URL for direct token parameter (standard case)
-    const token = searchParams?.get("token");
-    if (token) {
-      console.log("Token found in standard query params");
-      return token;
-    }
-
-    try {
-      // Try getting token from URL in various formats Supabase might use
-      const url = window.location.href;
-      
-      // Format: ?token=xyz
-      const tokenRegex = /[?&]token=([^&#]*)/;
-      const tokenMatch = url.match(tokenRegex);
-      if (tokenMatch && tokenMatch[1]) {
-        console.log("Token found via regex in query params");
-        return tokenMatch[1];
-      }
-      
-      // Format: #access_token=xyz
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const hashToken = hashParams.get("access_token");
-      if (hashToken) {
-        console.log("Token found in hash fragment");
-        return hashToken;
-      }
-      
-      // Format often used in Supabase redirects
-      const types = ["recovery", "signup", "invite"];
-      for (const type of types) {
-        if (url.includes(`type=${type}`) && url.includes("token=")) {
-          const fullTokenRegex = new RegExp(`token=([^&]*)`);
-          const match = url.match(fullTokenRegex);
-          if (match && match[1]) {
-            console.log(`Token found in ${type} flow`);
-            return match[1];
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error parsing token:", error);
-    }
-    
-    return null;
-  };
-
   // Extract the token from the URL on component mount
   useEffect(() => {
     if (tokenChecked) return;
-    
+
+    // Function to parse token from Supabase magic link
+    const parseSupabaseToken = (): string | null => {
+      // Check URL for direct token parameter (standard case)
+      const token = searchParams?.get("token");
+      if (token) {
+        console.log("Token found in standard query params");
+        return token;
+      }
+
+      try {
+        // Try getting token from URL in various formats Supabase might use
+        const url = window.location.href;
+
+        // Format: ?token=xyz
+        const tokenRegex = /[?&]token=([^&#]*)/;
+        const tokenMatch = url.match(tokenRegex);
+        if (tokenMatch && tokenMatch[1]) {
+          console.log("Token found via regex in query params");
+          return tokenMatch[1];
+        }
+
+        // Format: #access_token=xyz
+        const hashParams = new URLSearchParams(
+          window.location.hash.substring(1),
+        );
+        const hashToken = hashParams.get("access_token");
+        if (hashToken) {
+          console.log("Token found in hash fragment");
+          return hashToken;
+        }
+
+        // Format often used in Supabase redirects
+        const types = ["recovery", "signup", "invite"];
+        for (const type of types) {
+          if (url.includes(`type=${type}`) && url.includes("token=")) {
+            const fullTokenRegex = new RegExp(`token=([^&]*)`);
+            const match = url.match(fullTokenRegex);
+            if (match && match[1]) {
+              console.log(`Token found in ${type} flow`);
+              return match[1];
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error parsing token:", error);
+      }
+
+      return null;
+    };
+
     const token = parseSupabaseToken();
-    
+
     if (token) {
       setAccessToken(token);
       setTokenChecked(true);
     } else {
       console.error("No valid token found in URL", window.location.href);
       toast.error(
-        "Invalid or missing reset token. Please request a new password reset link."
+        "Invalid or missing reset token. Please request a new password reset link.",
       );
       // Redirect to forgot password page after a short delay
       setTimeout(() => {
@@ -142,12 +146,10 @@ export default function ResetPasswordPage() {
   return (
     <PageLayout>
       {/* Header */}
-      <div className="text-center mt-8">
-        <h1 className="text-5xl font-bold text-white mb-4 font-serif">
-          I Ching Divination
-        </h1>
-        <p className="text-xl text-gray-300 font-serif">Reset your password</p>
-      </div>
+      <ContentContainer className="mb-8">
+        <Heading>I Ching Divination</Heading>
+        <p className="text-xl text-gray-300 font-serif text-center">Reset your password</p>
+      </ContentContainer>
 
       {/* Form */}
       <div className="max-w-md w-full mx-auto mt-12 p-8 bg-[#D8CDBA] rounded-2xl shadow-lg">

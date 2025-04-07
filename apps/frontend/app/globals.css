@@ -12,4 +12,16 @@ body {
   margin: 0;
   padding: 0;
   /* Remove fixed width and overflow-x to let content flow naturally */
+}
+
+@layer base {
+  body {
+    @apply bg-black text-white;
+  }
+}
+
+@layer utilities {
+  .text-shadow-sm {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  }
 } 
