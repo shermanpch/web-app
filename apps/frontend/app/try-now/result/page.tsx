@@ -41,7 +41,7 @@ export default function ResultPage() {
       try {
         const parsedReading = JSON.parse(decodeURIComponent(readingString));
         setReading(parsedReading as ExtendedDivinationResponse);
-        
+
         // Set clarification answer from parsed reading if available
         if (parsedReading.clarifying_answer) {
           setClarificationAnswer(parsedReading.clarifying_answer);
@@ -88,18 +88,18 @@ export default function ResultPage() {
         const updatedReading = {
           ...reading,
           clarifying_question: clarificationInput,
-          clarifying_answer: updateResponse.clarifying_answer
+          clarifying_answer: updateResponse.clarifying_answer,
         };
-        
+
         // Update state
         setClarificationAnswer(updateResponse.clarifying_answer);
         setReading(updatedReading);
         setClarificationInput("");
-        
+
         // Update URL with new reading data to persist across navigation
         const readingDataString = JSON.stringify(updatedReading);
         router.replace(
-          `/try-now/result?reading=${encodeURIComponent(readingDataString)}`
+          `/try-now/result?reading=${encodeURIComponent(readingDataString)}`,
         );
       } catch (error: any) {
         setClarificationError(error.message || "Failed to get clarification");
@@ -121,7 +121,7 @@ export default function ResultPage() {
   return (
     <PageLayout>
       <div className="flex min-h-screen">
-        <motion.div 
+        <motion.div
           className="w-full max-w-4xl mx-auto px-4 py-12"
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -169,7 +169,9 @@ export default function ResultPage() {
                 <h3 className="font-bold mb-2">
                   Changing Line ({reading.line_change.line})
                 </h3>
-                <p className="text-justify">{reading.line_change.interpretation}</p>
+                <p className="text-justify">
+                  {reading.line_change.interpretation}
+                </p>
               </div>
 
               <div>
@@ -205,7 +207,9 @@ export default function ResultPage() {
                 />
 
                 {clarificationError && (
-                  <div className="text-red-500 font-serif">{clarificationError}</div>
+                  <div className="text-red-500 font-serif">
+                    {clarificationError}
+                  </div>
                 )}
 
                 <div className="flex justify-center">
