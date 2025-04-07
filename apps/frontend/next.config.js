@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
+  reactStrictMode: false,
 
   // This configures the Next.js development server proxy.
   // It does NOT affect production builds (Netlify handles that).

@@ -140,22 +140,32 @@ export default function ResultPage() {
           <div className="flex flex-col sm:flex-row justify-center items-center sm:space-x-8 md:space-x-12 space-y-6 sm:space-y-0 mb-8 sm:mb-12">
             <div className="text-center">
               <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 bg-gray-300 mb-2"></div>
-              <p className="text-white font-serif text-sm sm:text-base">Initial Hexagram</p>
+              <p className="text-white font-serif text-sm sm:text-base">
+                Initial Hexagram
+              </p>
             </div>
 
-            <div className="text-brand-button-bg text-3xl sm:text-4xl transform sm:rotate-0 rotate-90">→</div>
+            <div className="text-brand-button-bg text-3xl sm:text-4xl transform sm:rotate-0 rotate-90">
+              →
+            </div>
 
             <div className="text-center">
               <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 bg-gray-300 mb-2"></div>
-              <p className="text-white font-serif text-sm sm:text-base">Final Hexagram</p>
+              <p className="text-white font-serif text-sm sm:text-base">
+                Final Hexagram
+              </p>
             </div>
           </div>
 
           {/* Interpretation Card */}
           <div className="bg-[#D8CDBA] rounded-lg p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 font-serif">
-            <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">{reading.hexagram_name}</h2>
+            <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">
+              {reading.hexagram_name}
+            </h2>
 
-            <div className="italic mb-4 sm:mb-6 text-sm sm:text-base">Keywords: {reading.summary}</div>
+            <div className="italic mb-4 sm:mb-6 text-sm sm:text-base">
+              Keywords: {reading.summary}
+            </div>
 
             <div className="space-y-4 sm:space-y-6 text-sm sm:text-base">
               <div>
@@ -214,7 +224,9 @@ export default function ResultPage() {
                   disabled={!clarificationInput.trim() || isClarifying}
                   className="w-full sm:w-auto bg-brand-button-bg hover:bg-brand-button-hover text-white px-6 sm:px-8 py-2 sm:py-3 rounded-full text-sm sm:text-base font-semibold"
                 >
-                  {isClarifying ? "Getting Clarification..." : "Get Clarification"}
+                  {isClarifying
+                    ? "Getting Clarification..."
+                    : "Get Clarification"}
                 </Button>
                 {clarificationError && (
                   <p className="text-red-500 text-sm">{clarificationError}</p>
@@ -229,11 +241,15 @@ export default function ResultPage() {
                 transition={{ duration: 0.3 }}
                 className="mt-6 sm:mt-8 bg-[#D8CDBA] rounded-lg p-4 sm:p-6 font-serif"
               >
-                <h3 className="font-bold mb-2 text-base sm:text-lg">Clarification</h3>
+                <h3 className="font-bold mb-2 text-base sm:text-lg">
+                  Clarification
+                </h3>
                 <p className="italic mb-3 text-sm sm:text-base">
                   Q: {reading.clarifying_question}
                 </p>
-                <p className="text-justify text-sm sm:text-base">{clarificationAnswer}</p>
+                <p className="text-justify text-sm sm:text-base">
+                  {clarificationAnswer}
+                </p>
               </motion.div>
             )}
           </AnimatePresence>

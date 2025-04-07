@@ -9,7 +9,8 @@ import { usePageState } from "@/hooks/use-page-state";
 import { authApi } from "@/lib/api/endpoints/auth";
 
 export default function ChangePasswordForm() {
-  const { isLoading, error, setError, clearError, withLoadingState } = usePageState();
+  const { isLoading, error, setError, clearError, withLoadingState } =
+    usePageState();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -54,7 +55,10 @@ export default function ChangePasswordForm() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="currentPassword" className="text-gray-800 font-serif block text-lg">
+          <Label
+            htmlFor="currentPassword"
+            className="text-gray-800 font-serif block text-lg"
+          >
             Current Password
           </Label>
           <Input
@@ -69,7 +73,10 @@ export default function ChangePasswordForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="newPassword" className="text-gray-800 font-serif block text-lg">
+          <Label
+            htmlFor="newPassword"
+            className="text-gray-800 font-serif block text-lg"
+          >
             New Password
           </Label>
           <Input
@@ -84,7 +91,10 @@ export default function ChangePasswordForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="confirmNewPassword" className="text-gray-800 font-serif block text-lg">
+          <Label
+            htmlFor="confirmNewPassword"
+            className="text-gray-800 font-serif block text-lg"
+          >
             Confirm New Password
           </Label>
           <Input
@@ -108,4 +118,4 @@ export default function ChangePasswordForm() {
       </form>
     </div>
   );
-} 
+}

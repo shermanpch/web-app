@@ -7,7 +7,7 @@ import { User } from "@/types/auth";
 import "./globals.css";
 
 // Add this line to prevent caching
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Web App",
@@ -66,9 +66,7 @@ export default async function RootLayout({
           <div className="relative z-20">
             <NavigationBar user={user} />
           </div>
-          <main className="flex-grow flex flex-col">
-            {children}
-          </main>
+          <main className="flex-grow flex flex-col">{children}</main>
           <Toaster richColors position="top-center" />
         </div>
       </body>

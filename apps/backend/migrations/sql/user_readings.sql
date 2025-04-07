@@ -34,6 +34,9 @@ SELECT
 CREATE POLICY "Allow users to update their own readings" ON user_readings FOR
 UPDATE USING (auth.uid () = user_id);
 
+-- Policy: Allow authenticated users to delete their own readings
+CREATE POLICY "Allow authenticated users to delete their own readings" ON user_readings FOR DELETE USING (auth.uid () = user_id);
+
 -- Policy: Allow authenticated users to insert their own readings
 CREATE POLICY "Allow authenticated users to insert their own readings" ON user_readings FOR INSERT
 WITH

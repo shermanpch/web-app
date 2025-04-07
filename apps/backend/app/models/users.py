@@ -57,3 +57,19 @@ class UserReadingResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class DeleteReadingRequest(BaseModel):
+    """Request model for deleting a user reading."""
+
+    reading_id: UUID
+    user_id: UUID
+
+
+class DeleteReadingResponse(BaseModel):
+    """Response model for deleted reading."""
+
+    success: bool
+    reading_id: UUID
+    user_id: UUID
+    message: str

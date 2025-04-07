@@ -19,11 +19,7 @@
       "@components/*": ["components/*"],
       "@lib/*": ["lib/*"],
       "@config/*": ["config/*"],
-      "@hooks/*": ["hooks/*"],
-      "@ui/*": ["components/ui/*"],
-      "@sections/*": ["components/sections/*"],
-      "@layout/*": ["components/layout/*"],
-      "@theme/*": ["components/theme/*"]
+      "@hooks/*": ["hooks/*"]
     },
     "plugins": [
       {

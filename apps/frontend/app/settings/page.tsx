@@ -11,7 +11,7 @@ export default function SettingsPage() {
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-12 font-serif">
             Change Password
           </h1>
-          
+
           <ChangePasswordForm />
         </div>
       </div>

@@ -4,7 +4,7 @@ import logging
 from typing import List
 from uuid import UUID
 
-from ...models.users import UserReadingResponse
+from ...models.users import DeleteReadingResponse, UserReadingResponse
 from ...services.auth.supabase import get_authenticated_client
 
 # Create logger
@@ -64,3 +64,118 @@ async def get_user_readings_from_db(
         logger.error(f"Error fetching user readings for {user_id}: {str(e)}")
         # Re-raise the exception to be handled by the API endpoint
         raise Exception(f"Failed to retrieve user readings: {str(e)}")
+
+
+async def delete_user_reading_from_db(
+    user_id: UUID, reading_id: UUID, access_token: str, refresh_token: str
+) -> DeleteReadingResponse:
+    """
+    Delete a specific reading for a user from the database.
+
+    Args:
+        user_id: The UUID of the user whose reading is to be deleted.
+        reading_id: The UUID of the reading to delete.
+        access_token: User's access token.
+        refresh_token: User's refresh token.
+
+    Returns:
+        DeleteReadingResponse with the result of the operation.
+
+    Raises:
+        Exception: If the reading doesn't exist or cannot be deleted.
+    """
+    logger.info(f"Deleting reading {reading_id} for user: {user_id}")
+
+    try:
+        # Get authenticated Supabase client
+        client = await get_authenticated_client(access_token, refresh_token)
+
+        # First verify the reading belongs to the user
+        verify_response = (
+            await client.table("user_readings")
+            .select("id")
+            .eq("id", str(reading_id))
+            .eq("user_id", str(user_id))
+            .execute()
+        )
+
+        if not verify_response.data:
+            logger.warning(f"Reading {reading_id} not found for user {user_id}")
+            raise Exception(f"Reading not found or does not belong to the user")
+
+        # Delete the reading
+        delete_response = (
+            await client.table("user_readings")
+            .delete()
+            .eq("id", str(reading_id))
+            .eq("user_id", str(user_id))  # Ensure we only delete user's own readings
+            .execute()
+        )
+
+        if not delete_response.data:
+            raise Exception("Failed to delete reading")
+
+        logger.info(f"Successfully deleted reading {reading_id} for user {user_id}")
+        return DeleteReadingResponse(
+            success=True,
+            reading_id=reading_id,
+            user_id=user_id,
+            message="Reading deleted successfully",
+        )
+
+    except Exception as e:
+        logger.error(
+            f"Error deleting reading {reading_id} for user {user_id}: {str(e)}"
+        )
+        # Re-raise the exception to be handled by the API endpoint
+        raise Exception(f"Failed to delete reading: {str(e)}")
+
+
+async def delete_all_user_readings_from_db(
+    user_id: UUID, access_token: str, refresh_token: str
+) -> DeleteReadingResponse:
+    """
+    Delete all readings for a user from the database.
+
+    Args:
+        user_id: The UUID of the user whose readings are to be deleted.
+        access_token: User's access token.
+        refresh_token: User's refresh token.
+
+    Returns:
+        DeleteReadingResponse with the result of the operation.
+
+    Raises:
+        Exception: If the readings cannot be deleted.
+    """
+    logger.info(f"Deleting all readings for user: {user_id}")
+
+    try:
+        # Get authenticated Supabase client
+        client = await get_authenticated_client(access_token, refresh_token)
+
+        # Delete all readings for the user
+        delete_response = (
+            await client.table("user_readings")
+            .delete()
+            .eq("user_id", str(user_id))
+            .execute()
+        )
+
+        # Check if the operation was successful (data will contain deleted records)
+        if delete_response.data is None:  # None means error in this context
+            raise Exception("Failed to delete readings")
+
+        count = len(delete_response.data)
+        logger.info(f"Successfully deleted {count} readings for user {user_id}")
+        return DeleteReadingResponse(
+            success=True,
+            reading_id=UUID("00000000-0000-0000-0000-000000000000"),  # Placeholder UUID
+            user_id=user_id,
+            message=f"Successfully deleted {count} readings",
+        )
+
+    except Exception as e:
+        logger.error(f"Error deleting readings for user {user_id}: {str(e)}")
+        # Re-raise the exception to be handled by the API endpoint
+        raise Exception(f"Failed to delete readings: {str(e)}")

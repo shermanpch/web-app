@@ -37,6 +37,63 @@ export const userApi = {
   },
 
   /**
+   * Delete a specific reading by ID.
+   * @param readingId The UUID of the reading to delete
+   * @returns Success response with the deleted reading ID
+   */
+  async deleteReading(
+    readingId: string,
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await axios.delete(
+        `${API_URL}/api/user/readings/${readingId}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true, // Send cookies for authentication
+        },
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error(`API Error deleting reading ${readingId}:`, error);
+      // Handle axios errors
+      if (error?.response?.data) {
+        const errorData = error.response.data as ErrorResponse;
+        const errorMessage = errorData.detail || "Failed to delete reading";
+        throw new Error(errorMessage);
+      }
+      throw new Error("Failed to delete reading. Please try again later.");
+    }
+  },
+
+  /**
+   * Delete all readings for the authenticated user.
+   * @returns Success response
+   */
+  async deleteAllReadings(): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await axios.delete(`${API_URL}/api/user/readings`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true, // Send cookies for authentication
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error("API Error deleting all readings:", error);
+      // Handle axios errors
+      if (error?.response?.data) {
+        const errorData = error.response.data as ErrorResponse;
+        const errorMessage =
+          errorData.detail || "Failed to delete all readings";
+        throw new Error(errorMessage);
+      }
+      throw new Error("Failed to delete all readings. Please try again later.");
+    }
+  },
+
+  /**
    * Get the current quota information for the authenticated user.
    * Returns null if no quota information is found.
    */

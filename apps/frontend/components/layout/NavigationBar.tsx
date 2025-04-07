@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useState } from "react";
 
 interface NavigationBarProps {
@@ -42,8 +43,8 @@ export default function NavigationBar({ user }: NavigationBarProps) {
   ];
 
   return (
-    <nav className="relative">
-      <div className="flex justify-between items-center py-4 px-4 md:px-8 w-full bg-gray-900/80 backdrop-blur-sm">
+    <nav className="fixed top-0 left-0 w-full z-50 bg-gray-900/80 backdrop-blur-sm">
+      <div className="flex justify-between items-center py-4 px-4 md:px-6 w-full">
         {/* Hamburger menu button - only visible on mobile */}
         <button
           className="md:hidden text-gray-200 hover:text-white"
@@ -76,12 +77,28 @@ export default function NavigationBar({ user }: NavigationBarProps) {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="text-gray-200 hover:text-white hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 font-serif p-0 h-auto font-normal text-lg"
+                  className="relative h-10 w-10 rounded-full p-0 hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
                 >
-                  Account
+                  <Avatar className="h-10 w-10">
+                    {user.image && (
+                      <AvatarImage
+                        src={user.image}
+                        alt={user.name || user.email}
+                      />
+                    )}
+                    <AvatarFallback className="bg-gray-700 text-gray-200">
+                      {user.name
+                        ? user.name.charAt(0).toUpperCase()
+                        : user.email?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="sr-only">User menu</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56 mr-4 bg-[#F0E6D6]" align="end">
+              <DropdownMenuContent
+                className="w-56 bg-[#F0E6D6]"
+                align="end"
+              >
                 <DropdownMenuItem
                   asChild
                   className="cursor-pointer text-gray-800 focus:bg-[#e0d6c6]"
@@ -125,7 +142,7 @@ export default function NavigationBar({ user }: NavigationBarProps) {
 
       {/* Mobile menu - slides down when hamburger is clicked */}
       <div
-        className={`md:hidden absolute top-full left-0 right-0 bg-gray-900/95 backdrop-blur-sm transition-all duration-300 ${
+        className={`md:hidden fixed top-[60px] left-0 right-0 bg-gray-900/95 backdrop-blur-sm transition-all duration-300 z-40 ${
           isMobileMenuOpen ? "max-h-screen py-4" : "max-h-0 overflow-hidden"
         }`}
       >

@@ -105,10 +105,14 @@ export const authApi = {
    * @param currentPassword - The current password for verification (required for logged-in users)
    * @param accessToken - Optional access token for password reset flow
    */
-  async changePassword(newPassword: string, currentPassword?: string, accessToken?: string): Promise<void> {
+  async changePassword(
+    newPassword: string,
+    currentPassword?: string,
+    accessToken?: string,
+  ): Promise<void> {
     try {
       let payload: any = {};
-      
+
       // The backend endpoint expects a simple { password: string } for logged-in users
       // and { password: string, access_token: string } for password reset flow
       if (accessToken) {
