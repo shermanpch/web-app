@@ -45,7 +45,7 @@ export default function ConsultingPage() {
             first_number: parseInt(n1),
             second_number: parseInt(n2),
             third_number: parseInt(n3),
-            language: "en", // Default to English
+            language: "English", // Default to English
           });
 
           // Only decrement quota after successful reading
@@ -63,7 +63,7 @@ export default function ConsultingPage() {
                 first_number: parseInt(n1),
                 second_number: parseInt(n2),
                 third_number: parseInt(n3),
-                language: "en",
+                language: "English",
                 prediction: readingData,
               });
 
