@@ -14,19 +14,48 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { userApi } from "@/lib/api/endpoints/user";
 
 interface NavigationBarProps {
   user: AuthUser | null;
 }
 
-export default function NavigationBar({ user }: NavigationBarProps) {
+export default function NavigationBar({
+  user: initialUser,
+}: NavigationBarProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Fetch user data client-side with better error handling
+  const {
+    data: user,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: async () => {
+      try {
+        return await authApi.getCurrentUser();
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        return null; // Return null on error to avoid breaking the UI
+      }
+    },
+    staleTime: 1000 * 60 * 15, // Cache for 15 minutes
+    refetchOnMount: true, // Always refetch when component mounts
+    refetchOnWindowFocus: true, // Refetch when window gains focus
+    retry: 1, // Retry once if fetch fails
+    initialData: initialUser,
+  });
 
   const handleLogout = async () => {
     try {
       await authApi.logout();
+      // Invalidate the user query
+      queryClient.setQueryData(["currentUser"], null);
       router.push("/login");
       router.refresh();
     } catch (error) {
@@ -45,17 +74,21 @@ export default function NavigationBar({ user }: NavigationBarProps) {
   return (
     <nav className="fixed top-0 left-0 w-full z-50 bg-gray-900/80 backdrop-blur-sm">
       <div className="flex justify-between items-center py-4 px-4 md:px-6 w-full">
-        {/* Hamburger menu button - only visible on mobile */}
-        <button
-          className="md:hidden text-gray-200 hover:text-white"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        >
-          {isMobileMenuOpen ? (
-            <X className="h-6 w-6" />
-          ) : (
-            <Menu className="h-6 w-6" />
-          )}
-        </button>
+        {/* Logo or Brand - can be added here */}
+        <div className="flex items-center">
+          {/* Hamburger menu button - only visible on mobile */}
+          <button
+            className="md:hidden text-gray-200 hover:text-white"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {isMobileMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
+          </button>
+        </div>
 
         {/* Desktop navigation - hidden on mobile */}
         <div className="hidden md:flex items-center space-x-8 font-serif">

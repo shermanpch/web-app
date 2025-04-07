@@ -27,6 +27,7 @@ export default function ResultPage() {
   const [clarificationAnswer, setClarificationAnswer] = useState<string | null>(
     null,
   );
+  const [isMutationInProgress, setIsMutationInProgress] = useState(false);
 
   const clarificationMutation = useMutation({
     mutationFn: async () => {
@@ -104,9 +105,19 @@ export default function ResultPage() {
   }, [searchParams]);
 
   const handleClarificationSubmit = () => {
-    if (!reading || !clarificationInput.trim()) return;
+    if (!reading || !clarificationInput.trim() || isMutationInProgress) return;
+
+    setIsMutationInProgress(true);
     clarificationMutation.mutate();
   };
+
+  useEffect(() => {
+    if (clarificationMutation.isSuccess) {
+      setIsMutationInProgress(false);
+    } else if (clarificationMutation.isError) {
+      setIsMutationInProgress(false);
+    }
+  }, [clarificationMutation.isSuccess, clarificationMutation.isError]);
 
   if (!reading) {
     return (
@@ -224,11 +235,12 @@ export default function ResultPage() {
                     onClick={handleClarificationSubmit}
                     disabled={
                       !clarificationInput.trim() ||
-                      clarificationMutation.isPending
+                      clarificationMutation.isPending ||
+                      isMutationInProgress
                     }
                     className="bg-brand-button-bg hover:bg-brand-button-hover text-white px-6 sm:px-8 py-2 sm:py-3 rounded-full text-sm sm:text-base font-semibold"
                   >
-                    {clarificationMutation.isPending
+                    {clarificationMutation.isPending || isMutationInProgress
                       ? "Getting Clarification..."
                       : "Get Clarification"}
                   </Button>

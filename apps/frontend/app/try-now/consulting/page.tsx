@@ -14,6 +14,7 @@ export default function ConsultingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [hasMutationStarted, setHasMutationStarted] = useState(false);
 
   const readingMutation = useMutation({
     mutationFn: async () => {
@@ -27,27 +28,32 @@ export default function ConsultingPage() {
         throw new Error("Missing required parameters");
       }
 
-      // Get the reading first
-      const readingData = await divinationApi.getIchingReading({
-        question,
-        first_number: parseInt(n1),
-        second_number: parseInt(n2),
-        third_number: parseInt(n3),
-        language: "English", // Default to English
-      });
-
-      // Only decrement quota after successful reading
-      await userApi.decrementQuota();
-
-      return {
-        readingData,
-        params: {
+      try {
+        // Get the reading first
+        const readingData = await divinationApi.getIchingReading({
           question,
-          n1: parseInt(n1),
-          n2: parseInt(n2),
-          n3: parseInt(n3),
-        },
-      };
+          first_number: parseInt(n1),
+          second_number: parseInt(n2),
+          third_number: parseInt(n3),
+          language: "English", // Default to English
+        });
+
+        // Only decrement quota after successful reading
+        await userApi.decrementQuota();
+
+        return {
+          readingData,
+          params: {
+            question,
+            n1: parseInt(n1),
+            n2: parseInt(n2),
+            n3: parseInt(n3),
+          },
+        };
+      } catch (error) {
+        console.error("Error in reading mutation:", error);
+        throw error;
+      }
     },
     onSuccess: async (result) => {
       const { readingData, params } = result;
@@ -97,9 +103,18 @@ export default function ConsultingPage() {
   });
 
   useEffect(() => {
-    // Start the reading process immediately
-    readingMutation.mutate();
-  }, [readingMutation]);
+    // Prevent multiple API calls with this flag
+    if (!hasMutationStarted) {
+      setHasMutationStarted(true);
+      // Start the reading process
+      readingMutation.mutate();
+    }
+
+    // Clean up function to prevent issues during unmount
+    return () => {
+      // Can add cleanup logic here if needed
+    };
+  }, [readingMutation, hasMutationStarted]);
 
   return (
     <PageLayout>

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
-import { Trash2, AlertTriangle } from "lucide-react";
+import { Trash2, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import PageLayout from "@/components/layout/PageLayout";
 import { userApi } from "@/lib/api/endpoints/user";
 import { UserReadingHistoryEntry } from "@/types/divination";
@@ -20,16 +20,21 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function ReadingsPage() {
   const queryClient = useQueryClient();
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
-  // Fetch readings using React Query
+  // Fetch readings using React Query with pagination
   const {
     data: readings = [],
     isLoading,
     error,
     refetch,
-  } = useQuery<UserReadingHistoryEntry[]>({
-    queryKey: ["userReadings"],
-    queryFn: userApi.getUserReadings,
+    isFetching,
+  } = useQuery({
+    queryKey: ["userReadings", currentPage],
+    queryFn: () =>
+      userApi.getUserReadings({ page: currentPage, limit: pageSize }),
+    staleTime: 1000 * 60, // 1 minute
   });
 
   // Initialize filteredReadings with an empty array, not a state derived from readings
@@ -51,7 +56,7 @@ export default function ReadingsPage() {
 
     const lowercaseQuery = searchQuery.toLowerCase();
     return readings.filter(
-      (reading) =>
+      (reading: UserReadingHistoryEntry) =>
         reading.question.toLowerCase().includes(lowercaseQuery) ||
         (reading.prediction?.hexagram_name || "")
           .toLowerCase()
@@ -114,6 +119,17 @@ export default function ReadingsPage() {
   // Delete all readings
   const confirmDeleteAllReadings = async () => {
     deleteAllReadingsMutation.mutate();
+  };
+
+  // Handle pagination
+  const goToNextPage = () => {
+    if (!isFetching && readings.length === pageSize) {
+      setCurrentPage((old) => old + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    setCurrentPage((old) => Math.max(old - 1, 1));
   };
 
   return (
@@ -180,7 +196,7 @@ export default function ReadingsPage() {
               Try Again
             </Button>
           </div>
-        ) : readings.length === 0 ? (
+        ) : readings.length === 0 && currentPage === 1 ? (
           <div className="bg-[#EDE6D6] rounded-2xl p-8 text-center shadow-lg">
             <p className="text-gray-800 text-lg font-serif">
               You haven&apos;t made any I Ching readings yet.
@@ -206,171 +222,198 @@ export default function ReadingsPage() {
             </Button>
           </div>
         ) : (
-          <div className="space-y-6">
-            {filteredReadings
-              .sort(
-                (a, b) =>
-                  new Date(b.created_at).getTime() -
-                  new Date(a.created_at).getTime(),
-              )
-              .map((reading) => (
-                <div
-                  key={reading.id}
-                  className={`rounded-2xl overflow-hidden shadow-lg transition-all duration-300 ${
-                    expandedReadingId === reading.id
-                      ? "border border-amber-600/30"
-                      : ""
-                  }`}
-                >
-                  {/* Reading Header - Always visible */}
+          <>
+            <div className="space-y-6">
+              {filteredReadings
+                .sort(
+                  (a: UserReadingHistoryEntry, b: UserReadingHistoryEntry) =>
+                    new Date(b.created_at).getTime() -
+                    new Date(a.created_at).getTime(),
+                )
+                .map((reading) => (
                   <div
-                    className={`p-6 cursor-pointer bg-[#EDE6D6] ${expandedReadingId === reading.id ? "border-b border-amber-600/20" : ""}`}
+                    key={reading.id}
+                    className={`rounded-2xl overflow-hidden shadow-lg transition-all duration-300 ${
+                      expandedReadingId === reading.id
+                        ? "border border-amber-600/30"
+                        : ""
+                    }`}
                   >
-                    <div className="flex justify-between items-start">
-                      <div
-                        onClick={() => toggleExpand(reading.id)}
-                        className="flex-grow"
-                      >
-                        <p className="text-sm text-gray-600">
-                          {format(
-                            new Date(reading.created_at),
-                            "MMMM d, yyyy 'at' h:mm a",
-                          )}
-                        </p>
-                        <h3 className="text-xl text-gray-800 font-serif font-medium mt-1">
-                          {reading.prediction?.hexagram_name && (
-                            <span className="font-bold mr-2">
-                              {reading.prediction.hexagram_name}
-                            </span>
-                          )}
-                          {reading.question}
-                        </h3>
-                      </div>
-                      <div className="flex items-center">
-                        {/* Delete button */}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="mr-2 text-gray-500 hover:text-red-600 hover:bg-transparent"
-                          onClick={(e) => handleDeleteClick(e, reading.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Delete</span>
-                        </Button>
-
-                        {/* Expand/collapse button */}
-                        <button
-                          className="text-gray-700"
-                          aria-label={
-                            expandedReadingId === reading.id
-                              ? "Collapse"
-                              : "Expand"
-                          }
+                    {/* Reading Header - Always visible */}
+                    <div
+                      className={`p-6 cursor-pointer bg-[#EDE6D6] ${expandedReadingId === reading.id ? "border-b border-amber-600/20" : ""}`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div
                           onClick={() => toggleExpand(reading.id)}
+                          className="flex-grow"
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className={`h-6 w-6 transition-transform duration-300 ${expandedReadingId === reading.id ? "rotate-180" : ""}`}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
+                          <p className="text-sm text-gray-600">
+                            {format(
+                              new Date(reading.created_at),
+                              "MMMM d, yyyy 'at' h:mm a",
+                            )}
+                          </p>
+                          <h3 className="text-xl text-gray-800 font-serif font-medium mt-1">
+                            {reading.prediction?.hexagram_name && (
+                              <span className="font-bold mr-2">
+                                {reading.prediction.hexagram_name}
+                              </span>
+                            )}
+                            {reading.question}
+                          </h3>
+                        </div>
+                        <div className="flex items-center">
+                          {/* Delete button */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="mr-2 text-gray-500 hover:text-red-600 hover:bg-transparent"
+                            onClick={(e) => handleDeleteClick(e, reading.id)}
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 9l-7 7-7-7"
-                            />
-                          </svg>
-                        </button>
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Delete</span>
+                          </Button>
+
+                          {/* Expand/collapse button */}
+                          <button
+                            className="text-gray-700"
+                            aria-label={
+                              expandedReadingId === reading.id
+                                ? "Collapse"
+                                : "Expand"
+                            }
+                            onClick={() => toggleExpand(reading.id)}
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className={`h-6 w-6 transition-transform duration-300 ${expandedReadingId === reading.id ? "rotate-180" : ""}`}
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Expanded Content */}
-                  {expandedReadingId === reading.id && reading.prediction && (
-                    <div className="bg-[#EDE6D6] p-6">
-                      {/* Keywords Section */}
-                      <div className="mb-4">
-                        <h4 className="font-bold text-gray-800 font-serif">
-                          Keywords
-                        </h4>
-                        <p className="text-gray-700 italic font-serif">
-                          {reading.prediction.summary}
-                        </p>
-                      </div>
-
-                      {/* Initial Interpretation Section */}
-                      <div className="mb-4">
-                        <h4 className="font-bold text-gray-800 font-serif">
-                          Initial Interpretation
-                        </h4>
-                        <p className="text-gray-700 font-serif">
-                          The hexagram {reading.prediction.hexagram_name}{" "}
-                          {reading.prediction.interpretation}
-                        </p>
-                      </div>
-
-                      {/* Changing Line Section */}
-                      {reading.prediction.line_change && (
+                    {/* Expanded Content */}
+                    {expandedReadingId === reading.id && reading.prediction && (
+                      <div className="bg-[#EDE6D6] p-6">
+                        {/* Keywords Section */}
                         <div className="mb-4">
                           <h4 className="font-bold text-gray-800 font-serif">
-                            Changing Line ({reading.prediction.line_change.line}
-                            )
+                            Keywords
                           </h4>
-                          <p className="text-gray-700 font-serif">
-                            {reading.prediction.line_change.interpretation}
+                          <p className="text-gray-700 italic font-serif">
+                            {reading.prediction.summary}
                           </p>
                         </div>
-                      )}
 
-                      {/* Resulting Hexagram Section */}
-                      {reading.prediction.result && (
+                        {/* Initial Interpretation Section */}
                         <div className="mb-4">
                           <h4 className="font-bold text-gray-800 font-serif">
-                            Resulting Hexagram ({reading.prediction.result.name}
-                            )
+                            Initial Interpretation
                           </h4>
                           <p className="text-gray-700 font-serif">
-                            {reading.prediction.result.interpretation}
+                            The hexagram {reading.prediction.hexagram_name}{" "}
+                            {reading.prediction.interpretation}
                           </p>
                         </div>
-                      )}
 
-                      {/* Advice Section */}
-                      <div className="mb-4">
-                        <h4 className="font-bold text-gray-800 font-serif">
-                          Advice
-                        </h4>
-                        <p className="text-gray-700 font-serif">
-                          {reading.prediction.advice}
-                        </p>
-                      </div>
-
-                      {/* Clarifying Question Section */}
-                      {reading.clarifying_question &&
-                        reading.clarifying_answer && (
-                          <div className="mt-6 pt-4 border-t border-amber-600/20">
-                            <h4 className="font-bold text-gray-800 font-serif mb-2">
-                              Your Clarifying Question
-                            </h4>
-                            <p className="text-gray-700 font-serif mb-4 italic">
-                              &ldquo;{reading.clarifying_question}&rdquo;
-                            </p>
-
-                            <h4 className="font-bold text-gray-800 font-serif mb-2">
-                              Response
+                        {/* Changing Line Section */}
+                        {reading.prediction.line_change && (
+                          <div className="mb-4">
+                            <h4 className="font-bold text-gray-800 font-serif">
+                              Changing Line (
+                              {reading.prediction.line_change.line})
                             </h4>
                             <p className="text-gray-700 font-serif">
-                              {reading.clarifying_answer}
+                              {reading.prediction.line_change.interpretation}
                             </p>
                           </div>
                         )}
-                    </div>
-                  )}
-                </div>
-              ))}
-          </div>
+
+                        {/* Resulting Hexagram Section */}
+                        {reading.prediction.result && (
+                          <div className="mb-4">
+                            <h4 className="font-bold text-gray-800 font-serif">
+                              Resulting Hexagram (
+                              {reading.prediction.result.name})
+                            </h4>
+                            <p className="text-gray-700 font-serif">
+                              {reading.prediction.result.interpretation}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Advice Section */}
+                        <div className="mb-4">
+                          <h4 className="font-bold text-gray-800 font-serif">
+                            Advice
+                          </h4>
+                          <p className="text-gray-700 font-serif">
+                            {reading.prediction.advice}
+                          </p>
+                        </div>
+
+                        {/* Clarifying Question Section */}
+                        {reading.clarifying_question &&
+                          reading.clarifying_answer && (
+                            <div className="mt-6 pt-4 border-t border-amber-600/20">
+                              <h4 className="font-bold text-gray-800 font-serif mb-2">
+                                Your Clarifying Question
+                              </h4>
+                              <p className="text-gray-700 font-serif mb-4 italic">
+                                &ldquo;{reading.clarifying_question}&rdquo;
+                              </p>
+
+                              <h4 className="font-bold text-gray-800 font-serif mb-2">
+                                Response
+                              </h4>
+                              <p className="text-gray-700 font-serif">
+                                {reading.clarifying_answer}
+                              </p>
+                            </div>
+                          )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="mt-8 flex justify-center items-center space-x-4">
+              <Button
+                onClick={goToPreviousPage}
+                disabled={currentPage === 1 || isLoading}
+                variant="outline"
+                className="flex items-center space-x-2 bg-[#EDE6D6] hover:bg-[#e0d9c9] text-gray-800"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span>Previous</span>
+              </Button>
+
+              <span className="text-white">Page {currentPage}</span>
+
+              <Button
+                onClick={goToNextPage}
+                disabled={isFetching || readings.length < pageSize || isLoading}
+                variant="outline"
+                className="flex items-center space-x-2 bg-[#EDE6D6] hover:bg-[#e0d9c9] text-gray-800"
+              >
+                <span>Next</span>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </>
         )}
       </div>
 

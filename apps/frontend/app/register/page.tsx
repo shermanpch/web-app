@@ -3,28 +3,31 @@
 import React, { useState, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import PageLayout from "@/components/layout/PageLayout";
 import { authApi } from "@/lib/api/endpoints/auth";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { LoginCredentials } from "@/types/auth";
 import { userApi } from "@/lib/api/endpoints/user";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { SignUpCredentials } from "@/types/auth";
+import { toast } from "sonner";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
-  const loginMutation = useMutation({
-    mutationFn: authApi.login,
+  const signupMutation = useMutation({
+    mutationFn: authApi.signup,
     onSuccess: async (response) => {
-      console.log("Login successful:", response);
+      console.log("Registration successful:", response);
 
       // Update the user data in the cache
       queryClient.setQueryData(["currentUser"], response.data.user);
@@ -32,33 +35,56 @@ export default function LoginPage() {
       // Force a refetch of the current user
       await queryClient.invalidateQueries({ queryKey: ["currentUser"] });
 
-      // Prefetch first page of readings data immediately after login
+      // Prefetch first page of readings data immediately after registration
       queryClient.prefetchQuery({
         queryKey: ["userReadings", 1],
         queryFn: () => userApi.getUserReadings({ page: 1, limit: 10 }),
         staleTime: 1000 * 60 * 5, // Keep prefetched data fresh for 5 minutes
       });
 
-      // Prefetch user quota/profile data immediately after login
+      // Prefetch user quota/profile data immediately after registration
       queryClient.prefetchQuery({
         queryKey: ["userQuota"],
         queryFn: userApi.getUserQuota,
         staleTime: 1000 * 60 * 5, // Keep prefetched data fresh for 5 minutes
       });
 
+      toast.success("Registration successful!");
+
       // Navigate using Next.js router
       router.push("/try-now");
       router.refresh();
     },
     onError: (error) => {
-      console.error("Login failed:", error);
+      console.error("Registration failed:", error);
+      toast.error(`Registration failed: ${(error as Error).message}`);
     },
   });
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const credentials: LoginCredentials = { email, password };
-    loginMutation.mutate(credentials);
+    setValidationError(null);
+
+    // Client-side validation
+    if (password !== confirmPassword) {
+      setValidationError("Passwords do not match");
+      return;
+    }
+
+    if (password.length < 8) {
+      setValidationError("Password must be at least 8 characters long");
+      return;
+    }
+
+    if (!agreeTerms) {
+      setValidationError(
+        "You must agree to the Terms of Service and Privacy Policy",
+      );
+      return;
+    }
+
+    const credentials: SignUpCredentials = { email, password };
+    signupMutation.mutate(credentials);
   };
 
   return (
@@ -73,16 +99,17 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* Login Form */}
+      {/* Registration Form */}
       <div className="max-w-md w-full mx-auto mt-12 p-8 bg-[#D8CDBA] rounded-2xl shadow-lg">
         <h2 className="text-3xl font-semibold text-gray-800 mb-8 text-center font-serif">
-          Welcome Back!
+          Create Account
         </h2>
 
-        {loginMutation.error && (
-          <p className="text-sm text-red-600 text-center font-medium mb-6">
-            {(loginMutation.error as Error).message}
-          </p>
+        {(validationError || signupMutation.error) && (
+          <div className="flex items-center gap-2 text-sm text-red-600 font-medium mb-6 p-2 bg-red-50 rounded-lg">
+            <AlertCircle className="h-4 w-4" />
+            <p>{validationError || (signupMutation.error as Error)?.message}</p>
+          </div>
         )}
 
         <form className="space-y-6" onSubmit={handleSubmit}>
@@ -117,7 +144,7 @@ export default function LoginPage() {
                 id="password"
                 name="password"
                 type="password"
-                placeholder="Enter your Password here"
+                placeholder="Create a Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -126,49 +153,76 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Options Row */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="remember"
-                checked={rememberMe}
-                onCheckedChange={(checked: boolean | string) =>
-                  setRememberMe(Boolean(checked))
-                }
-                className="border-gray-400 data-[state=checked]:bg-[#B88A6A] data-[state=checked]:border-[#B88A6A]"
-              />
-              <Label
-                htmlFor="remember"
-                className="text-sm text-gray-700 font-serif"
-              >
-                Remember Me
-              </Label>
-            </div>
-            <Link
-              href="/forgot-password"
-              className="text-sm text-[#B88A6A] hover:text-[#a87a5a] font-medium"
+          {/* Confirm Password Field */}
+          <div className="space-y-2">
+            <Label
+              htmlFor="confirmPassword"
+              className="text-gray-700 font-serif"
             >
-              Forgot Password?
-            </Link>
+              Confirm Password
+            </Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                placeholder="Confirm your Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                className="pl-10 w-full bg-[#EDE6D6] border-none rounded-lg h-12 text-gray-800 placeholder:text-gray-500 focus:ring-2 focus:ring-[#B88A6A] focus:ring-offset-2 focus:ring-offset-[#D8CDBA]"
+              />
+            </div>
           </div>
 
-          {/* Login Button */}
+          {/* Terms and Conditions */}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="terms"
+              checked={agreeTerms}
+              onCheckedChange={(checked: boolean | string) =>
+                setAgreeTerms(Boolean(checked))
+              }
+              className="border-gray-400 data-[state=checked]:bg-[#B88A6A] data-[state=checked]:border-[#B88A6A]"
+            />
+            <Label htmlFor="terms" className="text-sm text-gray-700 font-serif">
+              I agree to the{" "}
+              <Link
+                href="/terms"
+                className="text-[#B88A6A] hover:text-[#a87a5a] font-medium"
+              >
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/privacy"
+                className="text-[#B88A6A] hover:text-[#a87a5a] font-medium"
+              >
+                Privacy Policy
+              </Link>
+            </Label>
+          </div>
+
+          {/* Register Button */}
           <Button
             type="submit"
-            disabled={loginMutation.isPending}
+            disabled={signupMutation.isPending}
             className="w-full bg-[#B88A6A] hover:bg-[#a87a5a] text-white font-semibold py-6 rounded-lg text-lg mt-8 h-auto disabled:opacity-50"
           >
-            {loginMutation.isPending ? "Logging in..." : "Login"}
+            {signupMutation.isPending
+              ? "Creating Account..."
+              : "Create Account"}
           </Button>
 
-          {/* Register Link */}
+          {/* Login Link */}
           <p className="mt-6 text-center text-sm text-gray-700 font-serif">
-            Don&apos;t have an account?{" "}
+            Already have an account?{" "}
             <Link
-              href="/register"
+              href="/login"
               className="text-[#B88A6A] hover:text-[#a87a5a] font-medium"
             >
-              Register Now
+              Login
             </Link>
           </p>
         </form>

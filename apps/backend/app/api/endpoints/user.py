@@ -2,7 +2,7 @@ import logging
 from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 
 from ...models.auth import AuthenticatedSession, UserData
 from ...models.users import (
@@ -115,26 +115,34 @@ async def decrement_quota(
 async def get_user_readings(
     current_user: UserData = Depends(get_current_user),
     session: AuthenticatedSession = Depends(get_auth_tokens),
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    limit: int = Query(10, ge=1, le=100, description="Number of readings per page"),
 ):
     """
-    Get all historical readings for the authenticated user.
+    Get historical readings for the authenticated user with pagination.
 
     Args:
         current_user: The authenticated user data obtained from the token
         session: Authenticated session with tokens
+        page: Page number (1-indexed)
+        limit: Number of readings per page (max 100)
 
     Returns:
-        A list of the user's historical readings
+        A list of the user's historical readings for the requested page
 
     Raises:
         HTTPException: If readings cannot be retrieved
     """
-    logger.info(f"API: Fetching readings for user ID: {current_user.id}")
+    logger.info(
+        f"API: Fetching readings for user ID: {current_user.id} (page: {page}, limit: {limit})"
+    )
     try:
         readings = await get_user_readings_from_db(
             user_id=current_user.id,
             access_token=session.access_token,
             refresh_token=session.refresh_token,
+            page=page,
+            limit=limit,
         )
         return readings
     except Exception as e:

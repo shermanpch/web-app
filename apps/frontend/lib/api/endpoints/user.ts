@@ -10,11 +10,19 @@ export const userApi = {
    * Get historical readings for the authenticated user.
    * This function is intended for client-side usage if needed later.
    * The ReadingsHistoryPage uses server-side fetching instead.
+   * @param options Pagination options
+   * @returns List of user readings for the requested page
    */
-  async getUserReadings(): Promise<UserReadingHistoryEntry[]> {
+  async getUserReadings(options?: {
+    page?: number;
+    limit?: number;
+  }): Promise<UserReadingHistoryEntry[]> {
+    const page = options?.page || 1;
+    const limit = options?.limit || 10;
+
     try {
       const response = await axios.get<UserReadingHistoryEntry[]>(
-        `${API_URL}/api/user/readings`,
+        `${API_URL}/api/user/readings?page=${page}&limit=${limit}`,
         {
           headers: {
             "Content-Type": "application/json",
