@@ -9,13 +9,13 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        serif: ['Georgia', 'Times New Roman', 'serif'],
+        serif: ["Georgia", "Times New Roman", "serif"],
       },
       colors: {
-        'brand-input-bg': '#D8CDBA',
-        'brand-button-bg': '#5A7D60',
-        'brand-button-hover': '#4A6D50',
-        'brand-input-text': '#6b7280',
+        "brand-input-bg": "#D8CDBA",
+        "brand-button-bg": "#5A7D60",
+        "brand-button-hover": "#4A6D50",
+        "brand-input-text": "#6b7280",
       },
     },
   },

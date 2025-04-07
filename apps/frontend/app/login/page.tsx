@@ -1,23 +1,23 @@
-'use client';
+"use client";
 
-import React, { useState, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Mail, Lock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import PageLayout from '@/components/layout/PageLayout';
-import { authApi } from '@/lib/api/endpoints/auth';
-import { usePageState } from '@/hooks/use-page-state';
-import { LoginCredentials } from '@/types/auth';
+import React, { useState, FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Mail, Lock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import PageLayout from "@/components/layout/PageLayout";
+import { authApi } from "@/lib/api/endpoints/auth";
+import { usePageState } from "@/hooks/use-page-state";
+import { LoginCredentials } from "@/types/auth";
 
 export default function LoginPage() {
   const router = useRouter();
   const { isLoading, error, setError, withLoadingState } = usePageState();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -28,9 +28,9 @@ export default function LoginPage() {
 
     await withLoadingState(async () => {
       const response = await authApi.login(credentials);
-      console.log('Login successful:', response);
-      router.push('/try-now');
-    }, 'Login failed. Please check your credentials and try again.');
+      console.log("Login successful:", response);
+      router.push("/try-now");
+    }, "Login failed. Please check your credentials and try again.");
   };
 
   return (
@@ -47,16 +47,22 @@ export default function LoginPage() {
 
       {/* Login Form */}
       <div className="max-w-md w-full mx-auto mt-12 p-8 bg-[#D8CDBA] rounded-2xl shadow-lg">
-        <h2 className="text-3xl font-semibold text-gray-800 mb-8 text-center font-serif">Welcome Back!</h2>
-        
+        <h2 className="text-3xl font-semibold text-gray-800 mb-8 text-center font-serif">
+          Welcome Back!
+        </h2>
+
         {error && (
-          <p className="text-sm text-red-600 text-center font-medium mb-6">{error}</p>
+          <p className="text-sm text-red-600 text-center font-medium mb-6">
+            {error}
+          </p>
         )}
 
         <form className="space-y-6" onSubmit={handleSubmit}>
           {/* Email Field */}
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-gray-700 font-serif">Email</Label>
+            <Label htmlFor="email" className="text-gray-700 font-serif">
+              Email
+            </Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
               <Input
@@ -74,7 +80,9 @@ export default function LoginPage() {
 
           {/* Password Field */}
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-gray-700 font-serif">Password</Label>
+            <Label htmlFor="password" className="text-gray-700 font-serif">
+              Password
+            </Label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
               <Input
@@ -93,15 +101,25 @@ export default function LoginPage() {
           {/* Options Row */}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="remember" 
+              <Checkbox
+                id="remember"
                 checked={rememberMe}
-                onCheckedChange={(checked: boolean | string) => setRememberMe(Boolean(checked))}
+                onCheckedChange={(checked: boolean | string) =>
+                  setRememberMe(Boolean(checked))
+                }
                 className="border-gray-400 data-[state=checked]:bg-[#B88A6A] data-[state=checked]:border-[#B88A6A]"
               />
-              <Label htmlFor="remember" className="text-sm text-gray-700 font-serif">Remember Me</Label>
+              <Label
+                htmlFor="remember"
+                className="text-sm text-gray-700 font-serif"
+              >
+                Remember Me
+              </Label>
             </div>
-            <Link href="/forgot-password" className="text-sm text-[#B88A6A] hover:text-[#a87a5a] font-medium">
+            <Link
+              href="/forgot-password"
+              className="text-sm text-[#B88A6A] hover:text-[#a87a5a] font-medium"
+            >
               Forgot Password?
             </Link>
           </div>
@@ -112,13 +130,16 @@ export default function LoginPage() {
             disabled={isLoading}
             className="w-full bg-[#B88A6A] hover:bg-[#a87a5a] text-white font-semibold py-6 rounded-lg text-lg mt-8 h-auto disabled:opacity-50"
           >
-            {isLoading ? 'Logging in...' : 'Login'}
+            {isLoading ? "Logging in..." : "Login"}
           </Button>
 
           {/* Register Link */}
           <p className="mt-6 text-center text-sm text-gray-700 font-serif">
-            Don&apos;t have an account?{' '}
-            <Link href="/register" className="text-[#B88A6A] hover:text-[#a87a5a] font-medium">
+            Don&apos;t have an account?{" "}
+            <Link
+              href="/register"
+              className="text-[#B88A6A] hover:text-[#a87a5a] font-medium"
+            >
               Register Now
             </Link>
           </p>
@@ -126,4 +147,4 @@ export default function LoginPage() {
       </div>
     </PageLayout>
   );
-} 
+}

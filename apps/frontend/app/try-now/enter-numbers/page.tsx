@@ -1,35 +1,39 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import PageLayout from '@/components/layout/PageLayout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import React, { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import PageLayout from "@/components/layout/PageLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function EnterNumbersPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const question = searchParams.get('question') || '';
+  const question = searchParams.get("question") || "";
 
-  const [firstNumber, setFirstNumber] = useState('');
-  const [secondNumber, setSecondNumber] = useState('');
-  const [thirdNumber, setThirdNumber] = useState('');
+  const [firstNumber, setFirstNumber] = useState("");
+  const [secondNumber, setSecondNumber] = useState("");
+  const [thirdNumber, setThirdNumber] = useState("");
 
   const isValidNumber = (num: string) => {
     const parsed = parseInt(num);
     return !isNaN(parsed) && parsed >= 0 && parsed <= 999;
   };
-  const isFormValid = isValidNumber(firstNumber) && isValidNumber(secondNumber) && isValidNumber(thirdNumber);
+  const isFormValid =
+    isValidNumber(firstNumber) &&
+    isValidNumber(secondNumber) &&
+    isValidNumber(thirdNumber);
 
   const handleNumberSubmit = () => {
     if (!isFormValid) return;
-    
+
     // Ensure numbers are padded to 3 digits for consistency
-    const padNumber = (num: string) => parseInt(num).toString().padStart(3, '0');
-    
+    const padNumber = (num: string) =>
+      parseInt(num).toString().padStart(3, "0");
+
     router.push(
-      `/try-now/consulting?question=${encodeURIComponent(question)}&n1=${padNumber(firstNumber)}&n2=${padNumber(secondNumber)}&n3=${padNumber(thirdNumber)}`
+      `/try-now/consulting?question=${encodeURIComponent(question)}&n1=${padNumber(firstNumber)}&n2=${padNumber(secondNumber)}&n3=${padNumber(thirdNumber)}`,
     );
   };
 
@@ -43,17 +47,20 @@ export default function EnterNumbersPage() {
           </h1>
 
           {/* Instructions */}
-          <p className="text-xl text-gray-300 mb-6 font-serif">
+          <p className="text-xl text-gray-300 mb-6 font-serif text-justify">
             Take a moment, breathe deeply, and focus on your question.
           </p>
-          <p className="text-xl text-gray-300 mb-12 font-serif">
+          <p className="text-xl text-gray-300 mb-12 font-serif text-justify">
             Then, think of three random 3-digit numbers and enter them below.
           </p>
 
           {/* Number Inputs */}
           <div className="w-full max-w-xs mx-auto space-y-8">
             <div>
-              <Label htmlFor="firstNumber" className="text-gray-400 font-serif mb-2 block">
+              <Label
+                htmlFor="firstNumber"
+                className="text-gray-400 font-serif mb-2 block"
+              >
                 First Number
               </Label>
               <Input
@@ -69,7 +76,10 @@ export default function EnterNumbersPage() {
             </div>
 
             <div>
-              <Label htmlFor="secondNumber" className="text-gray-400 font-serif mb-2 block">
+              <Label
+                htmlFor="secondNumber"
+                className="text-gray-400 font-serif mb-2 block"
+              >
                 Second Number
               </Label>
               <Input
@@ -85,7 +95,10 @@ export default function EnterNumbersPage() {
             </div>
 
             <div>
-              <Label htmlFor="thirdNumber" className="text-gray-400 font-serif mb-2 block">
+              <Label
+                htmlFor="thirdNumber"
+                className="text-gray-400 font-serif mb-2 block"
+              >
                 Third Number
               </Label>
               <Input
@@ -113,4 +126,4 @@ export default function EnterNumbersPage() {
       </div>
     </PageLayout>
   );
-} 
+}

@@ -1,5 +1,5 @@
-import React from 'react';
-import NavigationBar from './NavigationBar';
+import React from "react";
+import NavigationBar from "./NavigationBar";
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -17,4 +17,4 @@ export default function PageLayout({ children }: PageLayoutProps) {
       </main>
     </div>
   );
-} 
+}

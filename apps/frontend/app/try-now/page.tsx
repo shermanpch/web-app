@@ -1,42 +1,46 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import PageLayout from '@/components/layout/PageLayout';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { useRouter } from 'next/navigation';
-import { userApi } from '@/lib/api/endpoints/user';
-import { toast } from 'sonner';
+import React, { useState } from "react";
+import PageLayout from "@/components/layout/PageLayout";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { useRouter } from "next/navigation";
+import { userApi } from "@/lib/api/endpoints/user";
+import { toast } from "sonner";
 
 export default function TryNowPage() {
-  const [question, setQuestion] = useState('');
+  const [question, setQuestion] = useState("");
   const router = useRouter();
 
   const handleNext = async () => {
     try {
       // Silently check user quota
       const quota = await userApi.getUserQuota();
-      
+
       if (!quota || quota.remaining_queries <= 0) {
         toast.error(
-          'You have no remaining readings. Please upgrade your membership to continue.',
+          "You have no remaining readings. Please upgrade your membership to continue.",
           {
             duration: 5000,
             action: {
-              label: 'Upgrade',
-              onClick: () => router.push('/pricing'),
+              label: "Upgrade",
+              onClick: () => router.push("/pricing"),
             },
-          }
+          },
         );
         return;
       }
 
       // If we have quota, proceed to enter numbers
-      router.push(`/try-now/enter-numbers?question=${encodeURIComponent(question)}`);
+      router.push(
+        `/try-now/enter-numbers?question=${encodeURIComponent(question)}`,
+      );
     } catch (error) {
       // If there's an error checking quota, just try to proceed
       // The quota check will happen again in the consulting page
-      router.push(`/try-now/enter-numbers?question=${encodeURIComponent(question)}`);
+      router.push(
+        `/try-now/enter-numbers?question=${encodeURIComponent(question)}`,
+      );
     }
   };
 
@@ -50,10 +54,10 @@ export default function TryNowPage() {
           </h1>
 
           {/* Instructions */}
-          <p className="text-xl text-gray-300 mb-6 font-serif">
+          <p className="text-xl text-gray-300 mb-6 font-serif text-justify">
             Take a moment, breathe deeply and clearly formulate your question.
           </p>
-          <p className="text-xl text-gray-300 mb-12 font-serif">
+          <p className="text-xl text-gray-300 mb-12 font-serif text-justify">
             Focus your intent on the question for as long as you need.
           </p>
 
@@ -78,4 +82,4 @@ export default function TryNowPage() {
       </div>
     </PageLayout>
   );
-} 
+}

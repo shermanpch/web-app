@@ -4,12 +4,7 @@ import type { NextRequest } from "next/server";
 /**
  * Define route patterns for protected and public routes
  */
-const protectedRoutes = [
-  "/try-now",
-  "/profile",
-  "/readings",
-  "/settings"
-]; // Regex pattern for dashboard and subpaths
+const protectedRoutes = ["/try-now", "/profile", "/readings", "/settings"]; // Regex pattern for dashboard and subpaths
 const publicAuthRoutes = [
   "/login",
   "/register",
