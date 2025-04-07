@@ -87,7 +87,9 @@ export default function LoginPage() {
 
         <AuthFormWrapper
           title="Welcome Back!"
-          error={loginMutation.error ? (loginMutation.error as Error).message : null}
+          error={
+            loginMutation.error ? (loginMutation.error as Error).message : null
+          }
           footerContent={footerContent}
         >
           <form className="space-y-6" onSubmit={handleSubmit}>

@@ -59,7 +59,11 @@ export default function ForgotPasswordPage() {
 
         <AuthFormWrapper
           title="Forgot Password"
-          error={resetPasswordMutation.error ? (resetPasswordMutation.error as Error).message : null}
+          error={
+            resetPasswordMutation.error
+              ? (resetPasswordMutation.error as Error).message
+              : null
+          }
           footerContent={!resetSent ? footerContent : undefined}
         >
           {resetSent ? (

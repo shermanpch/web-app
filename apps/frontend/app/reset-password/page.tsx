@@ -167,7 +167,9 @@ export default function ResetPasswordPage() {
 
         <AuthFormWrapper
           title="Reset Password"
-          error={validationError || (resetPasswordMutation.error as Error)?.message}
+          error={
+            validationError || (resetPasswordMutation.error as Error)?.message
+          }
           footerContent={footerContent}
         >
           <form className="space-y-6" onSubmit={handleSubmit}>

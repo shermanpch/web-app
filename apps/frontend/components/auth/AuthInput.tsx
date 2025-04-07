@@ -44,4 +44,4 @@ export default function AuthInput({
       </div>
     </div>
   );
-} 
+}
