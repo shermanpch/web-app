@@ -370,14 +370,14 @@ export default function ReadingsPage() {
                           reading.clarifying_answer && (
                             <div className="mt-6 pt-4 border-t border-amber-600/20">
                               <h4 className="font-bold text-gray-800 font-serif mb-2">
-                                Your Clarifying Question
+                                Clarification Question
                               </h4>
-                              <p className="text-gray-700 font-serif mb-4 italic">
-                                &ldquo;{reading.clarifying_question}&rdquo;
+                              <p className="text-gray-700 font-serif mb-4">
+                                {reading.clarifying_question}
                               </p>
 
                               <h4 className="font-bold text-gray-800 font-serif mb-2">
-                                Response
+                                Clarification Answer
                               </h4>
                               <p className="text-gray-700 font-serif">
                                 {reading.clarifying_answer}

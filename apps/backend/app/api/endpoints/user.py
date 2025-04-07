@@ -22,6 +22,7 @@ from ...services.users.quota import (
 from ...services.users.reading import (
     delete_all_user_readings_from_db,
     delete_user_reading_from_db,
+    get_reading_by_id,
     get_user_readings_from_db,
 )
 
@@ -277,4 +278,56 @@ async def upgrade_membership(
         raise HTTPException(
             status_code=status_code,
             detail=str(e),
+        )
+
+
+@router.get("/readings/{reading_id}", response_model=UserReadingResponse)
+async def get_user_reading(
+    reading_id: UUID = Path(..., description="The ID of the reading to fetch"),
+    current_user: UserData = Depends(get_current_user),
+    session: AuthenticatedSession = Depends(get_auth_tokens),
+):
+    """
+    Get a specific reading by ID for the authenticated user.
+
+    Args:
+        reading_id: The UUID of the reading to fetch
+        current_user: The authenticated user data obtained from the token
+        session: Authenticated session with tokens
+
+    Returns:
+        The requested reading if found and owned by the user
+
+    Raises:
+        HTTPException: If the reading is not found or cannot be retrieved
+    """
+    logger.info(f"API: Fetching reading {reading_id} for user ID: {current_user.id}")
+    try:
+        reading = await get_reading_by_id(
+            user_id=current_user.id,
+            reading_id=reading_id,
+            access_token=session.access_token,
+            refresh_token=session.refresh_token,
+        )
+
+        if not reading:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Reading not found or does not belong to user",
+            )
+
+        return reading
+    except Exception as e:
+        error_msg = str(e).lower()
+        if "not found" in error_msg or "does not belong" in error_msg:
+            status_code = status.HTTP_404_NOT_FOUND
+        else:
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+
+        logger.error(
+            f"API error fetching reading {reading_id} for user {current_user.id}: {str(e)}"
+        )
+        raise HTTPException(
+            status_code=status_code,
+            detail=f"Failed to retrieve reading: {str(e)}",
         )

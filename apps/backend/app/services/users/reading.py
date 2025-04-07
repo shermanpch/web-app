@@ -1,7 +1,7 @@
 """Service functions for user readings."""
 
 import logging
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
 from ...models.users import DeleteReadingResponse, UserReadingResponse
@@ -185,3 +185,61 @@ async def delete_all_user_readings_from_db(
         logger.error(f"Error deleting readings for user {user_id}: {str(e)}")
         # Re-raise the exception to be handled by the API endpoint
         raise Exception(f"Failed to delete readings: {str(e)}")
+
+
+async def get_reading_by_id(
+    user_id: UUID,
+    reading_id: UUID,
+    access_token: str,
+    refresh_token: str,
+) -> Optional[UserReadingResponse]:
+    """
+    Fetch a specific reading by ID for a user from the database.
+
+    Args:
+        user_id: The UUID of the user whose reading is to be fetched.
+        reading_id: The UUID of the reading to fetch.
+        access_token: User's access token.
+        refresh_token: User's refresh token.
+
+    Returns:
+        UserReadingResponse object if found, None otherwise.
+
+    Raises:
+        Exception: If the database query fails or reading doesn't belong to user.
+    """
+    logger.info(f"Fetching reading {reading_id} for user: {user_id}")
+
+    try:
+        # Get authenticated Supabase client
+        client = await get_authenticated_client(access_token, refresh_token)
+
+        # Query the user_readings table for the specific reading
+        response = (
+            await client.table("user_readings")
+            .select(
+                "id, user_id, question, first_number, second_number, third_number, language, prediction, clarifying_question, clarifying_answer, created_at"
+            )
+            .eq("id", str(reading_id))
+            .eq("user_id", str(user_id))  # Ensure reading belongs to user
+            .single()
+            .execute()
+        )
+
+        # Check if we have data
+        data = response.data
+        if not data:
+            logger.warning(f"Reading {reading_id} not found for user: {user_id}")
+            return None
+
+        # Convert to UserReadingResponse object
+        reading = UserReadingResponse.model_validate(data)
+        logger.info(f"Successfully fetched reading {reading_id} for user: {user_id}")
+        return reading
+
+    except Exception as e:
+        logger.error(
+            f"Error fetching reading {reading_id} for user {user_id}: {str(e)}"
+        )
+        # Re-raise the exception to be handled by the API endpoint
+        raise Exception(f"Failed to retrieve reading: {str(e)}")

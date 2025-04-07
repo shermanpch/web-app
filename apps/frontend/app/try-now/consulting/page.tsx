@@ -72,22 +72,14 @@ export default function ConsultingPage() {
           // Only decrement quota after successful save
           await userApi.decrementQuota();
 
-          // Navigate to result page with both reading data and ID
-          const readingDataString = JSON.stringify({
-            ...readingData,
-            reading_id: saveResponse.id, // Add the reading ID to the data
-          });
-          router.push(
-            `/try-now/result?reading=${encodeURIComponent(readingDataString)}`,
-          );
+          // Navigate to result page with just the reading ID
+          router.push(`/try-now/result?id=${saveResponse.id}`);
         }
       } catch (saveError) {
         console.error("Error saving reading:", saveError);
-        // If saving fails, still navigate but without the reading ID
-        const readingDataString = JSON.stringify(readingData);
-        router.push(
-          `/try-now/result?reading=${encodeURIComponent(readingDataString)}`,
-        );
+        // If saving fails, show error and redirect back
+        setErrorMessage("Failed to save your reading. Please try again.");
+        setTimeout(() => router.push("/try-now"), 3000);
       }
     },
     onError: (error: any) => {
