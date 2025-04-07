@@ -256,46 +256,6 @@ async def delete_user(user_id: str) -> Dict[str, Any]:
         )
 
 
-async def refresh_user_session(refresh_token: str) -> Dict[str, Any]:
-    """
-    Refresh a user session using Supabase client.
-
-    Args:
-        refresh_token: User's refresh token from previous login
-
-    Returns:
-        New session data with tokens and user info
-
-    Raises:
-        SupabaseAuthError: If session refresh fails
-    """
-    logger.info("Attempting to refresh user session")
-    try:
-        client = await get_supabase_client()
-        response = await client.auth.refresh_session(refresh_token)
-
-        # Check if refresh succeeded
-        if not response.user or not response.session:
-            raise SupabaseAuthError("Failed to refresh session")
-
-        logger.info("User session refreshed successfully")
-        return response.model_dump()
-    except Exception as e:
-        error_str = str(e).lower()
-        logger.error(f"Session refresh error: {error_str}")
-
-        if "expired" in error_str or "invalid" in error_str:
-            raise SupabaseAuthError(
-                "Your session has expired. Please log in again.",
-                status_code=status.HTTP_401_UNAUTHORIZED,
-            )
-
-        raise SupabaseAuthError(
-            "Failed to refresh session. Please log in again.",
-            status_code=status.HTTP_401_UNAUTHORIZED,
-        )
-
-
 async def logout_user(access_token: str, refresh_token: str) -> Dict[str, Any]:
     """
     Logout a user by invalidating their session using Supabase client.

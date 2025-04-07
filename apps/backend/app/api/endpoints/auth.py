@@ -2,9 +2,8 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 
-from ...config import settings
 from ...models.auth import (
     AuthenticatedSession,
     AuthResponse,
@@ -23,7 +22,6 @@ from ...services.auth.supabase import (
     delete_user,
     login_user,
     logout_user,
-    refresh_user_session,
     reset_password,
     signup_user,
 )
@@ -105,79 +103,6 @@ async def get_current_user_info(
         Current user information
     """
     return current_user
-
-
-@router.post("/refresh", response_model=UserSessionResponse)
-async def refresh_session(response: Response, request: Request) -> UserSessionResponse:
-    """
-    Refresh an authentication session using a refresh token.
-
-    Args:
-        response: Response object for setting cookies
-        request: Request object containing cookies
-
-    Returns:
-        Updated session information
-
-    Raises:
-        HTTPException: If refresh token is missing or invalid
-    """
-    try:
-        # Get refresh token from cookies
-        refresh_token = request.cookies.get("refresh_token")
-        if not refresh_token:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Refresh token required",
-            )
-
-        # Get the current auth_token cookie to check its expiration
-        auth_token = request.cookies.get("auth_token")
-        auth_token_max_age = request.cookies.get("auth_token", {}).get("max-age", 3600)
-
-        # If auth_token max-age is greater than default, it means remember_me was true
-        remember_me = auth_token_max_age > 3600
-
-        # Attempt to refresh the session
-        result = await refresh_user_session(refresh_token)
-
-        # Extract session data
-        session_data = result.get("session", {})
-        user_data = result.get("user", {})
-
-        # Set new cookies with the same remember_me state
-        set_auth_cookies(
-            response,
-            access_token=session_data.get("access_token", ""),
-            refresh_token=session_data.get("refresh_token", ""),
-            expires_in=session_data.get("expires_in", 3600),
-            remember_me=remember_me,
-        )
-
-        return UserSessionResponse(
-            success=True,
-            data=UserSession(
-                user=UserData(
-                    id=user_data.get("id", ""),
-                    email=user_data.get("email"),
-                    last_sign_in_at=user_data.get("last_sign_in_at"),
-                    created_at=user_data.get("created_at"),
-                )
-            ),
-        )
-
-    except SupabaseAuthError as e:
-        # Return the specific error from our custom exception
-        raise HTTPException(
-            status_code=e.status_code,
-            detail=e.message,
-        )
-    except Exception as e:
-        logger.error(f"Session refresh error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Session refresh failed. Please log in again.",
-        )
 
 
 @router.post("/signup", response_model=UserSessionResponse)

@@ -9,7 +9,6 @@ from .supabase import (
     get_supabase_client,
     login_user,
     logout_user,
-    refresh_user_session,
     reset_password,
     signup_user,
 )

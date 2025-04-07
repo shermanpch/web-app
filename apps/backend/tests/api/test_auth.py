@@ -120,26 +120,6 @@ class TestAuthentication(BaseTest):
             user_data["id"] == user_id
         ), "User ID in response doesn't match authenticated user"
 
-    def test_refresh_token(self, authenticated_client):
-        """Test refreshing token using cookie-based authentication."""
-        # ARRANGE
-        self.logger.info("Testing token refresh")
-        client, user_id = authenticated_client
-
-        # ACT - Send refresh request with cookies only, no JSON body
-        response = client.post("/api/auth/refresh")
-
-        # ASSERT
-        data = assert_successful_response(response)
-        assert_has_fields(data, ["data"])
-        assert_has_fields(data["data"], ["user"])
-
-        # Check for cookies in response
-        assert "Set-Cookie" in response.headers, "Response should set cookies"
-        cookies = response.cookies
-        assert "auth_token" in cookies, "Response should set auth_token cookie"
-        assert "refresh_token" in cookies, "Response should set refresh_token cookie"
-
     def test_reset_password(self, client, reset_password_user):
         """Test password reset request using specific email."""
         # ARRANGE

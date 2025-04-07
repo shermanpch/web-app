@@ -1,7 +1,7 @@
 """User readings models for the application."""
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -51,19 +51,12 @@ class UserReadingResponse(BaseModel):
     second_number: int
     third_number: int
     language: str
-    prediction: Optional[Dict[str, Any]] = None
+    prediction: Optional[dict] = None
     clarifying_question: Optional[str] = None
     clarifying_answer: Optional[str] = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
-
-
-class DeleteReadingRequest(BaseModel):
-    """Request model for deleting a user reading."""
-
-    reading_id: UUID
-    user_id: UUID
 
 
 class DeleteReadingResponse(BaseModel):

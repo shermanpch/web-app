@@ -1,61 +1,106 @@
-# Next.js build output
-.next/
-
-# Node dependencies
-node_modules/
-
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.env
-.venv
-env/
-venv/
-ENV/
-
-# Build files
-/dist
-/build
-
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# IDE and editor files
+# =========================================
+# IDE / Editor Files
+# =========================================
 .idea/
 .vscode/
 *.swp
 *.swo
 *~
 
-# OS files
+# =========================================
+# OS Files
+# =========================================
 .DS_Store
 Thumbs.db
+.AppleDouble
 
-# Scraped data
-apps/backend/migrations/scripts/data/
-apps/backend/migrations/scripts/scrapers/.scraper_cache/
+# =========================================
+# Node / JavaScript / TypeScript
+# =========================================
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# Cursor
-.cursorrules
+# Node dependencies
+node_modules/
 
-# Playwright
+# Next.js build output
+.next/
+
+# Playwright test artifacts
 **/test-results/
 **/playwright-report/
 **/playwright/.cache/
 
-# Local Netlify folder
-.netlify
+# =========================================
+# Python
+# =========================================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
 
-# Documentation
+# Virtual Environments (keep existing specific names + maybe a broader pattern if needed)
+.venv/
+env/
+venv/
+ENV/
+# venv*/ # Consider adding if you use varying names, but be careful
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+wheels/
+*.egg
+
+# Pytest cache
+.pytest_cache/
+
+# =========================================
+# Environment / Secrets
+# =========================================
+# Ignore environment files - DO NOT commit secrets
+.env
+.env.*.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# SSL certificates (especially private keys)
+.certs/
+
+# =========================================
+# Project Specific
+# =========================================
+# Scraped data
+apps/backend/migrations/scripts/data/
+apps/backend/migrations/scripts/scrapers/.scraper_cache/
+
+# Cursor tool config
+.cursorrules
+
+# Local Netlify dev folder
+.netlify/
+
+# Generated Documentation / Temp Files
 todo.md
-codebase.md
 repomix-output.md
 
-# SSL certificates
-.certs/
+# =========================================
+# Testing / Coverage
+# =========================================
+coverage/
+.coverage
+htmlcov/
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.tox/
