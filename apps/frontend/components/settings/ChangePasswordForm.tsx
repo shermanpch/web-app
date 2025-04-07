@@ -5,51 +5,59 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { usePageState } from "@/hooks/use-page-state";
+import { useMutation } from "@tanstack/react-query";
 import { authApi } from "@/lib/api/endpoints/auth";
 
 export default function ChangePasswordForm() {
-  const { isLoading, error, setError, clearError, withLoadingState } =
-    usePageState();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const changePasswordMutation = useMutation({
+    mutationFn: (params: { newPass: string; currentPass?: string }) =>
+      authApi.changePassword(params.newPass, params.currentPass),
+    onSuccess: () => {
+      toast.success("Password changed successfully!");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      setValidationError(null); // Clear validation error on success
+    },
+    onError: (error) => {
+      toast.error(`Failed to change password: ${(error as Error).message}`);
+      console.error("Change password failed:", error);
+      setValidationError(null); // Clear validation error on API error
+    },
+  });
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    setValidationError(null); // Clear previous validation errors
+
     // Client-side validation
     if (!newPassword) {
-      setError("New password cannot be empty.");
+      setValidationError("New password cannot be empty.");
       return;
     }
 
     if (newPassword !== confirmNewPassword) {
-      setError("New passwords do not match.");
+      setValidationError("New passwords do not match.");
       return;
     }
 
-    clearError();
-
-    await withLoadingState(async () => {
-      await authApi.changePassword(newPassword, currentPassword);
-      toast.success("Password changed successfully!");
-      // Clear form fields
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmNewPassword("");
-    }, "Failed to change password. Please check your current password.");
+    changePasswordMutation.mutate({
+      newPass: newPassword,
+      currentPass: currentPassword,
+    });
   };
 
   return (
     <div className="bg-[#EDE6D6] rounded-2xl p-8 shadow-lg w-full max-w-2xl mx-auto">
-      <h2 className="text-2xl font-serif text-gray-800 mb-8 text-center">
-        Change Password
-      </h2>
-
-      {error && (
+      {(validationError || changePasswordMutation.error) && (
         <p className="text-sm text-red-600 text-center font-medium mb-6">
-          {error}
+          {validationError || (changePasswordMutation.error as Error)?.message}
         </p>
       )}
 
@@ -110,10 +118,12 @@ export default function ChangePasswordForm() {
 
         <Button
           type="submit"
-          disabled={isLoading}
+          disabled={changePasswordMutation.isPending}
           className="w-full bg-[#B88A6A] hover:bg-[#a87a5a] text-white font-serif py-4 rounded-lg text-xl mt-8 h-auto disabled:opacity-50"
         >
-          {isLoading ? "Changing Password..." : "Change Password"}
+          {changePasswordMutation.isPending
+            ? "Changing Password..."
+            : "Change Password"}
         </Button>
       </form>
     </div>

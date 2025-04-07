@@ -95,10 +95,7 @@ export default function NavigationBar({ user }: NavigationBarProps) {
                   <span className="sr-only">User menu</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-56 bg-[#F0E6D6]"
-                align="end"
-              >
+              <DropdownMenuContent className="w-56 bg-[#F0E6D6]" align="end">
                 <DropdownMenuItem
                   asChild
                   className="cursor-pointer text-gray-800 focus:bg-[#e0d6c6]"

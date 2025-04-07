@@ -9,26 +9,29 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import PageLayout from "@/components/layout/PageLayout";
 import { authApi } from "@/lib/api/endpoints/auth";
-import { usePageState } from "@/hooks/use-page-state";
+import { useMutation } from "@tanstack/react-query";
 import { LoginCredentials } from "@/types/auth";
 
 export default function LoginPage() {
-  const { isLoading, error, setError, withLoadingState } = usePageState();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
-
-    const credentials: LoginCredentials = { email, password };
-
-    await withLoadingState(async () => {
-      const response = await authApi.login(credentials);
+  const loginMutation = useMutation({
+    mutationFn: authApi.login,
+    onSuccess: (response) => {
       console.log("Login successful:", response);
       window.location.href = "/try-now";
-    }, "Login failed. Please check your credentials and try again.");
+    },
+    onError: (error) => {
+      console.error("Login failed:", error);
+    },
+  });
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const credentials: LoginCredentials = { email, password };
+    loginMutation.mutate(credentials);
   };
 
   return (
@@ -49,9 +52,9 @@ export default function LoginPage() {
           Welcome Back!
         </h2>
 
-        {error && (
+        {loginMutation.error && (
           <p className="text-sm text-red-600 text-center font-medium mb-6">
-            {error}
+            {(loginMutation.error as Error).message}
           </p>
         )}
 
@@ -125,10 +128,10 @@ export default function LoginPage() {
           {/* Login Button */}
           <Button
             type="submit"
-            disabled={isLoading}
+            disabled={loginMutation.isPending}
             className="w-full bg-[#B88A6A] hover:bg-[#a87a5a] text-white font-semibold py-6 rounded-lg text-lg mt-8 h-auto disabled:opacity-50"
           >
-            {isLoading ? "Logging in..." : "Login"}
+            {loginMutation.isPending ? "Logging in..." : "Login"}
           </Button>
 
           {/* Register Link */}

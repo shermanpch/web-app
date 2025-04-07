@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { Trash2, AlertTriangle } from "lucide-react";
 import PageLayout from "@/components/layout/PageLayout";
@@ -16,14 +16,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function ReadingsPage() {
-  const [readings, setReadings] = useState<UserReadingHistoryEntry[]>([]);
-  const [filteredReadings, setFilteredReadings] = useState<
-    UserReadingHistoryEntry[]
-  >([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  // Fetch readings using React Query
+  const {
+    data: readings = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery<UserReadingHistoryEntry[]>({
+    queryKey: ["userReadings"],
+    queryFn: userApi.getUserReadings,
+  });
+
+  // Initialize filteredReadings with an empty array, not a state derived from readings
   const [expandedReadingId, setExpandedReadingId] = useState<string | null>(
     null,
   );
@@ -33,37 +42,15 @@ export default function ReadingsPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
   const [readingToDelete, setReadingToDelete] = useState<string | null>(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchReadings();
-  }, []);
-
-  async function fetchReadings() {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await userApi.getUserReadings();
-      setReadings(data);
-      setFilteredReadings(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load readings");
-      console.error("Error fetching readings:", err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // Filter readings when search query changes
-  useEffect(() => {
+  // Calculate filtered readings directly in the component instead of using state
+  const filteredReadings = useMemo(() => {
     if (!searchQuery.trim()) {
-      setFilteredReadings(readings);
-      return;
+      return readings;
     }
 
     const lowercaseQuery = searchQuery.toLowerCase();
-    const filtered = readings.filter(
+    return readings.filter(
       (reading) =>
         reading.question.toLowerCase().includes(lowercaseQuery) ||
         (reading.prediction?.hexagram_name || "")
@@ -73,9 +60,33 @@ export default function ReadingsPage() {
           .toLowerCase()
           .includes(lowercaseQuery),
     );
-
-    setFilteredReadings(filtered);
   }, [searchQuery, readings]);
+
+  // Delete a single reading mutation
+  const deleteReadingMutation = useMutation({
+    mutationFn: userApi.deleteReading,
+    onSuccess: () => {
+      // Invalidate the readings query cache to trigger a refetch
+      queryClient.invalidateQueries({ queryKey: ["userReadings"] });
+      setShowDeleteDialog(false);
+      setReadingToDelete(null);
+    },
+    onError: (err) => {
+      console.error("Error deleting reading:", err);
+    },
+  });
+
+  // Delete all readings mutation
+  const deleteAllReadingsMutation = useMutation({
+    mutationFn: userApi.deleteAllReadings,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["userReadings"] });
+      setShowDeleteAllDialog(false);
+    },
+    onError: (err) => {
+      console.error("Error deleting all readings:", err);
+    },
+  });
 
   const toggleExpand = (id: string) => {
     setExpandedReadingId(expandedReadingId === id ? null : id);
@@ -97,51 +108,12 @@ export default function ReadingsPage() {
   // Delete a single reading
   const confirmDeleteReading = async () => {
     if (!readingToDelete) return;
-
-    try {
-      setDeleteLoading(true);
-      setDeleteError(null);
-      await userApi.deleteReading(readingToDelete);
-
-      // Update state by removing the deleted reading
-      setReadings((prevReadings) =>
-        prevReadings.filter((r) => r.id !== readingToDelete),
-      );
-
-      // Close the dialog
-      setShowDeleteDialog(false);
-      setReadingToDelete(null);
-    } catch (err) {
-      setDeleteError(
-        err instanceof Error ? err.message : "Failed to delete reading",
-      );
-      console.error("Error deleting reading:", err);
-    } finally {
-      setDeleteLoading(false);
-    }
+    deleteReadingMutation.mutate(readingToDelete);
   };
 
   // Delete all readings
   const confirmDeleteAllReadings = async () => {
-    try {
-      setDeleteLoading(true);
-      setDeleteError(null);
-      await userApi.deleteAllReadings();
-
-      // Update state by clearing all readings
-      setReadings([]);
-      setFilteredReadings([]);
-
-      // Close the dialog
-      setShowDeleteAllDialog(false);
-    } catch (err) {
-      setDeleteError(
-        err instanceof Error ? err.message : "Failed to delete all readings",
-      );
-      console.error("Error deleting all readings:", err);
-    } finally {
-      setDeleteLoading(false);
-    }
+    deleteAllReadingsMutation.mutate();
   };
 
   return (
@@ -174,6 +146,7 @@ export default function ReadingsPage() {
               placeholder="Search your readings..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              disabled={isLoading}
             />
           </div>
         </div>
@@ -185,6 +158,7 @@ export default function ReadingsPage() {
               variant="destructive"
               onClick={handleDeleteAllClick}
               className="bg-red-600 hover:bg-red-700 text-white"
+              disabled={isLoading}
             >
               <Trash2 className="mr-2 h-4 w-4" />
               Delete All
@@ -192,18 +166,16 @@ export default function ReadingsPage() {
           </div>
         )}
 
-        {loading ? (
-          <div className="flex justify-center items-center h-40">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-          </div>
+        {isLoading ? (
+          <div className="text-white text-center">Loading your readings...</div>
         ) : error ? (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6">
             <p className="font-medium">Error loading readings</p>
-            <p className="text-sm">{error}</p>
+            <p className="text-sm">{(error as Error).message}</p>
             <Button
               variant="outline"
               className="mt-2 bg-white hover:bg-gray-100"
-              onClick={() => fetchReadings()}
+              onClick={() => refetch()}
             >
               Try Again
             </Button>
@@ -416,9 +388,11 @@ export default function ReadingsPage() {
             </DialogDescription>
           </DialogHeader>
 
-          {deleteError && (
+          {deleteReadingMutation.error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
-              <p className="text-sm">{deleteError}</p>
+              <p className="text-sm">
+                {(deleteReadingMutation.error as Error).message}
+              </p>
             </div>
           )}
 
@@ -426,7 +400,7 @@ export default function ReadingsPage() {
             <Button
               variant="outline"
               onClick={() => setShowDeleteDialog(false)}
-              disabled={deleteLoading}
+              disabled={deleteReadingMutation.isPending}
               className="border-gray-300"
             >
               Cancel
@@ -434,10 +408,10 @@ export default function ReadingsPage() {
             <Button
               variant="destructive"
               onClick={confirmDeleteReading}
-              disabled={deleteLoading}
+              disabled={deleteReadingMutation.isPending}
               className="ml-2 bg-red-600 hover:bg-red-700"
             >
-              {deleteLoading ? (
+              {deleteReadingMutation.isPending ? (
                 <div className="flex items-center">
                   <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
                   Deleting...
@@ -464,9 +438,11 @@ export default function ReadingsPage() {
             </DialogDescription>
           </DialogHeader>
 
-          {deleteError && (
+          {deleteAllReadingsMutation.error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
-              <p className="text-sm">{deleteError}</p>
+              <p className="text-sm">
+                {(deleteAllReadingsMutation.error as Error).message}
+              </p>
             </div>
           )}
 
@@ -474,7 +450,7 @@ export default function ReadingsPage() {
             <Button
               variant="outline"
               onClick={() => setShowDeleteAllDialog(false)}
-              disabled={deleteLoading}
+              disabled={deleteAllReadingsMutation.isPending}
               className="border-gray-300"
             >
               Cancel
@@ -482,10 +458,10 @@ export default function ReadingsPage() {
             <Button
               variant="destructive"
               onClick={confirmDeleteAllReadings}
-              disabled={deleteLoading}
+              disabled={deleteAllReadingsMutation.isPending}
               className="ml-2 bg-red-600 hover:bg-red-700"
             >
-              {deleteLoading ? (
+              {deleteAllReadingsMutation.isPending ? (
                 <div className="flex items-center">
                   <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
                   Deleting...

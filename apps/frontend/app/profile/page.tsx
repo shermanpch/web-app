@@ -1,46 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import PageLayout from "@/components/layout/PageLayout";
 import { authApi } from "@/lib/api/endpoints/auth";
 import { userApi } from "@/lib/api/endpoints/user";
 import { UserQuotaResponse } from "@/types/user";
 import { format } from "date-fns";
 
-// Types for our component state
-interface UserProfile {
-  id: string;
-  email: string;
-  created_at: string;
-}
-
 export default function ProfilePage() {
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [quota, setQuota] = useState<UserQuotaResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // Fetch current user data using React Query
+  const {
+    data: user,
+    isLoading: isLoadingUser,
+    error: userError,
+  } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: authApi.getCurrentUser,
+  });
 
-  useEffect(() => {
-    async function fetchUserData() {
-      try {
-        // Fetch current user data
-        const userData = await authApi.getCurrentUser();
-        if (userData) {
-          setUser(userData);
-        }
+  // Fetch user quota using React Query
+  const {
+    data: quota,
+    isLoading: isLoadingQuota,
+    error: quotaError,
+  } = useQuery<UserQuotaResponse | null>({
+    queryKey: ["userQuota"],
+    queryFn: userApi.getUserQuota,
+  });
 
-        // Fetch user quota
-        const quotaData = await userApi.getUserQuota();
-        setQuota(quotaData);
-      } catch (err) {
-        console.error("Error fetching profile data:", err);
-        setError(
-          "Failed to load some profile data. Please refresh to try again.",
-        );
-      }
-    }
+  // Combine loading states
+  const isLoading = isLoadingUser || isLoadingQuota;
 
-    fetchUserData();
-  }, []);
+  // Combine potential errors
+  const error = userError || quotaError;
 
   // Format the membership date
   const formatMemberSince = (dateString?: string) => {
@@ -86,48 +78,55 @@ export default function ProfilePage() {
 
         {error && (
           <div className="text-red-400 bg-red-900/20 py-2 px-4 rounded-lg mb-6 text-center">
-            {error}
+            {(error as Error).message || "Error loading profile data"}
           </div>
         )}
 
-        {/* Account Info Section */}
-        <div className="bg-[#EDE6D6] rounded-2xl p-8 mb-8 shadow-lg w-full">
-          <h2 className="text-2xl font-serif text-gray-800 mb-6">
-            Account Info
-          </h2>
+        {isLoading ? (
+          <div className="text-white text-center">Loading profile data...</div>
+        ) : (
+          <>
+            {/* Account Info Section */}
+            <div className="bg-[#EDE6D6] rounded-2xl p-8 mb-8 shadow-lg w-full">
+              <h2 className="text-2xl font-serif text-gray-800 mb-6">
+                Account Info
+              </h2>
 
-          <div className="space-y-2 text-gray-800">
-            <p>
-              <span className="font-medium">Email:</span> {user?.email || "-"}
-            </p>
-            <p>
-              <span className="font-medium">Plan:</span> {getPlanDisplay()}
-            </p>
-            <p>
-              <span className="font-medium">Premium Readings left:</span>{" "}
-              {quota?.remaining_queries !== undefined
-                ? quota.remaining_queries
-                : "-"}
-            </p>
-            <p>
-              <span className="font-medium">Member Since:</span>{" "}
-              {formatMemberSince(user?.created_at || quota?.created_at)}
-            </p>
-          </div>
-        </div>
+              <div className="space-y-2 text-gray-800">
+                <p>
+                  <span className="font-medium">Email:</span>{" "}
+                  {user?.email || "-"}
+                </p>
+                <p>
+                  <span className="font-medium">Plan:</span> {getPlanDisplay()}
+                </p>
+                <p>
+                  <span className="font-medium">Premium Readings left:</span>{" "}
+                  {quota?.remaining_queries !== undefined
+                    ? quota.remaining_queries
+                    : "-"}
+                </p>
+                <p>
+                  <span className="font-medium">Member Since:</span>{" "}
+                  {formatMemberSince(user?.created_at || quota?.created_at)}
+                </p>
+              </div>
+            </div>
 
-        {/* Subscription Section */}
-        <div className="bg-[#EDE6D6] rounded-2xl p-8 shadow-lg w-full">
-          <h2 className="text-2xl font-serif text-gray-800 mb-6">
-            Subscription and Credits
-          </h2>
+            {/* Subscription Section */}
+            <div className="bg-[#EDE6D6] rounded-2xl p-8 shadow-lg w-full">
+              <h2 className="text-2xl font-serif text-gray-800 mb-6">
+                Subscription and Credits
+              </h2>
 
-          <div className="space-y-2 text-gray-800">
-            <p>You&apos;re currently on the {getPlanDisplay()} plan</p>
-            <p>Auto-renews 10 premium readings every month</p>
-            <p>Next Renewal: {getNextRenewalDate()}</p>
-          </div>
-        </div>
+              <div className="space-y-2 text-gray-800">
+                <p>You&apos;re currently on the {getPlanDisplay()} plan</p>
+                <p>Auto-renews 10 premium readings every month</p>
+                <p>Next Renewal: {getNextRenewalDate()}</p>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </PageLayout>
   );

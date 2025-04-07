@@ -1,30 +1,22 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import PageLayout from "@/components/layout/PageLayout";
-import { usePageState } from "@/hooks/use-page-state";
+import { useMutation } from "@tanstack/react-query";
 import { divinationApi } from "@/lib/api/endpoints/divination";
 import { userApi } from "@/lib/api/endpoints/user";
 import { authApi } from "@/lib/api/endpoints/auth";
-import type { DivinationResponse } from "@/types/divination";
 import { motion } from "framer-motion";
 
 export default function ConsultingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const {
-    data: _readingResult,
-    setData: setReadingResult,
-    isLoading: _isLoading,
-    error,
-    setError,
-    withLoadingState,
-  } = usePageState<DivinationResponse>();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchAndSaveReading = async () => {
+  const readingMutation = useMutation({
+    mutationFn: async () => {
       const question = searchParams.get("question");
       const n1 = searchParams.get("n1");
       const n2 = searchParams.get("n2");
@@ -32,76 +24,89 @@ export default function ConsultingPage() {
 
       // Validate parameters
       if (!question || !n1 || !n2 || !n3) {
-        setError("Missing required parameters");
-        router.push("/try-now"); // Redirect back to start
-        return;
+        throw new Error("Missing required parameters");
       }
 
-      await withLoadingState(async () => {
-        try {
-          // Get the reading first
-          const readingData = await divinationApi.getIchingReading({
-            question,
-            first_number: parseInt(n1),
-            second_number: parseInt(n2),
-            third_number: parseInt(n3),
-            language: "English", // Default to English
+      // Get the reading first
+      const readingData = await divinationApi.getIchingReading({
+        question,
+        first_number: parseInt(n1),
+        second_number: parseInt(n2),
+        third_number: parseInt(n3),
+        language: "English", // Default to English
+      });
+
+      // Only decrement quota after successful reading
+      await userApi.decrementQuota();
+
+      return {
+        readingData,
+        params: {
+          question,
+          n1: parseInt(n1),
+          n2: parseInt(n2),
+          n3: parseInt(n3),
+        },
+      };
+    },
+    onSuccess: async (result) => {
+      const { readingData, params } = result;
+
+      try {
+        // Get current user and save reading
+        const user = await authApi.getCurrentUser();
+        if (user) {
+          const saveResponse = await divinationApi.saveIchingReading({
+            user_id: user.id,
+            question: params.question,
+            first_number: params.n1,
+            second_number: params.n2,
+            third_number: params.n3,
+            language: "English",
+            prediction: readingData,
           });
 
-          // Only decrement quota after successful reading
-          await userApi.decrementQuota();
-
-          setReadingResult(readingData);
-
-          // Get current user and save reading
-          try {
-            const user = await authApi.getCurrentUser();
-            if (user) {
-              const saveResponse = await divinationApi.saveIchingReading({
-                user_id: user.id,
-                question,
-                first_number: parseInt(n1),
-                second_number: parseInt(n2),
-                third_number: parseInt(n3),
-                language: "English",
-                prediction: readingData,
-              });
-
-              // Navigate to result page with both reading data and ID
-              const readingDataString = JSON.stringify({
-                ...readingData,
-                reading_id: saveResponse.id, // Add the reading ID to the data
-              });
-              router.push(
-                `/try-now/result?reading=${encodeURIComponent(readingDataString)}`,
-              );
-            }
-          } catch (saveError) {
-            console.error("Error saving reading:", saveError);
-            // If saving fails, still navigate but without the reading ID
-            const readingDataString = JSON.stringify(readingData);
-            router.push(
-              `/try-now/result?reading=${encodeURIComponent(readingDataString)}`,
-            );
-          }
-        } catch (error: any) {
-          setError(
-            error.message || "An error occurred while getting your reading",
+          // Navigate to result page with both reading data and ID
+          const readingDataString = JSON.stringify({
+            ...readingData,
+            reading_id: saveResponse.id, // Add the reading ID to the data
+          });
+          router.push(
+            `/try-now/result?reading=${encodeURIComponent(readingDataString)}`,
           );
-          console.error("Error in consulting flow:", error);
         }
-      });
-    };
+      } catch (saveError) {
+        console.error("Error saving reading:", saveError);
+        // If saving fails, still navigate but without the reading ID
+        const readingDataString = JSON.stringify(readingData);
+        router.push(
+          `/try-now/result?reading=${encodeURIComponent(readingDataString)}`,
+        );
+      }
+    },
+    onError: (error: any) => {
+      const errorMsg =
+        error.message || "An error occurred while getting your reading";
+      setErrorMessage(errorMsg);
 
-    fetchAndSaveReading();
-  }, [router, searchParams, withLoadingState, setError, setReadingResult]);
+      if (errorMsg === "Missing required parameters") {
+        router.push("/try-now"); // Redirect back to start
+      }
+      console.error("Error in consulting flow:", error);
+    },
+  });
+
+  useEffect(() => {
+    // Start the reading process immediately
+    readingMutation.mutate();
+  }, [readingMutation]);
 
   return (
     <PageLayout>
       <div className="flex min-h-screen bg-[#0A0D0A] absolute inset-0">
         <div className="flex flex-col items-center justify-center text-center w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10">
-          {error ? (
-            <div className="text-red-500 mb-4">{error}</div>
+          {errorMessage ? (
+            <div className="text-red-500 mb-4">{errorMessage}</div>
           ) : (
             <>
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-8 sm:mb-12 md:mb-16 font-serif">

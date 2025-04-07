@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import PageLayout from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { usePageState } from "@/hooks/use-page-state";
+import { useMutation } from "@tanstack/react-query";
 import { divinationApi } from "@/lib/api/endpoints/divination";
 import { authApi } from "@/lib/api/endpoints/auth";
 import type { DivinationResponse } from "@/types/divination";
@@ -28,12 +28,63 @@ export default function ResultPage() {
     null,
   );
 
-  const {
-    isLoading: isClarifying,
-    error: clarificationError,
-    setError: setClarificationError,
-    withLoadingState: withClarificationLoading,
-  } = usePageState<string>();
+  const clarificationMutation = useMutation({
+    mutationFn: async () => {
+      if (!reading || !clarificationInput.trim()) {
+        throw new Error("Reading or question is missing");
+      }
+
+      // Early return if reading_id is not available
+      if (!reading.reading_id) {
+        throw new Error("Cannot clarify - reading ID not found");
+      }
+
+      // Get current user
+      const user = await authApi.getCurrentUser();
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      // Update reading with clarification
+      const updateResponse = await divinationApi.updateIchingReading({
+        id: reading.reading_id as string,
+        user_id: user.id,
+        question: reading.question,
+        first_number: reading.first_number,
+        second_number: reading.second_number,
+        third_number: reading.third_number,
+        language: reading.language,
+        prediction: reading,
+        clarifying_question: clarificationInput,
+      });
+
+      return updateResponse;
+    },
+    onSuccess: (updateResponse) => {
+      if (!reading) return;
+
+      // Create updated reading object
+      const updatedReading: ExtendedDivinationResponse = {
+        ...reading,
+        clarifying_question: clarificationInput,
+        clarifying_answer: updateResponse.clarifying_answer,
+      };
+
+      // Update state
+      setClarificationAnswer(updateResponse.clarifying_answer);
+      setReading(updatedReading);
+      setClarificationInput("");
+
+      // Update URL with new reading data to persist across navigation
+      const readingDataString = JSON.stringify(updatedReading);
+      router.replace(
+        `/try-now/result?reading=${encodeURIComponent(readingDataString)}`,
+      );
+    },
+    onError: (error: any) => {
+      console.error("Error getting clarification:", error);
+    },
+  });
 
   useEffect(() => {
     const readingString = searchParams.get("reading");
@@ -52,60 +103,9 @@ export default function ResultPage() {
     }
   }, [searchParams]);
 
-  const handleClarificationSubmit = async () => {
+  const handleClarificationSubmit = () => {
     if (!reading || !clarificationInput.trim()) return;
-
-    // Early return if reading_id is not available
-    if (!reading.reading_id) {
-      setClarificationError("Cannot clarify - reading ID not found");
-      return;
-    }
-
-    setClarificationError(null);
-
-    await withClarificationLoading(async () => {
-      try {
-        // Get current user
-        const user = await authApi.getCurrentUser();
-        if (!user) {
-          throw new Error("User not found");
-        }
-
-        // Update reading with clarification
-        const updateResponse = await divinationApi.updateIchingReading({
-          id: reading.reading_id as string, // We've already checked it exists above
-          user_id: user.id,
-          question: reading.question,
-          first_number: reading.first_number,
-          second_number: reading.second_number,
-          third_number: reading.third_number,
-          language: reading.language,
-          prediction: reading,
-          clarifying_question: clarificationInput,
-        });
-
-        // Create updated reading object
-        const updatedReading = {
-          ...reading,
-          clarifying_question: clarificationInput,
-          clarifying_answer: updateResponse.clarifying_answer,
-        };
-
-        // Update state
-        setClarificationAnswer(updateResponse.clarifying_answer);
-        setReading(updatedReading);
-        setClarificationInput("");
-
-        // Update URL with new reading data to persist across navigation
-        const readingDataString = JSON.stringify(updatedReading);
-        router.replace(
-          `/try-now/result?reading=${encodeURIComponent(readingDataString)}`,
-        );
-      } catch (error: any) {
-        setClarificationError(error.message || "Failed to get clarification");
-        console.error("Error getting clarification:", error);
-      }
-    });
+    clarificationMutation.mutate();
   };
 
   if (!reading) {
@@ -219,17 +219,24 @@ export default function ResultPage() {
                   className="w-full min-h-[100px] bg-brand-input-bg text-gray-800 placeholder:text-brand-input-text border-none rounded-xl p-4 sm:p-6 focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none font-serif text-sm sm:text-base"
                   rows={3}
                 />
-                <Button
-                  onClick={handleClarificationSubmit}
-                  disabled={!clarificationInput.trim() || isClarifying}
-                  className="w-full sm:w-auto bg-brand-button-bg hover:bg-brand-button-hover text-white px-6 sm:px-8 py-2 sm:py-3 rounded-full text-sm sm:text-base font-semibold"
-                >
-                  {isClarifying
-                    ? "Getting Clarification..."
-                    : "Get Clarification"}
-                </Button>
-                {clarificationError && (
-                  <p className="text-red-500 text-sm">{clarificationError}</p>
+                <div className="flex justify-center">
+                  <Button
+                    onClick={handleClarificationSubmit}
+                    disabled={
+                      !clarificationInput.trim() ||
+                      clarificationMutation.isPending
+                    }
+                    className="bg-brand-button-bg hover:bg-brand-button-hover text-white px-6 sm:px-8 py-2 sm:py-3 rounded-full text-sm sm:text-base font-semibold"
+                  >
+                    {clarificationMutation.isPending
+                      ? "Getting Clarification..."
+                      : "Get Clarification"}
+                  </Button>
+                </div>
+                {clarificationMutation.error && (
+                  <p className="text-red-500 text-sm">
+                    {(clarificationMutation.error as Error).message}
+                  </p>
                 )}
               </motion.div>
             ) : (
@@ -253,6 +260,23 @@ export default function ResultPage() {
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* New Reading Button - Only show after clarification is answered */}
+          {clarificationAnswer && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="flex justify-center mt-8 sm:mt-12"
+            >
+              <Button
+                onClick={() => router.push("/try-now")}
+                className="bg-brand-button-bg hover:bg-brand-button-hover text-white px-8 py-3 rounded-full text-base font-semibold"
+              >
+                New Reading
+              </Button>
+            </motion.div>
+          )}
         </motion.div>
       </div>
     </PageLayout>
