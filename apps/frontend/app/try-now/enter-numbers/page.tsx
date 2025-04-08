@@ -17,11 +17,34 @@ export default function EnterNumbersPage() {
   const [firstNumber, setFirstNumber] = useState("");
   const [secondNumber, setSecondNumber] = useState("");
   const [thirdNumber, setThirdNumber] = useState("");
+  const [firstNumberError, setFirstNumberError] = useState<string | null>(null);
+  const [secondNumberError, setSecondNumberError] = useState<string | null>(null);
+  const [thirdNumberError, setThirdNumberError] = useState<string | null>(null);
+
+  const validateNumber = (value: string): string | null => {
+    if (!value) return null;
+    if (!/^\d+$/.test(value)) return "Please enter a valid number";
+    const num = parseInt(value);
+    if (num < 0) return "Number must be 0 or greater";
+    if (num > 999) return "Number must be 999 or less";
+    return null;
+  };
 
   const isValidNumber = (num: string) => {
     const parsed = parseInt(num);
     return !isNaN(parsed) && parsed >= 0 && parsed <= 999;
   };
+
+  const handleNumberChange = (
+    value: string,
+    setter: (value: string) => void,
+    errorSetter: (error: string | null) => void
+  ) => {
+    setter(value);
+    const error = validateNumber(value);
+    errorSetter(error);
+  };
+
   const isFormValid =
     isValidNumber(firstNumber) &&
     isValidNumber(secondNumber) &&
@@ -34,7 +57,7 @@ export default function EnterNumbersPage() {
     const padNumber = (num: string) =>
       parseInt(num).toString().padStart(3, "0");
 
-    router.push(
+    router.replace(
       `/try-now/consulting?question=${encodeURIComponent(question)}&n1=${padNumber(firstNumber)}&n2=${padNumber(secondNumber)}&n3=${padNumber(thirdNumber)}`,
     );
   };
@@ -68,9 +91,12 @@ export default function EnterNumbersPage() {
               max="999"
               placeholder="Enter first number (0-999)"
               value={firstNumber}
-              onChange={(e) => setFirstNumber(e.target.value)}
+              onChange={(e) => handleNumberChange(e.target.value, setFirstNumber, setFirstNumberError)}
               className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-800 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
             />
+            {firstNumberError && (
+              <p className="text-red-500 text-sm mt-2">{firstNumberError}</p>
+            )}
           </div>
 
           <div>
@@ -87,9 +113,12 @@ export default function EnterNumbersPage() {
               max="999"
               placeholder="Enter second number (0-999)"
               value={secondNumber}
-              onChange={(e) => setSecondNumber(e.target.value)}
+              onChange={(e) => handleNumberChange(e.target.value, setSecondNumber, setSecondNumberError)}
               className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-800 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
             />
+            {secondNumberError && (
+              <p className="text-red-500 text-sm mt-2">{secondNumberError}</p>
+            )}
           </div>
 
           <div>
@@ -106,9 +135,12 @@ export default function EnterNumbersPage() {
               max="999"
               placeholder="Enter third number (0-999)"
               value={thirdNumber}
-              onChange={(e) => setThirdNumber(e.target.value)}
+              onChange={(e) => handleNumberChange(e.target.value, setThirdNumber, setThirdNumberError)}
               className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-800 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
             />
+            {thirdNumberError && (
+              <p className="text-red-500 text-sm mt-2">{thirdNumberError}</p>
+            )}
           </div>
         </div>
 

@@ -73,13 +73,13 @@ export default function ConsultingPage() {
           await userApi.decrementQuota();
 
           // Navigate to result page with just the reading ID
-          router.push(`/try-now/result?id=${saveResponse.id}`);
+          router.replace(`/try-now/result?id=${saveResponse.id}`);
         }
       } catch (saveError) {
         console.error("Error saving reading:", saveError);
         // If saving fails, show error and redirect back
         setErrorMessage("Failed to save your reading. Please try again.");
-        setTimeout(() => router.push("/try-now"), 3000);
+        setTimeout(() => router.replace("/try-now"), 3000);
       }
     },
     onError: (error: any) => {
@@ -88,7 +88,7 @@ export default function ConsultingPage() {
       setErrorMessage(errorMsg);
 
       if (errorMsg === "Missing required parameters") {
-        router.push("/try-now"); // Redirect back to start
+        router.replace("/try-now"); // Redirect back to start
       }
       console.error("Error in consulting flow:", error);
     },
