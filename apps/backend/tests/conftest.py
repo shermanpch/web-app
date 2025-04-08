@@ -4,9 +4,11 @@ import logging
 import os
 import sys
 from pathlib import Path
+from typing import Any, Dict, Generator, List, Optional, Tuple
 
 import pytest
 from fastapi.testclient import TestClient
+from httpx import Response
 
 from main import app
 
@@ -36,18 +38,18 @@ logger.setLevel(logging.INFO)
 
 
 @pytest.fixture(scope="session")
-def client():
+def client() -> Generator[TestClient, None, None]:
     """
     Create a test client for FastAPI application.
 
     Returns:
         TestClient: FastAPI test client
     """
-    return TestClient(app)
+    yield TestClient(app)
 
 
 @pytest.fixture(scope="function")
-def test_user():
+def test_user() -> Generator[Dict[str, str], None, None]:
     """
     Test user credentials.
 
@@ -55,14 +57,16 @@ def test_user():
         dict: Test user credentials
     """
     random_id = os.urandom(4).hex()
-    return {
+    yield {
         "email": f"testuser.{random_id}@example.com",
         "password": "TestPassword123!",
     }
 
 
 @pytest.fixture(scope="function")
-def auth_tokens(client, test_user):
+def auth_tokens(
+    client: TestClient, test_user: Dict[str, str]
+) -> Generator[Dict[str, Any], None, None]:
     """
     Get both access and refresh tokens for a test user.
     Automatically handles user creation and cleanup.
@@ -127,7 +131,9 @@ def auth_tokens(client, test_user):
 
 
 @pytest.fixture(scope="function")
-def authenticated_client(client, auth_tokens):
+def authenticated_client(
+    client: TestClient, auth_tokens: Dict[str, Any]
+) -> Generator[Tuple[TestClient, Optional[str]], None, None]:
     """
     Provides a pre-authenticated TestClient instance.
 
@@ -150,7 +156,7 @@ def authenticated_client(client, auth_tokens):
 
 
 @pytest.fixture(scope="function")
-def reset_password_user():
+def reset_password_user() -> Generator[Dict[str, str], None, None]:
     """
     User credentials for reset password test.
 
@@ -159,11 +165,13 @@ def reset_password_user():
     """
     from app.config import settings
 
-    return {"email": settings.TEST_EMAIL, "password": "TestPassword123!"}
+    yield {"email": settings.TEST_EMAIL, "password": "TestPassword123!"}
 
 
 # Assertion helper functions
-def assert_successful_response(response, status_code=200):
+def assert_successful_response(
+    response: Response, status_code: int = 200
+) -> Dict[str, Any]:
     """
     Assert that a response was successful with expected status code.
 
@@ -178,7 +186,7 @@ def assert_successful_response(response, status_code=200):
         response.status_code == status_code
     ), f"Expected status code {status_code}, got {response.status_code}: {response.text}"
 
-    data = response.json()
+    data: Dict[str, Any] = response.json()
     if isinstance(data, dict) and "status" in data:
         assert (
             data.get("status") == "success"
@@ -187,7 +195,7 @@ def assert_successful_response(response, status_code=200):
     return data
 
 
-def assert_has_fields(obj, fields, prefix=""):
+def assert_has_fields(obj: Dict[str, Any], fields: List[str], prefix: str = "") -> None:
     """
     Assert that an object has all the specified fields.
 
@@ -200,15 +208,15 @@ def assert_has_fields(obj, fields, prefix=""):
         assert field in obj, f"{prefix}Missing required field: {field}"
 
 
-def extract_tokens_from_cookies(response):
+def extract_tokens_from_cookies(response: Response) -> Dict[str, str]:
     """
-    Extract access and refresh tokens from response cookies.
+    Extract authentication tokens from response cookies.
 
     Args:
-        response: HTTP response object
+        response: HTTP response with cookies
 
     Returns:
-        Dict containing access_token and refresh_token
+        dict: Dictionary containing access and refresh tokens
     """
     cookies = response.cookies
     access_token = cookies.get("auth_token")
@@ -223,15 +231,19 @@ def extract_tokens_from_cookies(response):
     }
 
 
-def extract_user_data(response):
+def extract_user_data(response: Response) -> Dict[str, Any]:
     """
     Extract user data from response.
 
     Args:
-        response: HTTP response object
+        response: HTTP response containing user data
 
     Returns:
-        Dict containing user data
+        dict: User data
     """
-    data = response.json().get("data", {})
-    return data.get("user", {})
+    data = response.json()
+    if isinstance(data, dict) and "data" in data:
+        data = data["data"]
+    if isinstance(data, dict) and "user" in data:
+        data = data["user"]
+    return data

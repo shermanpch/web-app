@@ -1,8 +1,12 @@
 """Tests for authentication endpoints."""
 
 import logging
+from typing import Any, Dict, Optional, Tuple, cast
 
+import pytest
+from _pytest.fixtures import FixtureFunction, SubRequest
 from fastapi import status
+from fastapi.testclient import TestClient
 
 from tests.api.base_test import BaseTest
 from tests.conftest import (
@@ -19,7 +23,7 @@ logger = logging.getLogger(__name__)
 class TestAuthentication(BaseTest):
     """Test suite for authentication endpoints."""
 
-    def test_signup(self, client, test_user):
+    def test_signup(self, client: TestClient, test_user: Dict[str, str]) -> None:
         """Test user signup."""
         # ARRANGE
         self.logger.info("Testing user signup")
@@ -28,7 +32,7 @@ class TestAuthentication(BaseTest):
         response = client.post("/api/auth/signup", json=test_user)
 
         # ASSERT
-        data = assert_successful_response(response)
+        data: Dict[str, Any] = assert_successful_response(response)
         assert_has_fields(data, ["data"])
         assert_has_fields(data["data"], ["user"])
 
@@ -39,7 +43,7 @@ class TestAuthentication(BaseTest):
         assert "refresh_token" in cookies, "Response should set refresh_token cookie"
 
         # Verify user data
-        user_data = extract_user_data(response)
+        user_data: Dict[str, Any] = extract_user_data(response)
         assert user_data.get("id"), "Response should include user ID"
         assert (
             user_data.get("email") == test_user["email"]
@@ -57,13 +61,13 @@ class TestAuthentication(BaseTest):
                 f"Deleted test user with status: {delete_response.status_code}"
             )
 
-    def test_login(self, client, test_user):
+    def test_login(self, client: TestClient, test_user: Dict[str, str]) -> None:
         """Test user login."""
         # ARRANGE
         self.logger.info("Testing user login")
 
         # Just use a different test_user instance for this specific test
-        new_test_user = {
+        new_test_user: Dict[str, str] = {
             "email": f"login_test_{test_user['email']}",
             "password": test_user["password"],
         }
@@ -78,7 +82,7 @@ class TestAuthentication(BaseTest):
         response = client.post("/api/auth/login", json=new_test_user)
 
         # ASSERT
-        data = assert_successful_response(response)
+        data: Dict[str, Any] = assert_successful_response(response)
         assert_has_fields(data, ["data"])
         assert_has_fields(data["data"], ["user"])
 
@@ -93,7 +97,7 @@ class TestAuthentication(BaseTest):
         client.cookies.set("refresh_token", cookies.get("refresh_token"))
 
         # Cleanup - delete the user we created for this test
-        user_data = extract_user_data(signup_response)
+        user_data: Dict[str, Any] = extract_user_data(signup_response)
         user_id = user_data.get("id")
         if user_id:
             delete_response = client.delete(f"/api/auth/users/{user_id}")
@@ -101,7 +105,9 @@ class TestAuthentication(BaseTest):
                 f"Deleted test user with status: {delete_response.status_code}"
             )
 
-    def test_get_current_user(self, authenticated_client):
+    def test_get_current_user(
+        self, authenticated_client: Tuple[TestClient, Optional[str]]
+    ) -> None:
         """Test getting current user info."""
         # ARRANGE
         self.logger.info("Testing get current user")
@@ -112,7 +118,7 @@ class TestAuthentication(BaseTest):
 
         # ASSERT
         assert response.status_code == status.HTTP_200_OK
-        user_data = response.json()
+        user_data: Dict[str, Any] = response.json()
         assert_has_fields(user_data, ["id", "email"])
 
         # Verify the user_id matches what we got from the fixture
@@ -120,13 +126,15 @@ class TestAuthentication(BaseTest):
             user_data["id"] == user_id
         ), "User ID in response doesn't match authenticated user"
 
-    def test_reset_password(self, client, reset_password_user):
+    def test_reset_password(
+        self, client: TestClient, reset_password_user: Dict[str, str]
+    ) -> None:
         """Test password reset request using specific email."""
         # ARRANGE
         self.logger.info("Testing password reset")
         # Just sign up the specific reset password user for this test
         signup_response = client.post("/api/auth/signup", json=reset_password_user)
-        user_data = extract_user_data(signup_response)
+        user_data: Dict[str, Any] = extract_user_data(signup_response)
         user_id = user_data.get("id")
         assert user_id, "Failed to create reset password test user"
 
@@ -136,7 +144,7 @@ class TestAuthentication(BaseTest):
         )
 
         # ASSERT
-        data = assert_successful_response(response)
+        data: Dict[str, Any] = assert_successful_response(response)
         assert "message" in data
 
         # Cleanup - delete the reset password user
@@ -154,7 +162,11 @@ class TestAuthentication(BaseTest):
                     f"Deleted reset password user with status: {delete_response.status_code}"
                 )
 
-    def test_password_change_flow(self, authenticated_client, test_user):
+    def test_password_change_flow(
+        self,
+        authenticated_client: Tuple[TestClient, Optional[str]],
+        test_user: Dict[str, str],
+    ) -> None:
         """Test the entire password change flow."""
         # ARRANGE
         self.logger.info("Testing password change flow")
@@ -162,7 +174,7 @@ class TestAuthentication(BaseTest):
 
         # ACT - Change password
         new_password = "NewPassword456!"
-        change_request = {"password": new_password}
+        change_request: Dict[str, str] = {"password": new_password}
 
         change_response = client.post("/api/auth/password/change", json=change_request)
 
@@ -170,11 +182,14 @@ class TestAuthentication(BaseTest):
         assert_successful_response(change_response)
 
         # Verify: Login with new password
-        new_credentials = {"email": test_user["email"], "password": new_password}
+        new_credentials: Dict[str, str] = {
+            "email": test_user["email"],
+            "password": new_password,
+        }
         login_response = client.post("/api/auth/login", json=new_credentials)
         assert_successful_response(login_response)
 
-    def test_unauthorized_access(self, client):
+    def test_unauthorized_access(self, client: TestClient) -> None:
         """Test access to protected endpoint without authentication."""
         # ARRANGE & ACT
         self.logger.info("Testing unauthorized access")
@@ -187,7 +202,7 @@ class TestAuthentication(BaseTest):
         # ASSERT
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_invalid_credentials_login(self, client):
+    def test_invalid_credentials_login(self, client: TestClient) -> None:
         """Test login with invalid credentials."""
         # ARRANGE & ACT
         self.logger.info("Testing invalid credentials")
@@ -199,7 +214,12 @@ class TestAuthentication(BaseTest):
         # ASSERT
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_delete_user_success(self, client, test_user):
+    @pytest.mark.asyncio  # type: ignore
+    async def test_delete_user_success(
+        self,
+        client: TestClient,
+        test_user: Dict[str, str],
+    ) -> None:
         """Test actual user creation and deletion (integration test)."""
         # ARRANGE
         self.logger.info("Testing user deletion")
@@ -235,7 +255,12 @@ class TestAuthentication(BaseTest):
         verify_login = client.post("/api/auth/login", json=test_user)
         assert verify_login.status_code == 401, "User should no longer exist"
 
-    def test_login_with_remember_me(self, client, test_user):
+    @pytest.mark.asyncio  # type: ignore
+    async def test_login_with_remember_me(
+        self,
+        client: TestClient,
+        test_user: Dict[str, str],
+    ) -> None:
         """Test user login with remember_me flag set to True."""
         # ARRANGE
         self.logger.info("Testing user login with remember_me=True")
@@ -329,7 +354,12 @@ class TestAuthentication(BaseTest):
                 f"Deleted test user with status: {delete_response.status_code}"
             )
 
-    def test_login_without_remember_me(self, client, test_user):
+    @pytest.mark.asyncio  # type: ignore
+    async def test_login_without_remember_me(
+        self,
+        client: TestClient,
+        test_user: Dict[str, str],
+    ) -> None:
         """Test user login with remember_me flag set to False."""
         # ARRANGE
         self.logger.info("Testing user login with remember_me=False")

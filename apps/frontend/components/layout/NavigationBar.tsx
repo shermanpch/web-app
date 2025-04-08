@@ -84,13 +84,16 @@ export default function NavigationBar({
   ];
 
   return (
-    <nav className="fixed top-0 left-0 w-full z-50 bg-gray-900/80 backdrop-blur-sm">
-      <div className="flex justify-between items-center py-4 px-4 md:px-6 w-full">
+    <nav className="fixed top-0 left-0 w-full z-50">
+      {/* Gradient background to match ContentContainer */}
+      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-[#1a1812]/70 to-black/80 border-b border-[rgba(218,165,32,0.3)]"></div>
+      
+      <div className="flex justify-between items-center py-4 px-4 md:px-6 w-full relative">
         {/* Logo or Brand - can be added here */}
         <div className="flex items-center">
           {/* Hamburger menu button - only visible on mobile */}
           <button
-            className="md:hidden text-gray-200 hover:text-white"
+            className="md:hidden text-[#EDE6D6] hover:text-white transition-colors"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Toggle menu"
           >
@@ -108,7 +111,7 @@ export default function NavigationBar({
             <Link
               key={link.href}
               href={link.href}
-              className="text-gray-200 hover:text-white transition-colors text-lg"
+              className="text-[#EDE6D6] hover:text-white hover:border-b hover:border-[rgba(218,165,32,0.6)] pb-1 transition-colors text-lg"
             >
               {link.label}
             </Link>
@@ -131,7 +134,7 @@ export default function NavigationBar({
                         alt={user.name || user.email}
                       />
                     )}
-                    <AvatarFallback className="bg-gray-700 text-gray-200">
+                    <AvatarFallback className="bg-[#1a1812] text-[#EDE6D6] border border-[rgba(218,165,32,0.3)]">
                       {user.name
                         ? user.name.charAt(0).toUpperCase()
                         : user.email?.charAt(0).toUpperCase()}
@@ -184,16 +187,19 @@ export default function NavigationBar({
 
       {/* Mobile menu - slides down when hamburger is clicked */}
       <div
-        className={`md:hidden fixed top-[60px] left-0 right-0 bg-gray-900/95 backdrop-blur-sm transition-all duration-300 z-40 ${
+        className={`md:hidden fixed top-[60px] left-0 right-0 transition-all duration-300 z-40 ${
           isMobileMenuOpen ? "max-h-screen py-4" : "max-h-0 overflow-hidden"
         }`}
       >
-        <div className="flex flex-col space-y-4 px-4">
+        {/* Gradient background for mobile menu */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-[#1a1812]/70 to-black/80 border-b border-[rgba(218,165,32,0.3)]"></div>
+        
+        <div className="flex flex-col space-y-4 px-4 relative">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="text-gray-200 hover:text-white transition-colors text-lg font-serif"
+              className="text-[#EDE6D6] hover:text-white hover:border-b hover:border-[rgba(218,165,32,0.6)] pb-1 transition-colors text-lg font-serif"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               {link.label}

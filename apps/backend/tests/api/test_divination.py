@@ -1,11 +1,14 @@
 """Tests for divination endpoints."""
 
 import logging
+from typing import Any, Dict, Optional, Tuple
 
 import pytest
+from fastapi import status
+from fastapi.testclient import TestClient
 
 from tests.api.base_test import BaseTest
-from tests.conftest import assert_has_fields
+from tests.conftest import assert_has_fields, assert_successful_response
 
 # Get the logger with module name
 logger = logging.getLogger(__name__)
@@ -14,7 +17,7 @@ logger = logging.getLogger(__name__)
 class TestDivination(BaseTest):
     """Test suite for divination endpoints."""
 
-    def test_iching_text_retrieval_non_authenticated(self, client):
+    def test_iching_text_retrieval_non_authenticated(self, client: TestClient) -> None:
         """Test retrieving I-Ching text without authentication."""
         # ARRANGE
         self.logger.info("Testing I-Ching text retrieval without authentication")
@@ -41,7 +44,7 @@ class TestDivination(BaseTest):
         ), "Request should fail with authentication error when no auth is provided"
 
         # Verify error details in response
-        error_data = iching_response.json()
+        error_data: Dict[str, Any] = iching_response.json()
         assert "detail" in error_data, "Response should contain error details"
         assert (
             "Authentication" in error_data["detail"]
@@ -49,7 +52,9 @@ class TestDivination(BaseTest):
 
         self.logger.info("Non-authenticated test passed successfully!")
 
-    def test_iching_text_retrieval_authenticated(self, authenticated_client):
+    def test_iching_text_retrieval_authenticated(
+        self, authenticated_client: Tuple[TestClient, Optional[str]]
+    ) -> None:
         """Test retrieving I-Ching text using authentication cookies."""
         # ARRANGE
         self.logger.info("Testing I-Ching text retrieval with authentication")
@@ -74,7 +79,7 @@ class TestDivination(BaseTest):
         ), f"I-Ching text retrieval failed: {iching_response.text}"
 
         # Verify response structure and content
-        iching_data = iching_response.json()
+        iching_data: Dict[str, Any] = iching_response.json()
         assert_has_fields(
             iching_data,
             ["parent_coord", "child_coord", "parent_text", "child_text"],
@@ -93,7 +98,7 @@ class TestDivination(BaseTest):
 
         self.logger.info("I-Ching text retrieval test passed successfully!")
 
-    def _log_text_preview(self, iching_data):
+    def _log_text_preview(self, iching_data: Dict[str, Any]) -> None:
         """Log preview of parent and child text content."""
         parent_text = iching_data.get("parent_text", "")
         child_text = iching_data.get("child_text", "")
@@ -106,7 +111,7 @@ class TestDivination(BaseTest):
             preview = child_text[:50] + "..." if len(child_text) > 50 else child_text
             self.logger.info(f"Child text preview: {preview}")
 
-    def test_iching_image_retrieval_non_authenticated(self, client):
+    def test_iching_image_retrieval_non_authenticated(self, client: TestClient) -> None:
         """Test retrieving I-Ching image without authentication."""
         # ARRANGE
         self.logger.info("Testing I-Ching image retrieval without authentication")
@@ -130,8 +135,10 @@ class TestDivination(BaseTest):
 
         self.logger.info("Non-authenticated image retrieval test passed successfully!")
 
-    @pytest.mark.asyncio
-    async def test_iching_image_retrieval_authenticated(self, authenticated_client):
+    @pytest.mark.asyncio  # type: ignore
+    async def test_iching_image_retrieval_authenticated(
+        self, authenticated_client: Tuple[TestClient, Optional[str]]
+    ) -> None:
         """Test retrieving I-Ching image using authentication cookies."""
         # ARRANGE
         self.logger.info("Testing I-Ching image retrieval with authentication")
@@ -153,13 +160,13 @@ class TestDivination(BaseTest):
 
         # Verify response headers and content
         assert (
-            iching_response.headers["Content-Type"] == "image/jpeg"
+            iching_response.headers["content-type"] == "image/jpeg"
         ), "Response should be a JPEG image"
         assert len(iching_response.content) > 0, "Response should contain image data"
 
         self.logger.info("I-Ching image retrieval test passed successfully!")
 
-    def test_iching_coordinates_conversion(self, client):
+    def test_iching_coordinates_conversion(self, client: TestClient) -> None:
         """Test the I-Ching coordinates conversion logic."""
         # ARRANGE
         self.logger.info("Testing I-Ching coordinates conversion")
@@ -193,7 +200,7 @@ class TestDivination(BaseTest):
         ), f"I-Ching coordinates conversion failed: {coordinates_response.text}"
 
         # Verify response structure and content
-        coordinates_data = coordinates_response.json()
+        coordinates_data: Dict[str, Any] = coordinates_response.json()
         assert_has_fields(coordinates_data, ["parent_coord", "child_coord"])
 
         # Verify coordinates match expected values
@@ -255,16 +262,18 @@ class TestDivination(BaseTest):
 
         # Log the reading data for inspection
         self.logger.info("I-Ching Reading Results:")
-        self.logger.info(f"Hexagram Name: {reading_data['hexagram_name']}")
-        self.logger.info(f"Summary: {reading_data['summary']}")
-        self.logger.info(f"Interpretation: {reading_data['interpretation'][:100]}...")
+        self.logger.info(f"Hexagram Name: {reading_data.get('hexagram_name', 'N/A')}")
+        self.logger.info(f"Summary: {reading_data.get('summary', 'N/A')}")
         self.logger.info(
-            f"Line Change: {reading_data['line_change']['line']} - {reading_data['line_change']['interpretation'][:50]}..."
+            f"Interpretation: {reading_data.get('interpretation', '')[:100]}..."
         )
         self.logger.info(
-            f"Result Hexagram: {reading_data['result']['name']} - {reading_data['result']['interpretation'][:50]}..."
+            f"Line Change: {reading_data.get('line_change', {}).get('line', 'N/A')} - {reading_data.get('line_change', {}).get('interpretation', '')[:50]}..."
         )
-        self.logger.info(f"Advice: {reading_data['advice'][:100]}...")
+        self.logger.info(
+            f"Result Hexagram: {reading_data.get('result', {}).get('name', 'N/A')} - {reading_data.get('result', {}).get('interpretation', '')[:50]}..."
+        )
+        self.logger.info(f"Advice: {reading_data.get('advice', '')[:100]}...")
 
         self.logger.info("I-Ching reading test passed successfully!")
 
@@ -296,10 +305,10 @@ class TestDivination(BaseTest):
         # Get the real prediction data
         reading_data = reading_response.json()
         self.logger.info(
-            f"Retrieved real prediction for hexagram: {reading_data['hexagram_name']}"
+            f"Retrieved real prediction for hexagram: {reading_data.get('hexagram_name', 'N/A')}"
         )
         self.logger.info(
-            f"Retrieved real prediction for line change: {reading_data['result']['name']}"
+            f"Retrieved real prediction for line change: {reading_data.get('result', {}).get('name', 'N/A')}"
         )
 
         # STEP 2: Now save this real prediction to the database
@@ -308,11 +317,11 @@ class TestDivination(BaseTest):
             "/api/divination/iching-reading/save",
             json={
                 "user_id": user_id,
-                "question": reading_data["question"],
-                "first_number": reading_data["first_number"],
-                "second_number": reading_data["second_number"],
-                "third_number": reading_data["third_number"],
-                "language": reading_data["language"],
+                "question": reading_data.get("question", ""),
+                "first_number": reading_data.get("first_number", 0),
+                "second_number": reading_data.get("second_number", 0),
+                "third_number": reading_data.get("third_number", 0),
+                "language": reading_data.get("language", "en"),
                 "prediction": reading_data,
             },
         )
@@ -339,16 +348,16 @@ class TestDivination(BaseTest):
         assert save_data["success"] is True, "Expected success to be True"
 
         # Verify we got back a UUID
-        reading_id = save_data["id"]
+        reading_id = save_data.get("id")
         assert len(reading_id) > 0, "Expected a non-empty reading ID"
 
         # Log the reading details for inspection
         self.logger.info("I-Ching Reading Save Results:")
         self.logger.info(f"Reading ID: {reading_id}")
-        self.logger.info(f"User ID: {save_data['user_id']}")
-        self.logger.info(f"Created At: {save_data['created_at']}")
-        self.logger.info(f"Success: {save_data['success']}")
-        self.logger.info(f"Message: {save_data['message']}")
+        self.logger.info(f"User ID: {save_data.get('user_id', 'N/A')}")
+        self.logger.info(f"Created At: {save_data.get('created_at', 'N/A')}")
+        self.logger.info(f"Success: {save_data.get('success', False)}")
+        self.logger.info(f"Message: {save_data.get('message', 'N/A')}")
         self.logger.info("I-Ching reading save test passed successfully!")
 
     def test_update_iching_reading(self, authenticated_client):
@@ -379,10 +388,10 @@ class TestDivination(BaseTest):
         # Get the real prediction data
         reading_data = iching_response.json()
         self.logger.info(
-            f"Retrieved real prediction for hexagram: {reading_data['hexagram_name']}"
+            f"Retrieved real prediction for hexagram: {reading_data.get('hexagram_name', 'N/A')}"
         )
         self.logger.info(
-            f"Retrieved real prediction for line change: {reading_data['result']['name']}"
+            f"Retrieved real prediction for line change: {reading_data.get('result', {}).get('name', 'N/A')}"
         )
 
         # STEP 2: Now save this real prediction to the database
@@ -391,11 +400,11 @@ class TestDivination(BaseTest):
             "/api/divination/iching-reading/save",
             json={
                 "user_id": user_id,
-                "question": reading_data["question"],
-                "first_number": reading_data["first_number"],
-                "second_number": reading_data["second_number"],
-                "third_number": reading_data["third_number"],
-                "language": reading_data["language"],
+                "question": reading_data.get("question", ""),
+                "first_number": reading_data.get("first_number", 0),
+                "second_number": reading_data.get("second_number", 0),
+                "third_number": reading_data.get("third_number", 0),
+                "language": reading_data.get("language", "en"),
                 "prediction": reading_data,
                 "clarifying_question": None,
                 "clarifying_answer": None,
@@ -408,8 +417,8 @@ class TestDivination(BaseTest):
         ), f"I-Ching reading save failed: {save_response.text}"
 
         save_data = save_response.json()
-        reading_id = save_data["id"]
-        assert save_data["success"] is True, "Expected save to be successful"
+        reading_id = save_data.get("id")
+        assert save_data.get("success") is True, "Expected save to be successful"
         self.logger.info(f"Successfully saved reading with ID: {reading_id}")
 
         # STEP 3: Update the reading with a clarifying question
@@ -423,11 +432,11 @@ class TestDivination(BaseTest):
             json={
                 "id": reading_id,
                 "user_id": user_id,
-                "question": reading_data["question"],
-                "first_number": reading_data["first_number"],
-                "second_number": reading_data["second_number"],
-                "third_number": reading_data["third_number"],
-                "language": reading_data["language"],
+                "question": reading_data.get("question", ""),
+                "first_number": reading_data.get("first_number", 0),
+                "second_number": reading_data.get("second_number", 0),
+                "third_number": reading_data.get("third_number", 0),
+                "language": reading_data.get("language", "en"),
                 "prediction": reading_data,
                 "clarifying_question": test_clarifying_question,
             },
@@ -471,10 +480,12 @@ class TestDivination(BaseTest):
 
         # Log the updated reading details
         self.logger.info("I-Ching Reading Update Results:")
-        self.logger.info(f"Reading ID: {update_data['id']}")
-        self.logger.info(f"User ID: {update_data['user_id']}")
-        self.logger.info(f"Clarifying Question: {update_data['clarifying_question']}")
+        self.logger.info(f"Reading ID: {update_data.get('id', 'N/A')}")
+        self.logger.info(f"User ID: {update_data.get('user_id', 'N/A')}")
         self.logger.info(
-            f"Clarifying Answer: {update_data['clarifying_answer'][:100]}..."
+            f"Clarifying Question: {update_data.get('clarifying_question', 'N/A')}"
+        )
+        self.logger.info(
+            f"Clarifying Answer: {update_data.get('clarifying_answer', '')[:100]}..."
         )
         self.logger.info("I-Ching reading update test passed successfully!")
