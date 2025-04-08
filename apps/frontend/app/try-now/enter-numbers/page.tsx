@@ -36,13 +36,13 @@ export default function EnterNumbersPage() {
   };
 
   const handleNumberChange = (
-    value: string,
-    setter: (value: string) => void,
-    errorSetter: (error: string | null) => void
+    _value: string,
+    _setter: (_value: string) => void,
+    _errorSetter: (_error: string | null) => void
   ) => {
-    setter(value);
-    const error = validateNumber(value);
-    errorSetter(error);
+    _setter(_value);
+    const validationError = validateNumber(_value);
+    _errorSetter(validationError);
   };
 
   const isFormValid =
