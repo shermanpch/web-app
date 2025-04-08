@@ -87,7 +87,7 @@ export default function NavigationBar({
     <nav className="fixed top-0 left-0 w-full z-50">
       {/* Gradient background to match ContentContainer */}
       <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-[#1a1812]/70 to-black/80 border-b border-[rgba(218,165,32,0.3)]"></div>
-      
+
       <div className="flex justify-between items-center py-4 px-4 md:px-6 w-full relative">
         {/* Logo or Brand - can be added here */}
         <div className="flex items-center">
@@ -193,7 +193,7 @@ export default function NavigationBar({
       >
         {/* Gradient background for mobile menu */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-[#1a1812]/70 to-black/80 border-b border-[rgba(218,165,32,0.3)]"></div>
-        
+
         <div className="flex flex-col space-y-4 px-4 relative">
           {navLinks.map((link) => (
             <Link
