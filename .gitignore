@@ -91,6 +91,7 @@ apps/backend/migrations/scripts/scrapers/.scraper_cache/
 
 # Generated Documentation / Temp Files
 todo.md
+database.md
 repomix-output.md
 
 # =========================================

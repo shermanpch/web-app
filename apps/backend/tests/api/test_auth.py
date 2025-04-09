@@ -1,10 +1,9 @@
 """Tests for authentication endpoints."""
 
 import logging
-from typing import Any, Dict, Optional, Tuple, cast
+from typing import Any, Dict, Optional, Tuple
 
 import pytest
-from _pytest.fixtures import FixtureFunction, SubRequest
 from fastapi import status
 from fastapi.testclient import TestClient
 

@@ -4,23 +4,23 @@ import logging
 from typing import List, Optional
 from uuid import UUID
 
+from supabase._async.client import AsyncClient
+
 from ...models.users import DeleteReadingResponse, UserReadingResponse
-from ...services.auth.supabase import get_authenticated_client
 
 # Create logger
 logger = logging.getLogger(__name__)
 
 
 async def get_user_readings_from_db(
-    user_id: UUID, access_token: str, refresh_token: str, page: int = 1, limit: int = 10
+    user_id: UUID, client: AsyncClient, page: int = 1, limit: int = 10
 ) -> List[UserReadingResponse]:
     """
     Fetch paginated historical readings for a specific user from the database.
 
     Args:
         user_id: The UUID of the user whose readings are to be fetched.
-        access_token: User's access token.
-        refresh_token: User's refresh token.
+        client: Authenticated Supabase client instance.
         page: The page number (1-indexed).
         limit: The number of readings per page.
 
@@ -33,16 +33,12 @@ async def get_user_readings_from_db(
     logger.info(f"Fetching readings for user: {user_id} (page: {page}, limit: {limit})")
 
     try:
-        # Get authenticated Supabase client
-        logger.debug("Using authenticated client with user tokens")
-        client = await get_authenticated_client(access_token, refresh_token)
-
         # Calculate offset from page and limit
         offset = (page - 1) * limit
 
         # Query the user_readings table with pagination
         response = (
-            await client.table("user_readings")
+            await client.from_("user_readings")
             .select(
                 "id, user_id, question, first_number, second_number, third_number, language, prediction, clarifying_question, clarifying_answer, created_at"
             )
@@ -73,7 +69,7 @@ async def get_user_readings_from_db(
 
 
 async def delete_user_reading_from_db(
-    user_id: UUID, reading_id: UUID, access_token: str, refresh_token: str
+    user_id: UUID, reading_id: UUID, client: AsyncClient
 ) -> DeleteReadingResponse:
     """
     Delete a specific reading for a user from the database.
@@ -81,8 +77,7 @@ async def delete_user_reading_from_db(
     Args:
         user_id: The UUID of the user whose reading is to be deleted.
         reading_id: The UUID of the reading to delete.
-        access_token: User's access token.
-        refresh_token: User's refresh token.
+        client: Authenticated Supabase client instance.
 
     Returns:
         DeleteReadingResponse with the result of the operation.
@@ -93,12 +88,9 @@ async def delete_user_reading_from_db(
     logger.info(f"Deleting reading {reading_id} for user: {user_id}")
 
     try:
-        # Get authenticated Supabase client
-        client = await get_authenticated_client(access_token, refresh_token)
-
         # First verify the reading belongs to the user
         verify_response = (
-            await client.table("user_readings")
+            await client.from_("user_readings")
             .select("id")
             .eq("id", str(reading_id))
             .eq("user_id", str(user_id))
@@ -111,7 +103,7 @@ async def delete_user_reading_from_db(
 
         # Delete the reading
         delete_response = (
-            await client.table("user_readings")
+            await client.from_("user_readings")
             .delete()
             .eq("id", str(reading_id))
             .eq("user_id", str(user_id))  # Ensure we only delete user's own readings
@@ -138,15 +130,14 @@ async def delete_user_reading_from_db(
 
 
 async def delete_all_user_readings_from_db(
-    user_id: UUID, access_token: str, refresh_token: str
+    user_id: UUID, client: AsyncClient
 ) -> DeleteReadingResponse:
     """
     Delete all readings for a user from the database.
 
     Args:
         user_id: The UUID of the user whose readings are to be deleted.
-        access_token: User's access token.
-        refresh_token: User's refresh token.
+        client: Authenticated Supabase client instance.
 
     Returns:
         DeleteReadingResponse with the result of the operation.
@@ -157,12 +148,9 @@ async def delete_all_user_readings_from_db(
     logger.info(f"Deleting all readings for user: {user_id}")
 
     try:
-        # Get authenticated Supabase client
-        client = await get_authenticated_client(access_token, refresh_token)
-
         # Delete all readings for the user
         delete_response = (
-            await client.table("user_readings")
+            await client.from_("user_readings")
             .delete()
             .eq("user_id", str(user_id))
             .execute()
@@ -190,8 +178,7 @@ async def delete_all_user_readings_from_db(
 async def get_reading_by_id(
     user_id: UUID,
     reading_id: UUID,
-    access_token: str,
-    refresh_token: str,
+    client: AsyncClient,
 ) -> Optional[UserReadingResponse]:
     """
     Fetch a specific reading by ID for a user from the database.
@@ -199,8 +186,7 @@ async def get_reading_by_id(
     Args:
         user_id: The UUID of the user whose reading is to be fetched.
         reading_id: The UUID of the reading to fetch.
-        access_token: User's access token.
-        refresh_token: User's refresh token.
+        client: Authenticated Supabase client instance.
 
     Returns:
         UserReadingResponse object if found, None otherwise.
@@ -211,12 +197,9 @@ async def get_reading_by_id(
     logger.info(f"Fetching reading {reading_id} for user: {user_id}")
 
     try:
-        # Get authenticated Supabase client
-        client = await get_authenticated_client(access_token, refresh_token)
-
         # Query the user_readings table for the specific reading
         response = (
-            await client.table("user_readings")
+            await client.from_("user_readings")
             .select(
                 "id, user_id, question, first_number, second_number, third_number, language, prediction, clarifying_question, clarifying_answer, created_at"
             )

@@ -1,10 +1,11 @@
 """Divination API endpoints."""
 
 import logging
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 
-from ...models.auth import AuthenticatedSession
+from ...models.auth import AuthenticatedSession, UserData
 from ...models.divination import (
     IChingCoordinatesRequest,
     IChingCoordinatesResponse,
@@ -18,7 +19,8 @@ from ...models.divination import (
     IChingUpdateReadingRequest,
     IChingUpdateReadingResponse,
 )
-from ...services.auth.dependencies import get_auth_tokens
+from ...services.auth.dependencies import get_auth_tokens, get_current_user
+from ...services.auth.supabase import get_authenticated_client
 from ...services.divination.iching import (
     fetch_iching_image_data,
     get_iching_coordinates_from_oracle,
@@ -27,6 +29,7 @@ from ...services.divination.iching import (
     save_iching_reading_to_db,
     update_iching_reading_in_db,
 )
+from ...services.users.quota import check_quota, log_usage
 
 router = APIRouter(prefix="/divination", tags=["divination"])
 
@@ -52,12 +55,13 @@ async def get_iching_text(
         HTTPException: If text cannot be retrieved
     """
     try:
-        # Get the I Ching text using the request model
-        result = await get_iching_text_from_db(
-            request_data,
-            session.access_token,
-            session.refresh_token,
+        # Create authenticated client
+        client = await get_authenticated_client(
+            session.access_token, session.refresh_token
         )
+
+        # Get the I Ching text using the request model
+        result = await get_iching_text_from_db(request_data, client)
         return result
 
     except HTTPException:
@@ -98,6 +102,11 @@ async def get_iching_image_data(
     )
 
     try:
+        # Create authenticated client
+        client = await get_authenticated_client(
+            session.access_token, session.refresh_token
+        )
+
         # Create image request model
         image_request = IChingImageRequest(
             parent_coord=parent_coord, child_coord=child_coord
@@ -105,9 +114,7 @@ async def get_iching_image_data(
 
         # Get the image bytes from the service
         image_bytes = await fetch_iching_image_data(
-            request=image_request,
-            access_token=session.access_token,
-            refresh_token=session.refresh_token,
+            request=image_request, client=client
         )
 
         logger.info(
@@ -173,39 +180,45 @@ async def get_iching_coordinates(request_data: IChingCoordinatesRequest):
 @router.post("/iching-reading", response_model=IChingReadingResponse)
 async def get_iching_reading(
     request_data: IChingReadingRequest,
+    current_user: UserData = Depends(get_current_user),
     session: AuthenticatedSession = Depends(get_auth_tokens),
 ):
     """
     Generate a complete I Ching reading based on input numbers and question.
 
     This endpoint orchestrates the full I Ching reading process:
-    1. Converts input numbers to coordinates
-    2. Retrieves the appropriate hexagram text
-    3. Generates the reading interpretation using LLM
+    1. Checks if user has quota available for basic divination
+    2. Converts input numbers to coordinates
+    3. Retrieves the appropriate hexagram text
+    4. Generates the reading interpretation using LLM
+    5. Logs the usage for quota tracking
 
     Args:
         request_data: Request model containing numbers, question, and preferences
+        current_user: The authenticated user data obtained from the token
         session: Authenticated session with tokens
 
     Returns:
         Complete I Ching reading with coordinates, text, and interpretation
 
     Raises:
-        HTTPException: If reading cannot be generated
+        HTTPException: If reading cannot be generated or quota is exceeded
     """
     try:
-        # Get the complete I Ching reading
-        logger.info(
-            f"API: Generating I Ching reading for question: {request_data.question}"
+        # Create authenticated client
+        client = await get_authenticated_client(
+            session.access_token, session.refresh_token
         )
 
-        result = await get_iching_reading_from_oracle(
-            request_data,
-            session.access_token,
-            session.refresh_token,
-        )
+        # Check quota before proceeding
+        await check_quota(current_user.id, "basic_divination", client)
 
-        logger.info(f"API: Successfully generated I Ching reading")
+        # Get the reading
+        result = await get_iching_reading_from_oracle(request_data, client)
+
+        # Log usage after successful reading
+        await log_usage(current_user.id, "basic_divination", client)
+
         return result
 
     except HTTPException:
@@ -226,27 +239,26 @@ async def save_iching_reading(
     session: AuthenticatedSession = Depends(get_auth_tokens),
 ):
     """
-    Save an I Ching reading to the user's saved readings.
+    Save an I Ching reading to the database.
 
     Args:
-        request_data: Request model containing the reading data to save
+        request_data: Request model containing reading details to save
         session: Authenticated session with tokens
 
     Returns:
-        Response with save status and saved reading ID
+        Saved reading details
 
     Raises:
         HTTPException: If reading cannot be saved
     """
     try:
-        # Save the I Ching reading
-        logger.info(f"API: Saving I Ching reading for user: {request_data.user_id}")
-
-        result = await save_iching_reading_to_db(
-            request_data, session.access_token, session.refresh_token
+        # Create authenticated client
+        client = await get_authenticated_client(
+            session.access_token, session.refresh_token
         )
 
-        logger.info(f"API: Successfully saved I Ching reading: {result.id}")
+        # Save the reading
+        result = await save_iching_reading_to_db(request_data, client)
         return result
 
     except HTTPException:
@@ -264,32 +276,40 @@ async def save_iching_reading(
 @router.post("/iching-reading/update", response_model=IChingUpdateReadingResponse)
 async def update_iching_reading(
     request_data: IChingUpdateReadingRequest,
+    current_user: UserData = Depends(get_current_user),
     session: AuthenticatedSession = Depends(get_auth_tokens),
 ):
     """
-    Update an existing saved I Ching reading.
+    Update an existing I Ching reading.
 
     Args:
-        request_data: Request model containing the reading data to update
+        request_data: Request model containing updated reading details
+        current_user: The authenticated user data obtained from the token
         session: Authenticated session with tokens
 
     Returns:
-        Response with update status and updated reading ID
+        Updated reading details
 
     Raises:
         HTTPException: If reading cannot be updated
     """
     try:
-        # Update the I Ching reading
-        logger.info(f"API: Updating I Ching reading: {request_data.id}")
-
-        result = await update_iching_reading_in_db(
-            request_data,
-            session.access_token,
-            session.refresh_token,
+        # Create authenticated client
+        client = await get_authenticated_client(
+            session.access_token, session.refresh_token
         )
 
-        logger.info(f"API: Successfully updated I Ching reading: {result.id}")
+        # Check quota before proceeding with clarifying question
+        if request_data.clarifying_question:
+            await check_quota(current_user.id, "premium_divination", client)
+
+        # Update the reading
+        result = await update_iching_reading_in_db(request_data, client)
+
+        # Log usage if clarifying question was added
+        if request_data.clarifying_question:
+            await log_usage(current_user.id, "premium_divination", client)
+
         return result
 
     except HTTPException:

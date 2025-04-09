@@ -1,44 +1,45 @@
-"""User readings models for the application."""
+"""User readings and profile models for the application."""
 
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
 
-class UserQuotaRequest(BaseModel):
-    """User quota request model."""
+class UserProfileResponse(BaseModel):
+    """Model for user profile data from the profiles table."""
 
-    user_id: UUID
+    id: UUID
+    membership_tier_id: int
+    membership_tier_name: str  # Joined from membership_tiers table
+    premium_expiration: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
 
-
-class UpdateUserQuotaRequest(BaseModel):
-    """User quota update request model."""
-
-    user_id: UUID
-
-
-class UpdateUserQuotaResponse(BaseModel):
-    """User quota update response model."""
-
-    user_id: UUID
-    membership_type: str
-    remaining_queries: int
-    premium_expires_at: Optional[datetime] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    model_config = ConfigDict(from_attributes=True)
 
 
-class UserQuotaResponse(BaseModel):
-    """User quota response model."""
+class UserQuotaStatusResponse(BaseModel):
+    """Model for calculated quota status for a specific feature."""
 
-    user_id: UUID
-    membership_type: str
-    remaining_queries: int
-    premium_expires_at: Optional[datetime] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    feature_id: int
+    feature_name: str
+    limit: Optional[int] = None  # NULL means unlimited
+    used: int
+    remaining: Optional[int] = None  # NULL if limit is NULL (unlimited)
+    resets_at: datetime  # Start of next week
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserProfileStatusResponse(BaseModel):
+    """Combined response with profile and quota status."""
+
+    profile: UserProfileResponse
+    quotas: List[UserQuotaStatusResponse]
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserReadingResponse(BaseModel):

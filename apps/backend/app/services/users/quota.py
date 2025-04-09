@@ -2,53 +2,52 @@
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Dict, Optional
+from uuid import UUID
 
-from ...models.users import (
-    UpdateUserQuotaRequest,
-    UpdateUserQuotaResponse,
-    UserQuotaRequest,
-    UserQuotaResponse,
-)
-from ...services.auth.supabase import get_authenticated_client
+from supabase._async.client import AsyncClient
+
+from ...models.users import UserProfileResponse
 
 # Create logger
 logger = logging.getLogger(__name__)
 
 
-async def get_user_quota_from_db(
-    request: UserQuotaRequest,
-    access_token: str,
-    refresh_token: str,
-) -> Optional[UserQuotaResponse]:
+async def get_user_profile(
+    user_id: UUID,
+    client: AsyncClient,
+) -> Optional[UserProfileResponse]:
     """
-    Fetch user quota information from the database.
+    Fetch user profile data from the profiles table, joining with membership_tiers for the tier name.
 
     Args:
-        request: UserQuotaRequest containing user_id
-        access_token: User's access token
-        refresh_token: User's refresh token
+        user_id: UUID of the user
+        client: Authenticated Supabase client
 
     Returns:
-        UserQuotaResponse object with user quota information, or None if not found
+        UserProfileResponse object with profile information, or None if not found
 
     Raises:
         Exception: If database query fails
     """
-    logger.info(f"Fetching quota information for user: {request.user_id}")
+    logger.info(f"Fetching profile for user: {user_id}")
 
     try:
-        # Get authenticated Supabase client with user tokens
-        logger.debug("Using authenticated client with user tokens")
-        client = await get_authenticated_client(access_token, refresh_token)
-
-        # Query the user_quotas table - ensure user_id is a string
+        # Query the profiles table with a join to membership_tiers
+        # Using the public schema and proper foreign key relationship syntax
         response = (
-            await client.table("user_quotas")
+            await client.from_("profiles")
             .select(
-                "user_id, membership_type, remaining_queries, premium_expires_at, created_at, updated_at"
+                """
+                id,
+                membership_tier_id,
+                premium_expiration,
+                created_at,
+                updated_at,
+                membership_tiers(name)
+                """
             )
-            .eq("user_id", str(request.user_id))  # Convert UUID to string
+            .eq("id", str(user_id))
             .limit(1)
             .execute()
         )
@@ -56,176 +55,284 @@ async def get_user_quota_from_db(
         # Check if we have any data
         data = response.data
         if not data or len(data) == 0:
-            logger.warning(f"No quota found for user: {request.user_id}")
+            logger.warning(f"No profile found for user: {user_id}")
             return None
 
-        # Return the first (and should be only) result
-        logger.info(f"Found quota for user: {request.user_id}")
-        return UserQuotaResponse(**data[0])
+        # Transform the joined data into our response model format
+        profile_data = data[0]
+        profile_data["membership_tier_name"] = profile_data["membership_tiers"]["name"]
+        del profile_data["membership_tiers"]
+
+        logger.info(f"Found profile for user: {user_id}")
+        return UserProfileResponse(**profile_data)
 
     except Exception as e:
-        logger.error(f"Error fetching user quota: {str(e)}")
-        raise Exception(f"Failed to retrieve user quota: {str(e)}")
+        logger.error(f"Error fetching user profile: {str(e)}")
+        raise Exception(f"Failed to retrieve user profile: {str(e)}")
 
 
-async def decrement_user_quota(
-    request: UpdateUserQuotaRequest,
-    access_token: str,
-    refresh_token: str,
-) -> UpdateUserQuotaResponse:
+async def get_feature_quota_rule(
+    tier_id: int,
+    feature_id: int,
+    client: AsyncClient,
+) -> Optional[Dict]:
     """
-    Decrement a user's query quota by 1.
+    Get the quota rule for a specific membership tier and feature.
 
     Args:
-        request: UpdateUserQuotaRequest containing user_id
-        access_token: User's access token
-        refresh_token: User's refresh token
+        tier_id: ID of the membership tier
+        feature_id: ID of the feature
+        client: Authenticated Supabase client
 
     Returns:
-        UpdateUserQuotaResponse object with updated quota information
-
-    Raises:
-        Exception: If quota not found, insufficient queries, update fails, or database query fails
+        Dict containing the quota rule, or None if not found
     """
-    logger.info(f"Decrementing quota for user: {request.user_id}")
+    logger.info(f"Fetching quota rule for tier {tier_id} and feature {feature_id}")
 
     try:
-        # Get authenticated Supabase client with user tokens
-        logger.debug("Using authenticated client with user tokens")
-        client = await get_authenticated_client(access_token, refresh_token)
-
-        # First fetch current quota
         response = (
-            await client.table("user_quotas")
-            .select(
-                "user_id, membership_type, remaining_queries, premium_expires_at, created_at, updated_at"
-            )
-            .eq("user_id", str(request.user_id))  # Convert UUID to string
+            await client.from_("membership_feature_quota")
+            .select("weekly_quota")
+            .eq("membership_tier_id", tier_id)
+            .eq("feature_id", feature_id)
             .limit(1)
             .execute()
         )
 
-        # Check if we have any data
-        data = response.data
-        if not data or len(data) == 0:
-            logger.warning(f"No quota found for user: {request.user_id}")
-            raise Exception("User quota not found")
+        if not response.data:
+            return None
 
-        # Get current remaining queries
-        current_remaining = data[0]["remaining_queries"]
+        return response.data[0]
 
-        # Check if user has enough queries
-        if current_remaining <= 0:
-            logger.warning(f"Insufficient queries for user: {request.user_id}")
-            raise Exception("Insufficient queries remaining")
+    except Exception as e:
+        logger.error(f"Error fetching feature quota rule: {str(e)}")
+        raise Exception(f"Failed to retrieve feature quota rule: {str(e)}")
 
-        # Calculate new remaining count
-        new_remaining = current_remaining - 1
 
-        # Update the quota with optimistic concurrency check
-        update_response = (
-            await client.table("user_quotas")
-            .update({"remaining_queries": new_remaining})
-            .eq("user_id", str(request.user_id))
-            .eq("remaining_queries", current_remaining)  # Optimistic concurrency check
+async def get_current_weekly_usage(
+    user_id: UUID,
+    feature_id: int,
+    client: AsyncClient,
+) -> int:
+    """
+    Count the number of times a user has used a feature this week.
+
+    Args:
+        user_id: UUID of the user
+        feature_id: ID of the feature
+        client: Authenticated Supabase client
+
+    Returns:
+        Number of times the feature was used this week
+    """
+    logger.info(f"Counting weekly usage for user {user_id} and feature {feature_id}")
+
+    try:
+        # Count divinations for this week
+        # Use a simpler date format - start of the current week
+        now = datetime.now(timezone.utc)
+        start_of_week = now - timedelta(days=now.weekday())
+        start_of_week = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        response = (
+            await client.from_("divinations")
+            .select("id", count="exact")
+            .eq("user_id", str(user_id))
+            .eq("feature_id", feature_id)
+            .gte("performed_at", start_of_week.isoformat())
             .execute()
         )
 
-        # Check if update was successful
-        if not update_response.data:
-            logger.error(f"Failed to update quota for user: {request.user_id}")
-            raise Exception("Failed to update quota. Please try again")
-
-        # Return updated quota response
-        logger.info(f"Successfully decremented quota for user: {request.user_id}")
-        return UpdateUserQuotaResponse(**update_response.data[0])
+        return response.count or 0
 
     except Exception as e:
-        logger.error(f"Error decrementing user quota: {str(e)}")
-        raise Exception(f"Failed to decrement user quota: {str(e)}")
+        logger.error(f"Error counting weekly usage: {str(e)}")
+        raise Exception(f"Failed to count weekly usage: {str(e)}")
+
+
+async def check_quota(
+    user_id: UUID,
+    feature_name: str,
+    client: AsyncClient,
+) -> bool:
+    """
+    Check if a user has quota remaining for a specific feature.
+
+    Args:
+        user_id: UUID of the user
+        feature_name: Name of the feature to check
+        client: Authenticated Supabase client
+
+    Returns:
+        True if user can use the feature, False if quota exceeded
+
+    Raises:
+        Exception: If feature not found or other database errors
+    """
+    logger.info(f"Checking quota for user {user_id} and feature {feature_name}")
+
+    try:
+        # Get feature ID
+        feature_response = (
+            await client.from_("features")
+            .select("id")
+            .eq("name", feature_name)
+            .limit(1)
+            .execute()
+        )
+
+        if not feature_response.data:
+            raise Exception(f"Feature not found: {feature_name}")
+
+        feature_id = feature_response.data[0]["id"]
+
+        # Get user's profile and determine effective tier
+        profile = await get_user_profile(user_id, client)
+        if not profile:
+            raise Exception("User profile not found")
+
+        # If premium has expired, assume they're on the free tier
+        if profile.premium_expiration and profile.premium_expiration < datetime.now(
+            timezone.utc
+        ):
+            # Get free tier ID
+            free_tier_response = (
+                await client.from_("membership_tiers")
+                .select("id")
+                .eq("name", "free")
+                .limit(1)
+                .execute()
+            )
+            effective_tier_id = free_tier_response.data[0]["id"]
+        else:
+            effective_tier_id = profile.membership_tier_id
+
+        # Get quota rule
+        quota_rule = await get_feature_quota_rule(effective_tier_id, feature_id, client)
+
+        # If no rule found or weekly_quota is NULL, assume unlimited
+        if not quota_rule or quota_rule["weekly_quota"] is None:
+            return True
+
+        # Get current usage
+        current_usage = await get_current_weekly_usage(user_id, feature_id, client)
+
+        # Check if under quota
+        return current_usage < quota_rule["weekly_quota"]
+
+    except Exception as e:
+        logger.error(f"Error checking quota: {str(e)}")
+        raise Exception(f"Failed to check quota: {str(e)}")
+
+
+async def log_usage(
+    user_id: UUID,
+    feature_name: str,
+    client: AsyncClient,
+    details: Optional[Dict] = None,
+) -> None:
+    """
+    Log a feature usage event.
+
+    Args:
+        user_id: UUID of the user
+        feature_name: Name of the feature used
+        client: Authenticated Supabase client
+        details: Optional JSON details about the usage
+
+    Raises:
+        Exception: If feature not found or logging fails
+    """
+    logger.info(f"Logging usage for user {user_id} and feature {feature_name}")
+
+    try:
+        # Get feature ID
+        feature_response = (
+            await client.from_("features")
+            .select("id")
+            .eq("name", feature_name)
+            .limit(1)
+            .execute()
+        )
+
+        if not feature_response.data:
+            raise Exception(f"Feature not found: {feature_name}")
+
+        feature_id = feature_response.data[0]["id"]
+
+        # Insert usage log
+        await client.from_("divinations").insert(
+            {
+                "user_id": str(user_id),
+                "feature_id": feature_id,
+                "details": details,
+            }
+        ).execute()
+
+        logger.info("Usage logged successfully")
+
+    except Exception as e:
+        logger.error(f"Error logging usage: {str(e)}")
+        raise Exception(f"Failed to log usage: {str(e)}")
 
 
 async def upgrade_user_to_premium(
-    request: UpdateUserQuotaRequest,
-    access_token: str,
-    refresh_token: str,
-) -> UpdateUserQuotaResponse:
+    user_id: UUID,
+    client: AsyncClient,
+) -> UserProfileResponse:
     """
-    Upgrade a user's membership to premium and add 30 queries to their quota.
-    Sets premium expiration to 30 days from now.
+    Upgrade a user to premium membership.
 
     Args:
-        request: UpdateUserQuotaRequest containing user_id
-        access_token: User's access token
-        refresh_token: User's refresh token
+        user_id: UUID of the user
+        client: Authenticated Supabase client
 
     Returns:
-        UpdateUserQuotaResponse object with updated quota information
+        UserProfileResponse with updated profile information
 
     Raises:
-        Exception: If quota not found, update fails, or database query fails
+        Exception: If profile not found or update fails
     """
-    logger.info(f"Starting premium upgrade process for user: {request.user_id}")
+    logger.info(f"Upgrading user {user_id} to premium")
 
     try:
-        # Get authenticated Supabase client with user tokens
-        logger.debug("Using authenticated client with user tokens")
-        client = await get_authenticated_client(access_token, refresh_token)
-
-        # First fetch current quota
-        response = (
-            await client.table("user_quotas")
-            .select(
-                "user_id, membership_type, remaining_queries, premium_expires_at, created_at, updated_at"
-            )
-            .eq("user_id", str(request.user_id))  # Convert UUID to string
+        # Get premium tier ID
+        premium_tier_response = (
+            await client.from_("membership_tiers")
+            .select("id")
+            .eq("name", "premium")
             .limit(1)
             .execute()
         )
 
-        # Check if we have any data
-        data = response.data
-        if not data or len(data) == 0:
-            logger.warning(f"No quota found for user: {request.user_id}")
-            raise Exception("User quota not found")
+        if not premium_tier_response.data:
+            raise Exception("Premium tier not found")
 
-        # Get current remaining queries
-        current_remaining = data[0]["remaining_queries"]
+        premium_tier_id = premium_tier_response.data[0]["id"]
 
-        # Calculate new remaining count (add 30 queries)
-        new_remaining = current_remaining + 30
+        # Calculate expiration (30 days from now)
+        expires_at = datetime.now(timezone.utc) + timedelta(days=30)
 
-        # # Calculate expiration date (30 days from now in UTC)
-        # expires_at = datetime.now(timezone.utc) + timedelta(days=30)
-
-        # Calculate expiration date (10 seconds from now in UTC)
-        expires_at = datetime.now(timezone.utc) + timedelta(seconds=10)
-
-        # Update the quota
+        # Update profile
         update_response = (
-            await client.table("user_quotas")
+            await client.from_("profiles")
             .update(
                 {
-                    "membership_type": "premium",
-                    "remaining_queries": new_remaining,
-                    "premium_expires_at": expires_at.isoformat(),
+                    "membership_tier_id": premium_tier_id,
+                    "premium_expiration": expires_at.isoformat(),
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
                 }
             )
-            .eq("user_id", str(request.user_id))
+            .eq("id", str(user_id))
             .execute()
         )
 
-        # Check if update was successful
         if not update_response.data:
-            logger.error(f"Failed to upgrade user: {request.user_id}")
-            raise Exception("Failed to upgrade user membership. Please try again")
+            raise Exception("Failed to upgrade user profile")
 
-        # Return updated quota response
-        logger.info(
-            f"Successfully upgraded user {request.user_id} to premium membership"
-        )
-        return UpdateUserQuotaResponse(**update_response.data[0])
+        # Return updated profile
+        return await get_user_profile(user_id, client)
 
     except Exception as e:
-        logger.error(f"Error upgrading user membership: {str(e)}")
-        raise Exception(f"Failed to upgrade user membership: {str(e)}")
+        logger.error(f"Error upgrading user: {str(e)}")
+        raise Exception(f"Failed to upgrade user: {str(e)}")

@@ -22,8 +22,3 @@ class BaseTest:
         # (though setup_method should always run first in a standard test)
         if hasattr(self, "logger"):
             self.logger.info(f"Finished test: {method.__name__}")
-
-    def assert_has_fields(self, data: Dict[str, Any], fields: list[str]) -> None:
-        """Assert that data has all required fields."""
-        for field in fields:
-            assert field in data, f"Missing field: {field}"

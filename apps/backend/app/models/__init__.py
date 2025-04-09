@@ -2,4 +2,8 @@
 
 from .auth import PasswordChange, PasswordReset, UserData, UserLogin, UserSignup
 from .divination import IChingTextRequest, IChingTextResponse
-from .users import UpdateUserQuotaRequest, UserQuotaRequest, UserQuotaResponse
+from .users import (
+    UserProfileResponse,
+    UserProfileStatusResponse,
+    UserQuotaStatusResponse,
+)

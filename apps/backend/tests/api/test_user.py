@@ -5,7 +5,6 @@ import uuid
 from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
-from fastapi import status
 from fastapi.testclient import TestClient
 
 from tests.api.base_test import BaseTest
@@ -405,103 +404,131 @@ class TestUser(BaseTest):
     # ========================================================================
 
     @pytest.mark.asyncio
-    async def test_quota_auto_creation_and_manual_decrement(
+    async def test_get_user_profile_status(
         self, authenticated_client: Tuple[TestClient, Optional[str]]
     ) -> None:
-        """Test quota auto-creation and manual decrement."""
+        """Test retrieving user profile status with quotas."""
         # ARRANGE
-        self.logger.info("Testing quota auto-creation and manual decrement")
+        self.logger.info("Testing user profile status retrieval")
         client, user_id = authenticated_client
 
-        # Step 1: Get initial quota (should auto-create if doesn't exist)
-        initial_quota_response = client.get("/api/user/quota")
-        assert (
-            initial_quota_response.status_code == 200
-        ), f"Failed to get initial quota: {initial_quota_response.text}"
-
-        initial_quota_data: Dict[str, Any] = initial_quota_response.json()
-        assert_has_fields(initial_quota_data, ["remaining_queries"])
-        initial_quota = initial_quota_data["remaining_queries"]
-        self.logger.info(f"Initial quota: {initial_quota}")
-
-        # Step 2: Decrement quota
-        decrement_response = client.post("/api/user/quota/decrement")
-        assert (
-            decrement_response.status_code == 200
-        ), f"Failed to decrement quota: {decrement_response.text}"
-
-        decrement_data: Dict[str, Any] = decrement_response.json()
-        assert_has_fields(decrement_data, ["remaining_queries"])
-        decremented_quota = decrement_data["remaining_queries"]
-        self.logger.info(f"Quota after decrement: {decremented_quota}")
-
-        # Step 3: Get final quota
-        final_quota_response = client.get("/api/user/quota")
-        assert (
-            final_quota_response.status_code == 200
-        ), f"Failed to get final quota: {final_quota_response.text}"
-
-        final_quota_data: Dict[str, Any] = final_quota_response.json()
-        assert_has_fields(final_quota_data, ["remaining_queries"])
-        final_quota = final_quota_data["remaining_queries"]
-        self.logger.info(f"Final quota: {final_quota}")
+        # ACT - Get the user's profile status
+        profile_response = client.get("/api/user/profile")
 
         # ASSERT
-        assert (
-            decremented_quota == initial_quota - 1
-        ), f"Expected quota to decrease by 1, but went from {initial_quota} to {decremented_quota}"
-        assert (
-            final_quota == decremented_quota
-        ), f"Final quota {final_quota} doesn't match decremented quota {decremented_quota}"
+        assert_successful_response(profile_response)
+        profile_data = profile_response.json()
 
-        self.logger.info(
-            "Quota auto-creation and manual decrement test passed successfully!"
+        # Verify response matches UserProfileStatusResponse model
+        assert_has_fields(profile_data, ["profile", "quotas"])
+
+        # Verify profile data structure
+        profile = profile_data["profile"]
+        assert_has_fields(
+            profile,
+            [
+                "id",
+                "membership_tier_id",
+                "membership_tier_name",
+                "premium_expiration",
+                "created_at",
+                "updated_at",
+            ],
+        )
+        assert str(profile["id"]) == user_id
+        assert isinstance(profile["membership_tier_name"], str)
+        assert isinstance(profile["membership_tier_id"], int)
+
+        # Verify quotas list structure
+        quotas = profile_data["quotas"]
+        assert isinstance(quotas, list)
+        if quotas:  # If any quotas exist
+            first_quota = quotas[0]
+            assert_has_fields(
+                first_quota,
+                [
+                    "feature_id",
+                    "feature_name",
+                    "limit",
+                    "used",
+                    "remaining",
+                    "resets_at",
+                ],
+            )
+            assert isinstance(first_quota["feature_id"], int)
+            assert isinstance(first_quota["feature_name"], str)
+            assert isinstance(first_quota["used"], int)
+            assert first_quota["used"] >= 0
+
+            # If there's a limit, verify remaining is calculated correctly
+            if first_quota["limit"] is not None:
+                assert isinstance(first_quota["limit"], int)
+                assert first_quota["limit"] >= 0
+                assert (
+                    first_quota["remaining"]
+                    == first_quota["limit"] - first_quota["used"]
+                )
+            else:
+                assert first_quota["remaining"] is None
+
+        self.logger.info("User profile status test passed successfully!")
+
+    def test_get_profile_non_authenticated(self, client: TestClient) -> None:
+        """Test retrieving user profile without authentication."""
+        # ARRANGE
+        self.logger.info("Testing retrieving user profile without authentication")
+        client.cookies.clear()
+
+        # ACT
+        profile_response = client.get("/api/user/profile")
+
+        # ASSERT
+        assert profile_response.status_code == 401
+        error_data = profile_response.json()
+        assert "detail" in error_data
+        assert "Authentication" in error_data["detail"]
+
+    def test_upgrade_membership(
+        self, authenticated_client: Tuple[TestClient, Optional[str]]
+    ) -> None:
+        """Test upgrading user membership to premium."""
+        # ARRANGE
+        self.logger.info("Testing user membership upgrade")
+        client, user_id = authenticated_client
+
+        # ACT - Upgrade the membership
+        upgrade_response = client.post("/api/user/profile/upgrade")
+
+        # ASSERT
+        assert_successful_response(upgrade_response)
+        profile_data = upgrade_response.json()
+
+        # Verify response matches UserProfileResponse model
+        assert_has_fields(
+            profile_data,
+            [
+                "id",
+                "membership_tier_id",
+                "membership_tier_name",
+                "premium_expiration",
+                "created_at",
+                "updated_at",
+            ],
         )
 
-    def test_get_quota_non_authenticated(self, client: TestClient) -> None:
-        """Test getting quota without authentication."""
-        # ARRANGE
-        self.logger.info("Testing getting quota without authentication")
+        # Verify premium status
+        assert str(profile_data["id"]) == user_id
+        assert profile_data["membership_tier_name"] == "premium"
+        assert profile_data["premium_expiration"] is not None
 
-        # Clear any existing cookies
-        client.cookies.clear()
-
-        # ACT - Make request without auth tokens/cookies
-        quota_response = client.get("/api/user/quota")
-
-        # ASSERT
+        # Verify the change is reflected in the profile endpoint
+        profile_response = client.get("/api/user/profile")
+        assert_successful_response(profile_response)
+        full_profile = profile_response.json()
+        assert full_profile["profile"]["membership_tier_name"] == "premium"
         assert (
-            quota_response.status_code == 401
-        ), "Request should fail with authentication error when no auth is provided"
+            full_profile["profile"]["premium_expiration"]
+            == profile_data["premium_expiration"]
+        )
 
-        error_data: Dict[str, Any] = quota_response.json()
-        assert "detail" in error_data, "Response should contain error details"
-        assert (
-            "Authentication" in error_data["detail"]
-        ), "Error should mention authentication"
-
-        self.logger.info("Non-authenticated get quota test passed successfully!")
-
-    def test_decrement_quota_non_authenticated(self, client: TestClient) -> None:
-        """Test decrementing quota without authentication."""
-        # ARRANGE
-        self.logger.info("Testing decrementing quota without authentication")
-
-        # Clear any existing cookies
-        client.cookies.clear()
-
-        # ACT - Make request without auth tokens/cookies
-        decrement_response = client.post("/api/user/quota/decrement")
-
-        # ASSERT
-        assert (
-            decrement_response.status_code == 401
-        ), "Request should fail with authentication error when no auth is provided"
-
-        error_data: Dict[str, Any] = decrement_response.json()
-        assert "detail" in error_data, "Response should contain error details"
-        assert (
-            "Authentication" in error_data["detail"]
-        ), "Error should mention authentication"
-
-        self.logger.info("Non-authenticated decrement quota test passed successfully!")
+        self.logger.info("User membership upgrade test passed successfully!")

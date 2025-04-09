@@ -18,7 +18,9 @@ export default function EnterNumbersPage() {
   const [secondNumber, setSecondNumber] = useState("");
   const [thirdNumber, setThirdNumber] = useState("");
   const [firstNumberError, setFirstNumberError] = useState<string | null>(null);
-  const [secondNumberError, setSecondNumberError] = useState<string | null>(null);
+  const [secondNumberError, setSecondNumberError] = useState<string | null>(
+    null,
+  );
   const [thirdNumberError, setThirdNumberError] = useState<string | null>(null);
 
   const validateNumber = (value: string): string | null => {
@@ -38,7 +40,7 @@ export default function EnterNumbersPage() {
   const handleNumberChange = (
     _value: string,
     _setter: (_value: string) => void,
-    _errorSetter: (_error: string | null) => void
+    _errorSetter: (_error: string | null) => void,
   ) => {
     _setter(_value);
     const validationError = validateNumber(_value);
@@ -91,7 +93,13 @@ export default function EnterNumbersPage() {
               max="999"
               placeholder="Enter first number (0-999)"
               value={firstNumber}
-              onChange={(e) => handleNumberChange(e.target.value, setFirstNumber, setFirstNumberError)}
+              onChange={(e) =>
+                handleNumberChange(
+                  e.target.value,
+                  setFirstNumber,
+                  setFirstNumberError,
+                )
+              }
               className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-800 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
             />
             {firstNumberError && (
@@ -113,7 +121,13 @@ export default function EnterNumbersPage() {
               max="999"
               placeholder="Enter second number (0-999)"
               value={secondNumber}
-              onChange={(e) => handleNumberChange(e.target.value, setSecondNumber, setSecondNumberError)}
+              onChange={(e) =>
+                handleNumberChange(
+                  e.target.value,
+                  setSecondNumber,
+                  setSecondNumberError,
+                )
+              }
               className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-800 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
             />
             {secondNumberError && (
@@ -135,7 +149,13 @@ export default function EnterNumbersPage() {
               max="999"
               placeholder="Enter third number (0-999)"
               value={thirdNumber}
-              onChange={(e) => handleNumberChange(e.target.value, setThirdNumber, setThirdNumberError)}
+              onChange={(e) =>
+                handleNumberChange(
+                  e.target.value,
+                  setThirdNumber,
+                  setThirdNumberError,
+                )
+              }
               className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-800 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
             />
             {thirdNumberError && (

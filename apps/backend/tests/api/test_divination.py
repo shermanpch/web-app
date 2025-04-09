@@ -4,11 +4,10 @@ import logging
 from typing import Any, Dict, Optional, Tuple
 
 import pytest
-from fastapi import status
 from fastapi.testclient import TestClient
 
 from tests.api.base_test import BaseTest
-from tests.conftest import assert_has_fields, assert_successful_response
+from tests.conftest import assert_has_fields
 
 # Get the logger with module name
 logger = logging.getLogger(__name__)
@@ -135,8 +134,7 @@ class TestDivination(BaseTest):
 
         self.logger.info("Non-authenticated image retrieval test passed successfully!")
 
-    @pytest.mark.asyncio  # type: ignore
-    async def test_iching_image_retrieval_authenticated(
+    def test_iching_image_retrieval_authenticated(
         self, authenticated_client: Tuple[TestClient, Optional[str]]
     ) -> None:
         """Test retrieving I-Ching image using authentication cookies."""
@@ -213,7 +211,9 @@ class TestDivination(BaseTest):
 
         self.logger.info("I-Ching coordinates conversion test passed successfully!")
 
-    def test_iching_reading_authenticated(self, authenticated_client):
+    def test_iching_reading_authenticated(
+        self, authenticated_client: Tuple[TestClient, Optional[str]]
+    ) -> None:
         """Test generating a complete I Ching reading."""
         # ARRANGE
         self.logger.info("Testing I-Ching reading generation")
@@ -277,7 +277,9 @@ class TestDivination(BaseTest):
 
         self.logger.info("I-Ching reading test passed successfully!")
 
-    def test_save_iching_reading(self, authenticated_client):
+    def test_save_iching_reading(
+        self, authenticated_client: Tuple[TestClient, Optional[str]]
+    ) -> None:
         """Test saving an I Ching reading to the database."""
         # ARRANGE
         self.logger.info("Testing save I-Ching reading")
@@ -360,7 +362,9 @@ class TestDivination(BaseTest):
         self.logger.info(f"Message: {save_data.get('message', 'N/A')}")
         self.logger.info("I-Ching reading save test passed successfully!")
 
-    def test_update_iching_reading(self, authenticated_client):
+    def test_update_iching_reading(
+        self, authenticated_client: Tuple[TestClient, Optional[str]]
+    ) -> None:
         """Test updating an I Ching reading with a clarification question."""
         # ARRANGE
         self.logger.info("Testing update I-Ching reading")
