@@ -27,7 +27,7 @@ const containerVariants = {
   show: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.2,
+      staggerChildren: 0.5,
       delayChildren: 0.3,
     },
   },
@@ -122,11 +122,11 @@ export default function ResultPage() {
         readingId,
       ]);
 
-      // Optimistically update to the new value
+      // Don't optimistically update the clarifying_answer
+      // This allows the loading animation to remain visible
       queryClient.setQueryData(["userReading", readingId], (old: any) => ({
         ...old,
         clarifying_question: clarificationInput,
-        clarifying_answer: "Consulting the Oracle...", // Better loading message
       }));
 
       return { previousReading };
@@ -144,9 +144,10 @@ export default function ResultPage() {
         queryKey: ["userProfileStatus"],
       });
 
-      // Update reading history
+      // Update reading history - invalidate all pages
       queryClient.invalidateQueries({
         queryKey: ["userReadings"],
+        refetchType: "all",
       });
     },
     onError: (error: any, _, context) => {
@@ -303,6 +304,32 @@ export default function ResultPage() {
                       </p>
                     </div>
                   </motion.div>
+                ) : reading.clarifying_question && isMutationInProgress ? (
+                  <motion.div variants={itemVariants}>
+                    <div className="mt-6 pt-4 border-t border-amber-600/20">
+                      <h3 className="font-bold mb-1 sm:mb-2 text-gray-800">
+                        Clarification Question
+                      </h3>
+                      <p className="text-justify text-gray-800">
+                        {reading.clarifying_question}
+                      </p>
+                    </div>
+
+                    <div className="mt-4">
+                      <h3 className="font-bold mb-1 sm:mb-2 text-gray-800">
+                        Clarification Answer
+                      </h3>
+                      <div className="text-center py-4">
+                        <div className="text-gray-800 font-serif mb-4">
+                          Consulting the Oracle...
+                        </div>
+                        <div className="relative mx-auto w-8 h-8">
+                          <div className="absolute top-0 left-0 w-full h-full border-2 border-amber-200 rounded-full"></div>
+                          <div className="absolute top-0 left-0 w-full h-full border-2 border-amber-600 rounded-full animate-spin border-t-transparent"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
                 ) : (
                   <motion.div variants={itemVariants}>
                     <div className="mt-8">
@@ -312,11 +339,14 @@ export default function ResultPage() {
                       {canClarify ? (
                         <>
                           {isMutationInProgress ? (
-                            <div className="text-center py-4">
-                              <div className="mb-4 text-gray-800">
+                            <div className="text-center py-8">
+                              <div className="mb-6 text-gray-800 text-lg font-serif">
                                 Consulting the Oracle...
                               </div>
-                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-800 mx-auto"></div>
+                              <div className="relative mx-auto w-10 h-10">
+                                <div className="absolute top-0 left-0 w-full h-full border-4 border-amber-200 rounded-full"></div>
+                                <div className="absolute top-0 left-0 w-full h-full border-4 border-amber-600 rounded-full animate-spin border-t-transparent"></div>
+                              </div>
                             </div>
                           ) : (
                             <>

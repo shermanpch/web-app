@@ -72,6 +72,7 @@ export default function ConsultingPage() {
           // Invalidate reading history queries to reflect the new reading
           queryClient.invalidateQueries({
             queryKey: ["userReadings"],
+            refetchType: "all",
           });
 
           // Also invalidate the user profile status to update quota numbers

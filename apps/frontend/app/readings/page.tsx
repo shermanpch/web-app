@@ -43,7 +43,7 @@ export default function ReadingsPage() {
     queryFn: () =>
       userApi.getUserReadings({ page: currentPage, limit: pageSize }),
     staleTime: 1000 * 60 * 5, // 5 minutes - prevent frequent refetches
-    refetchOnMount: false, // Don't refetch automatically on mount
+    refetchOnMount: true, // Enable refetch on mount to get latest data
   });
 
   // Initialize filteredReadings with an empty array, not a state derived from readings

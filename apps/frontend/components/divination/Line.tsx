@@ -18,7 +18,7 @@ const lineVariants = {
     opacity: 1,
     scaleX: 1,
     transition: {
-      duration: 0.4,
+      duration: 0.25,
       ease: "easeOut",
     },
   },
