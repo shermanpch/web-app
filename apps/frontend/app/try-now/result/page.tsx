@@ -14,6 +14,12 @@ import type { DivinationResponse } from "@/types/divination";
 import ContentContainer from "@/components/layout/ContentContainer";
 import Heading from "@/components/ui/heading";
 import Link from "next/link";
+import AnimatedHexagram from "@/components/divination/AnimatedHexagram";
+import {
+  calculateCoordsFromNumbers,
+  getInitialHexagramLines,
+  getFinalHexagramLines,
+} from "@/lib/divinationUtils";
 
 // Animation variants
 const containerVariants = {
@@ -105,29 +111,55 @@ export default function ResultPage() {
         clarifying_question: clarificationInput,
       });
     },
-    onSuccess: () => {
+    onMutate: async () => {
+      setIsMutationInProgress(true);
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["userReading", readingId] });
+
+      // Snapshot the previous value
+      const previousReading = queryClient.getQueryData([
+        "userReading",
+        readingId,
+      ]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(["userReading", readingId], (old: any) => ({
+        ...old,
+        clarifying_question: clarificationInput,
+        clarifying_answer: "Consulting the Oracle...", // Better loading message
+      }));
+
+      return { previousReading };
+    },
+    onSuccess: (response) => {
       // Clear input and reset mutation state
       setClarificationInput("");
       setIsMutationInProgress(false);
 
-      // Invalidate the reading query with resetQueries to force a refetch
-      queryClient.resetQueries({
-        queryKey: ["userReading", readingId],
-      });
+      // Update the reading with the actual response
+      queryClient.setQueryData(["userReading", readingId], response);
 
-      // Also invalidate the user profile status to update quota numbers
+      // Update quota numbers
       queryClient.invalidateQueries({
         queryKey: ["userProfileStatus"],
       });
 
-      // Invalidate reading history to include the clarification update
+      // Update reading history
       queryClient.invalidateQueries({
         queryKey: ["userReadings"],
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, _, context) => {
       console.error("Error getting clarification:", error);
       setIsMutationInProgress(false);
+
+      // Rollback to the previous value
+      if (context?.previousReading) {
+        queryClient.setQueryData(
+          ["userReading", readingId],
+          context.previousReading,
+        );
+      }
     },
   });
 
@@ -161,6 +193,15 @@ export default function ResultPage() {
 
   const prediction = reading.prediction as DivinationResponse;
 
+  // Calculate hexagram lines
+  const { parentCoord, childCoord } = calculateCoordsFromNumbers(
+    reading.first_number,
+    reading.second_number,
+    reading.third_number,
+  );
+  const initialLines = getInitialHexagramLines(parentCoord);
+  const finalLines = getFinalHexagramLines(initialLines, parseInt(childCoord));
+
   return (
     <PageLayout>
       <motion.div variants={containerVariants} initial="hidden" animate="show">
@@ -176,7 +217,9 @@ export default function ResultPage() {
             {/* Hexagram Visuals */}
             <div className="flex flex-col sm:flex-row justify-center items-center sm:space-x-8 md:space-x-12 space-y-6 sm:space-y-0 mb-8 sm:mb-12">
               <div className="text-center">
-                <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 bg-gray-300 mb-2"></div>
+                <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 flex items-center justify-center">
+                  <AnimatedHexagram lines={initialLines} />
+                </div>
                 <p className="text-gray-200 font-serif text-sm sm:text-base">
                   Initial Hexagram
                 </p>
@@ -187,7 +230,9 @@ export default function ResultPage() {
               </div>
 
               <div className="text-center">
-                <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 bg-gray-300 mb-2"></div>
+                <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 flex items-center justify-center">
+                  <AnimatedHexagram lines={finalLines} />
+                </div>
                 <p className="text-gray-200 font-serif text-sm sm:text-base">
                   Final Hexagram
                 </p>
@@ -266,28 +311,38 @@ export default function ResultPage() {
                       </h3>
                       {canClarify ? (
                         <>
-                          <Textarea
-                            value={clarificationInput}
-                            onChange={(e) =>
-                              setClarificationInput(e.target.value)
-                            }
-                            placeholder="Ask a follow-up question about your reading..."
-                            className="mb-4 bg-white text-gray-800"
-                          />
-                          <div className="flex justify-center">
-                            <Button
-                              onClick={handleClarificationSubmit}
-                              disabled={
-                                !clarificationInput.trim() ||
-                                isMutationInProgress
-                              }
-                              className="bg-brand-button-bg hover:bg-brand-button-hover text-white px-6 py-2 rounded-full font-semibold"
-                            >
-                              {isMutationInProgress
-                                ? "Getting Clarification..."
-                                : "Get Clarification"}
-                            </Button>
-                          </div>
+                          {isMutationInProgress ? (
+                            <div className="text-center py-4">
+                              <div className="mb-4 text-gray-800">
+                                Consulting the Oracle...
+                              </div>
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-800 mx-auto"></div>
+                            </div>
+                          ) : (
+                            <>
+                              <Textarea
+                                value={clarificationInput}
+                                onChange={(e) =>
+                                  setClarificationInput(e.target.value)
+                                }
+                                placeholder="Ask a follow-up question about your reading..."
+                                className="mb-4 bg-white text-gray-800"
+                                disabled={isMutationInProgress}
+                              />
+                              <div className="flex justify-center">
+                                <Button
+                                  onClick={handleClarificationSubmit}
+                                  disabled={
+                                    !clarificationInput.trim() ||
+                                    isMutationInProgress
+                                  }
+                                  className="bg-brand-button-bg hover:bg-brand-button-hover text-white px-6 py-2 rounded-full font-semibold"
+                                >
+                                  Get Clarification
+                                </Button>
+                              </div>
+                            </>
+                          )}
                         </>
                       ) : (
                         <div className="text-center">

@@ -16,6 +16,7 @@ const config: Config = {
         "brand-button-bg": "#5A7D60",
         "brand-button-hover": "#4A6D50",
         "brand-input-text": "#6b7280",
+        "brand-hexagram": "#B8860B",
       },
     },
   },

@@ -206,12 +206,9 @@ export default function ProfilePage() {
                       <div className="flex flex-col gap-1">
                         <div className="flex justify-between text-sm">
                           <p>
-                            <span className="font-medium">Limit: </span>
-                            {quota.limit === null ? "No Limit" : quota.limit}
-                          </p>
-                          <p>
-                            <span className="font-medium">Used: </span>
-                            {quota.used}
+                            <span className="font-medium">Usage: </span>
+                            {quota.used} /{" "}
+                            {quota.limit === null ? "∞" : quota.limit}
                           </p>
                         </div>
 
@@ -225,13 +222,7 @@ export default function ProfilePage() {
                           )}
                         </div>
 
-                        <div className="flex justify-between mt-1 text-sm">
-                          <p>
-                            <span className="font-medium">Remaining: </span>
-                            {quota.remaining === null
-                              ? "Unlimited"
-                              : quota.remaining}
-                          </p>
+                        <div className="flex justify-end mt-1 text-sm">
                           <p>
                             <span className="font-medium">Resets in: </span>
                             {daysToReset}{" "}

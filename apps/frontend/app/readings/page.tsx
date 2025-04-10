@@ -19,6 +19,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  calculateCoordsFromNumbers,
+  getInitialHexagramLines,
+  getFinalHexagramLines,
+} from "@/lib/divinationUtils";
+import AnimatedHexagram from "@/components/divination/AnimatedHexagram";
 
 export default function ReadingsPage() {
   const queryClient = useQueryClient();
@@ -309,6 +315,50 @@ export default function ReadingsPage() {
                     {/* Expanded Content */}
                     {expandedReadingId === reading.id && reading.prediction && (
                       <div className="bg-[#EDE6D6] p-6">
+                        {/* Hexagram Animations Section */}
+                        <div className="flex flex-col sm:flex-row justify-center items-center sm:space-x-8 md:space-x-12 space-y-6 sm:space-y-0 mb-6 border-b border-amber-600/20 pb-6">
+                          {(() => {
+                            const { parentCoord, childCoord } =
+                              calculateCoordsFromNumbers(
+                                reading.first_number,
+                                reading.second_number,
+                                reading.third_number,
+                              );
+                            const initialLines =
+                              getInitialHexagramLines(parentCoord);
+                            const finalLines = getFinalHexagramLines(
+                              initialLines,
+                              parseInt(childCoord),
+                            );
+
+                            return (
+                              <>
+                                <div className="text-center">
+                                  <div className="w-20 h-20 md:w-24 md:h-24 flex items-center justify-center mx-auto">
+                                    <AnimatedHexagram lines={initialLines} />
+                                  </div>
+                                  <p className="text-gray-600 font-serif text-sm mt-1">
+                                    Initial
+                                  </p>
+                                </div>
+
+                                <div className="text-amber-700 text-3xl transform sm:rotate-0 rotate-90">
+                                  →
+                                </div>
+
+                                <div className="text-center">
+                                  <div className="w-20 h-20 md:w-24 md:h-24 flex items-center justify-center mx-auto">
+                                    <AnimatedHexagram lines={finalLines} />
+                                  </div>
+                                  <p className="text-gray-600 font-serif text-sm mt-1">
+                                    Final
+                                  </p>
+                                </div>
+                              </>
+                            );
+                          })()}
+                        </div>
+
                         {/* Keywords Section */}
                         <div className="mb-4">
                           <h4 className="font-bold text-gray-800 font-serif">
@@ -443,7 +493,7 @@ export default function ReadingsPage() {
                 variant="outline"
                 onClick={() => setShowDeleteDialog(false)}
                 disabled={deleteReadingMutation.isPending}
-                className="border-gray-300"
+                className="border-gray-300 bg-white hover:bg-gray-100 text-gray-800"
               >
                 Cancel
               </Button>
@@ -495,7 +545,7 @@ export default function ReadingsPage() {
                 variant="outline"
                 onClick={() => setShowDeleteAllDialog(false)}
                 disabled={deleteAllReadingsMutation.isPending}
-                className="border-gray-300"
+                className="border-gray-300 bg-white hover:bg-gray-100 text-gray-800"
               >
                 Cancel
               </Button>

@@ -1,15 +1,21 @@
+import logging
 import os
 
 from openai import AsyncOpenAI
+from pydantic import ValidationError
 
 from ...config import settings
 from ...models.divination import (
+    IChingPrediction,
     IChingReadingRequest,
     IChingReadingResponse,
     IChingTextResponse,
     IChingUpdateReadingRequest,
     IChingUpdateReadingResponse,
 )
+
+# Set up logger
+logger = logging.getLogger(__name__)
 
 
 class Oracle:
@@ -76,7 +82,6 @@ class Oracle:
 
         self.parent_coord = f"{self.first % 8}-{self.second % 8}"
         self.child_coord = f"{self.third % 6}"
-
         return self.parent_coord, self.child_coord
 
     async def get_initial_reading(
@@ -104,64 +109,137 @@ class Oracle:
             language=reading.language,
         )
 
-        client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-
-        response = await client.beta.chat.completions.parse(
-            model=settings.OPENAI_MODEL,
-            messages=[
-                {"role": "system", "content": system_prompt_with_text},
-                {"role": "user", "content": reading.question},
-            ],
-            response_format=IChingReadingResponse,
+        client = AsyncOpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=settings.OPENAI_API_KEY,
         )
 
-        parsed_response = response.choices[0].message.parsed
-        parsed_response.first_number = reading.first_number
-        parsed_response.second_number = reading.second_number
-        parsed_response.third_number = reading.third_number
-        parsed_response.question = reading.question
-        return parsed_response
+        try:
+            logger.info(
+                f"Sending initial reading request with model {settings.OPENAI_MODEL} for question: {reading.question[:50]}..."
+            )
+
+            raw_response = await client.chat.completions.create(
+                model=settings.OPENAI_MODEL,
+                messages=[
+                    {"role": "system", "content": system_prompt_with_text},
+                    {"role": "user", "content": reading.question},
+                ],
+            )
+
+            raw_content = raw_response.choices[0].message.content
+            logger.info(f"Received clarification response: {raw_content[:100]}...")
+
+            cleaned_content = raw_content.strip()
+            if cleaned_content.startswith("```") and cleaned_content.endswith("```"):
+                cleaned_content = cleaned_content[3:-3].strip()
+                if cleaned_content.lower().startswith("json"):
+                    cleaned_content = cleaned_content[4:].strip()
+
+            try:
+                prediction_data = IChingPrediction.model_validate_json(cleaned_content)
+            except (ValidationError, Exception) as parse_error:
+                logger.error(
+                    f"Failed to parse cleaned LLM response into IChingPrediction: {parse_error}"
+                )
+                raise ValueError(
+                    f"Failed to parse LLM response JSON: {parse_error}"
+                ) from parse_error
+
+            final_response = IChingReadingResponse(
+                **prediction_data.model_dump(),
+                first_number=reading.first_number,
+                second_number=reading.second_number,
+                third_number=reading.third_number,
+                question=reading.question,
+                language=reading.language,
+            )
+
+            return final_response
+
+        except Exception as e:
+            logger.error(f"Error in get_initial_reading: {str(e)}")
+            raise
 
     async def get_clarifying_reading(
         self, request: IChingUpdateReadingRequest
     ) -> IChingUpdateReadingResponse:
         """
-        Generate a clarifying answer based on the original reading and clarifying question.
-
-        This method uses the existing prediction and the new clarifying question to
-        generate a more focused and specific answer through the LLM.
+        Generate a clarifying answer using the LLM.
 
         Args:
-            request: IChingUpdateReadingRequest containing the original reading data
-                    and new clarifying question
+            request: Request containing original reading and clarifying question.
 
         Returns:
-            IChingUpdateReadingResponse: The updated request object with the clarifying_answer field populated
+            Updated response object with the clarifying answer.
+
+        Raises:
+            ValueError: If LLM response is empty or invalid.
+            RuntimeError: For unexpected errors during API call or processing.
         """
+        try:
+            system_prompt_with_text = self.clarification_prompt.format(
+                question=request.question,
+                initial_reading=request.prediction.model_dump_json(),
+                clarifying_question=request.clarifying_question,
+                language=request.language,
+            )
 
-        system_prompt_with_text = self.clarification_prompt.format(
-            question=request.question,
-            initial_reading=request.prediction,
-            clarifying_question=request.clarifying_question,
-            language=request.language,
-        )
+            client = AsyncOpenAI(
+                base_url="https://openrouter.ai/api/v1",
+                api_key=settings.OPENAI_API_KEY,
+            )
 
-        client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+            logger.info(
+                f"Sending clarification request (model: {settings.OPENAI_MODEL}, lang: {request.language}) for question: {request.clarifying_question[:50]}..."
+            )
 
-        response = await client.chat.completions.create(
-            model=settings.OPENAI_MODEL,
-            messages=[
-                {"role": "system", "content": system_prompt_with_text},
-                {"role": "user", "content": request.clarifying_question},
-            ],
-        )
+            response = await client.chat.completions.create(
+                model=settings.OPENAI_MODEL,
+                messages=[
+                    {"role": "system", "content": system_prompt_with_text},
+                    {"role": "user", "content": request.clarifying_question},
+                ],
+            )
 
-        request.clarifying_answer = response.choices[0].message.content
-        return request
+            if (
+                not response.choices
+                or not response.choices[0].message
+                or not response.choices[0].message.content
+            ):
+                logger.warning(
+                    "LLM returned invalid or empty response for clarification."
+                )
+                raise ValueError(
+                    "LLM returned invalid or empty response for clarification"
+                )
+
+            content = response.choices[0].message.content
+            logger.info(f"Received clarification response: {content[:100]}...")
+
+            # Construct the final response object
+            updated_data = request.model_dump()
+            updated_data["clarifying_answer"] = content
+            return IChingUpdateReadingResponse(**updated_data)
+
+        except Exception as e:
+            error_message = (
+                f"Error in get_clarifying_reading: {type(e).__name__}: {str(e)}"
+            )
+            logger.error(error_message)
+            if isinstance(e, ValueError):
+                raise
+            else:
+                raise RuntimeError(f"Failed to generate clarification: {e}") from e
 
     def _load_prompt(self, prompt_path):
-        """
-        Load prompt from prompt file.
-        """
-        with open(prompt_path, "r") as file:
-            return file.read()
+        """Load prompt from a file."""
+        try:
+            with open(prompt_path, "r", encoding="utf-8") as file:
+                return file.read()
+        except FileNotFoundError:
+            logger.exception(f"CRITICAL: Prompt file not found at {prompt_path}")
+            raise
+        except Exception as e:
+            logger.exception(f"CRITICAL: Error loading prompt file {prompt_path}: {e}")
+            raise
