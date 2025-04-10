@@ -7,10 +7,7 @@ import Heading from "@/components/ui/heading";
 import AnimatedHexagram from "@/components/divination/AnimatedHexagram";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  getInitialHexagramLines,
-  getFinalHexagramLines,
-} from "@/lib/divinationUtils";
+import { getInitialHexagramLines, getFinalHexagramLines } from "@/lib/divinationUtils";
 
 export default function TestAnimationPage() {
   const [parentCoord, setParentCoord] = useState("4-5");
@@ -21,9 +18,7 @@ export default function TestAnimationPage() {
     // Allow empty input for typing
     if (!value) {
       setParentCoord(value);
-      setError(
-        "Please enter a parent coordinate in the format 'X-Y' where X and Y are digits 0-7",
-      );
+      setError("Please enter a parent coordinate in the format 'X-Y' where X and Y are digits 0-7");
       return;
     }
 
@@ -36,9 +31,7 @@ export default function TestAnimationPage() {
     // Check format X-Y where X and Y are single digits
     const match = value.match(/^([0-7])-([0-7])$/);
     if (!match) {
-      setError(
-        "Parent coordinate must be in format 'X-Y' where X and Y are digits 0-7",
-      );
+      setError("Parent coordinate must be in format 'X-Y' where X and Y are digits 0-7");
     } else {
       setError(null);
     }
@@ -70,13 +63,11 @@ export default function TestAnimationPage() {
     <PageLayout>
       <ContentContainer>
         <Heading>Test Hexagram Animation</Heading>
-
+        
         {/* Input Controls */}
         <div className="flex flex-col space-y-4 mb-8 max-w-xs mx-auto mt-8">
           <div>
-            <Label htmlFor="parentCoord" className="text-gray-200">
-              Parent Coordinate (e.g., &ldquo;4-5&rdquo;)
-            </Label>
+            <Label htmlFor="parentCoord" className="text-gray-200">Parent Coordinate (e.g., "4-5")</Label>
             <Input
               id="parentCoord"
               value={parentCoord}
@@ -86,9 +77,7 @@ export default function TestAnimationPage() {
             />
           </div>
           <div>
-            <Label htmlFor="childCoord" className="text-gray-200">
-              Child Coordinate (0-5)
-            </Label>
+            <Label htmlFor="childCoord" className="text-gray-200">Child Coordinate (0-5)</Label>
             <Input
               id="childCoord"
               value={childCoord}
@@ -97,7 +86,11 @@ export default function TestAnimationPage() {
               placeholder="0-5"
             />
           </div>
-          {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
+          {error && (
+            <div className="text-red-500 text-sm mt-2">
+              {error}
+            </div>
+          )}
         </div>
 
         {/* Hexagram Display */}
@@ -123,4 +116,4 @@ export default function TestAnimationPage() {
       </ContentContainer>
     </PageLayout>
   );
-}
+} 
