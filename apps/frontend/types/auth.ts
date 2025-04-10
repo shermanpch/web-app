@@ -20,21 +20,6 @@ export interface UserSessionData {
   session: Session;
 }
 
-export interface NavigationState {
-  allowUnauthenticatedAccess: boolean;
-}
-
-export interface AuthState {
-  user: User | null;
-  session: Session | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-}
-
-export interface ExtendedAuthState extends AuthState {
-  navigationState: NavigationState;
-}
-
 export interface SignUpCredentials {
   email: string;
   password: string;
@@ -50,17 +35,6 @@ export interface UserSessionResponse {
   status: string;
   data: UserSessionData;
   message?: string;
-}
-
-export interface AuthFormProps {
-  type: "login" | "signup";
-  onSubmit: (data: LoginCredentials) => Promise<void>;
-  error?: string | null;
-  isLoading?: boolean;
-}
-
-export interface AuthLayoutProps {
-  children: React.ReactNode;
 }
 
 export interface ErrorResponse {

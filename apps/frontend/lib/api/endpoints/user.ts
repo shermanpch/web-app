@@ -1,7 +1,10 @@
 import axios from "axios";
 import { ErrorResponse } from "@/types/auth";
 import { UserReadingHistoryEntry } from "@/types/divination";
-import { UpdateUserQuotaResponse, UserQuotaResponse } from "@/types/user";
+import {
+  FrontendUserProfileStatusResponse,
+  FrontendUserProfileResponse,
+} from "@/types/user";
 
 const API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -102,75 +105,13 @@ export const userApi = {
   },
 
   /**
-   * Get the current quota information for the authenticated user.
-   * Returns null if no quota information is found.
-   */
-  async getUserQuota(): Promise<UserQuotaResponse | null> {
-    try {
-      const response = await axios.get<UserQuotaResponse | null>(
-        `${API_URL}/api/user/quota`,
-        {
-          withCredentials: true, // Send cookies for authentication
-        },
-      );
-      // Backend might return 200 OK with null body if no quota exists
-      return response.data;
-    } catch (error: any) {
-      console.error("API Error fetching user quota:", error);
-      // If backend returns 404 or similar for not found, handle it
-      if (error?.response?.status === 404) {
-        console.log("No quota found for user.");
-        return null;
-      }
-      // Handle other axios errors
-      if (error?.response?.data) {
-        const errorData = error.response.data as ErrorResponse;
-        const errorMessage = errorData.detail || "Failed to fetch quota";
-        throw new Error(errorMessage);
-      }
-      throw new Error("Failed to fetch quota. Please try again later.");
-    }
-  },
-
-  /**
-   * Decrement the authenticated user's query quota by 1.
-   * This should be called before making a divination or clarification request.
-   */
-  async decrementQuota(): Promise<UpdateUserQuotaResponse> {
-    try {
-      const response = await axios.post<UpdateUserQuotaResponse>(
-        `${API_URL}/api/user/quota/decrement`,
-        {}, // No request body needed
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true, // Send cookies for authentication
-        },
-      );
-      return response.data;
-    } catch (error: any) {
-      console.error("API Error decrementing user quota:", error);
-      // Handle axios errors
-      if (error?.response?.data) {
-        const errorData = error.response.data as ErrorResponse;
-        const errorMessage = errorData.detail || "Failed to decrement quota";
-
-        // Throw the specific error message from the backend
-        throw new Error(errorMessage);
-      }
-      throw new Error("Failed to decrement quota. Please try again later.");
-    }
-  },
-
-  /**
    * Upgrade the authenticated user's membership to premium status.
-   * This will set their membership type to 'premium' and add 30 queries to their quota.
+   * This will set their membership type to 'premium' and update their profile.
    */
-  async upgradeToPremium(): Promise<UpdateUserQuotaResponse> {
+  async upgradeToPremium(): Promise<FrontendUserProfileResponse> {
     try {
-      const response = await axios.post<UpdateUserQuotaResponse>(
-        `${API_URL}/api/user/quota/upgrade`,
+      const response = await axios.post<FrontendUserProfileResponse>(
+        `${API_URL}/api/user/profile/upgrade`,
         {}, // No request body needed
         {
           headers: {
@@ -222,6 +163,34 @@ export const userApi = {
         throw new Error(errorMessage);
       }
       throw new Error("Failed to fetch reading. Please try again later.");
+    }
+  },
+
+  /**
+   * Get the current user's profile status including membership and quota information.
+   * @returns User profile status response including membership type and quotas
+   */
+  async getUserProfileStatus(): Promise<FrontendUserProfileStatusResponse> {
+    try {
+      const response = await axios.get<FrontendUserProfileStatusResponse>(
+        `${API_URL}/api/user/profile`,
+        {
+          withCredentials: true, // Send cookies for authentication
+        },
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error("API Error fetching user profile status:", error);
+      // Handle axios errors
+      if (error?.response?.data) {
+        const errorData = error.response.data as ErrorResponse;
+        const errorMessage =
+          errorData.detail || "Failed to fetch profile status";
+        throw new Error(errorMessage);
+      }
+      throw new Error(
+        "Failed to fetch profile status. Please try again later.",
+      );
     }
   },
 

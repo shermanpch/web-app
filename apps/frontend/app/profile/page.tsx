@@ -4,40 +4,50 @@ import { useQuery } from "@tanstack/react-query";
 import PageLayout from "@/components/layout/PageLayout";
 import ContentContainer from "@/components/layout/ContentContainer";
 import Heading from "@/components/ui/heading";
-import { authApi } from "@/lib/api/endpoints/auth";
 import { userApi } from "@/lib/api/endpoints/user";
-import { UserQuotaResponse } from "@/types/user";
-import { format } from "date-fns";
+import { FrontendUserProfileStatusResponse } from "@/types/user";
+import { format, differenceInDays } from "date-fns";
+import { useState, useEffect } from "react";
 
 export default function ProfilePage() {
-  // Fetch current user data using React Query
-  const {
-    data: user,
-    isLoading: isLoadingUser,
-    error: userError,
-  } = useQuery({
-    queryKey: ["currentUser"],
-    queryFn: () => authApi.getCurrentUser(),
-  });
+  // State for tooltip visibility
+  const [showTooltip, setShowTooltip] = useState<string | null>(null);
 
-  // Fetch user quota using React Query
-  const {
-    data: quota,
-    isLoading: isLoadingQuota,
-    error: quotaError,
-  } = useQuery<UserQuotaResponse | null>({
-    queryKey: ["userQuota"],
-    queryFn: userApi.getUserQuota,
-  });
+  // Check if this profile load follows an upgrade
+  const [shouldRefetch, setShouldRefetch] = useState(false);
 
-  // Combine loading states
-  const isLoading = isLoadingUser || isLoadingQuota;
+  useEffect(() => {
+    // Check if we're coming from an upgrade
+    const justUpgraded = sessionStorage.getItem("justUpgraded") === "true";
 
-  // Combine potential errors
-  const error = userError || quotaError;
+    if (justUpgraded) {
+      // Clear the flag
+      sessionStorage.removeItem("justUpgraded");
+      // Set state to trigger refetch
+      setShouldRefetch(true);
+    }
+  }, []);
 
-  // Format the membership date
-  const formatMemberSince = (dateString?: string) => {
+  // Fetch combined profile and quota status using React Query
+  const { data, isLoading, error, refetch } =
+    useQuery<FrontendUserProfileStatusResponse>({
+      queryKey: ["userProfileStatus"],
+      queryFn: userApi.getUserProfileStatus,
+      staleTime: 1000 * 60 * 5, // 5 minutes - prevent frequent refetches
+      refetchOnMount: false, // Don't refetch automatically on mount
+      refetchOnWindowFocus: false, // Don't refetch when window regains focus
+    });
+
+  // Trigger a refetch if needed
+  useEffect(() => {
+    if (shouldRefetch) {
+      refetch();
+      setShouldRefetch(false);
+    }
+  }, [shouldRefetch, refetch]);
+
+  // Format dates helper function
+  const formatDate = (dateString?: string) => {
     if (!dateString) return "-";
     try {
       return format(new Date(dateString), "MMMM d, yyyy");
@@ -46,29 +56,47 @@ export default function ProfilePage() {
     }
   };
 
-  // Format the renewal date - For now, simulate this with a date 30 days from created_at
-  const getNextRenewalDate = () => {
-    if (!quota?.created_at) return "-";
+  // Format feature name helper function
+  const formatFeatureName = (name: string) => {
+    return name
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
 
+  // Get premium expiration display
+  const getPremiumExpiration = () => {
+    if (!data?.profile) return "-";
+    if (data.profile.membership_tier_name === "free") return "-";
+    return formatDate(data.profile.premium_expiration || undefined);
+  };
+
+  // Calculate progress percentage for quota
+  const calculateProgressPercentage = (used: number, limit: number | null) => {
+    if (limit === null) return 0; // No limit means no progress to show
+    if (limit === 0) return 100; // Prevent division by zero
+    return Math.min(Math.round((used / limit) * 100), 100); // Cap at 100%
+  };
+
+  // Get progress bar color based on usage
+  const getProgressBarColor = (percentage: number) => {
+    if (percentage >= 80) return "bg-amber-500"; // Warning color when near limit
+    return "bg-green-500"; // Default color for normal usage
+  };
+
+  // Calculate days until reset
+  const getDaysUntilReset = (resetDate?: string) => {
+    if (!resetDate) return "-";
     try {
-      // For now, we're hardcoding that renewals happen monthly from the creation date
-      const creationDate = new Date(quota.created_at);
-      const renewalDate = new Date(creationDate);
-      renewalDate.setMonth(renewalDate.getMonth() + 1);
+      const today = new Date();
+      const reset = new Date(resetDate);
+      const daysLeft = differenceInDays(reset, today);
 
-      return format(renewalDate, "MMMM d, yyyy");
+      if (daysLeft < 0) return "0"; // Already passed
+      return daysLeft.toString();
     } catch (err) {
       return "-";
     }
-  };
-
-  // Function to get plan name nicely formatted
-  const getPlanDisplay = () => {
-    if (!quota) return "Free";
-    return (
-      quota.membership_type.charAt(0).toUpperCase() +
-      quota.membership_type.slice(1)
-    );
   };
 
   return (
@@ -96,35 +124,124 @@ export default function ProfilePage() {
 
               <div className="space-y-2 text-gray-800">
                 <p>
-                  <span className="font-medium">Email:</span>{" "}
-                  {user?.email || "-"}
+                  <span className="font-medium">User ID:</span>{" "}
+                  {data?.profile.id || "-"}
                 </p>
                 <p>
-                  <span className="font-medium">Plan:</span> {getPlanDisplay()}
+                  <span className="font-medium">Membership Tier:</span>{" "}
+                  {data?.profile
+                    ? formatFeatureName(data.profile.membership_tier_name)
+                    : "Free"}
                 </p>
                 <p>
-                  <span className="font-medium">Premium Readings left:</span>{" "}
-                  {quota?.remaining_queries !== undefined
-                    ? quota.remaining_queries
-                    : "-"}
+                  <span className="font-medium">Premium Expiration:</span>{" "}
+                  {getPremiumExpiration()}
                 </p>
                 <p>
                   <span className="font-medium">Member Since:</span>{" "}
-                  {formatMemberSince(user?.created_at || quota?.created_at)}
+                  {formatDate(data?.profile.created_at)}
                 </p>
               </div>
             </div>
 
-            {/* Subscription Section */}
+            {/* Usage Section */}
             <div className="bg-[#EDE6D6] rounded-2xl p-8 shadow-lg w-full text-gray-800 mt-8">
-              <h2 className="text-2xl font-serif text-gray-800 mb-6">
-                Subscription and Credits
-              </h2>
+              <h2 className="text-2xl font-serif text-gray-800 mb-6">Usage</h2>
 
-              <div className="space-y-2 text-gray-800">
-                <p>You&apos;re currently on the {getPlanDisplay()} plan</p>
-                <p>Auto-renews 10 premium readings every month</p>
-                <p>Next Renewal: {getNextRenewalDate()}</p>
+              <div className="space-y-6">
+                {data?.quotas.map((quota) => {
+                  const percentage = calculateProgressPercentage(
+                    quota.used,
+                    quota.limit,
+                  );
+                  const progressColor = getProgressBarColor(percentage);
+                  const daysToReset = getDaysUntilReset(quota.resets_at);
+                  const featureName = formatFeatureName(quota.feature_name);
+                  const isPremiumDivination = quota.feature_name
+                    .toLowerCase()
+                    .includes("premium_divination");
+                  // Convert feature_id to string for consistent type with showTooltip state
+                  const featureIdStr = String(quota.feature_id);
+
+                  return (
+                    <div
+                      key={quota.feature_id}
+                      className="space-y-4 text-gray-800 border-b border-gray-300 pb-6 last:border-0"
+                    >
+                      <div className="relative">
+                        <h3 className="text-lg font-medium inline-flex items-center">
+                          {featureName}
+
+                          {isPremiumDivination && (
+                            <span
+                              className="ml-2 cursor-help text-gray-500"
+                              onMouseEnter={() => setShowTooltip(featureIdStr)}
+                              onMouseLeave={() => setShowTooltip(null)}
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            </span>
+                          )}
+                        </h3>
+
+                        {showTooltip === featureIdStr &&
+                          isPremiumDivination && (
+                            <div className="absolute z-10 bg-gray-900 text-white text-sm p-3 rounded shadow-lg max-w-xs mt-1">
+                              Premium Divination allows you to ask clarification
+                              questions on top of the basic divination.
+                            </div>
+                          )}
+                      </div>
+
+                      <div className="flex flex-col gap-1">
+                        <div className="flex justify-between text-sm">
+                          <p>
+                            <span className="font-medium">Limit: </span>
+                            {quota.limit === null ? "No Limit" : quota.limit}
+                          </p>
+                          <p>
+                            <span className="font-medium">Used: </span>
+                            {quota.used}
+                          </p>
+                        </div>
+
+                        {/* Progress bar */}
+                        <div className="h-4 w-full bg-gray-200 rounded-full overflow-hidden">
+                          {quota.limit !== null && (
+                            <div
+                              className={`h-full ${progressColor} rounded-full transition-all duration-500`}
+                              style={{ width: `${percentage}%` }}
+                            />
+                          )}
+                        </div>
+
+                        <div className="flex justify-between mt-1 text-sm">
+                          <p>
+                            <span className="font-medium">Remaining: </span>
+                            {quota.remaining === null
+                              ? "Unlimited"
+                              : quota.remaining}
+                          </p>
+                          <p>
+                            <span className="font-medium">Resets in: </span>
+                            {daysToReset}{" "}
+                            {parseInt(daysToReset) === 1 ? "day" : "days"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </>

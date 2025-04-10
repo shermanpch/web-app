@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import PageLayout from "@/components/layout/PageLayout";
@@ -13,6 +13,7 @@ import { userApi } from "@/lib/api/endpoints/user";
 import type { DivinationResponse } from "@/types/divination";
 import ContentContainer from "@/components/layout/ContentContainer";
 import Heading from "@/components/ui/heading";
+import Link from "next/link";
 
 // Animation variants
 const containerVariants = {
@@ -42,6 +43,27 @@ export default function ResultPage() {
   const [clarificationInput, setClarificationInput] = useState("");
   const [isMutationInProgress, setIsMutationInProgress] = useState(false);
 
+  // Fetch user profile status for quota check
+  const { data: profileStatus } = useQuery({
+    queryKey: ["userProfileStatus"],
+    queryFn: userApi.getUserProfileStatus,
+    staleTime: 1000 * 60, // Reduce staleTime to 1 minute
+    refetchOnMount: true, // Always refetch when component mounts
+  });
+
+  // Determine if user can submit clarification
+  const canClarify = useMemo(() => {
+    if (!profileStatus?.quotas) return false;
+    const premiumQuota = profileStatus.quotas.find(
+      (q) => q.feature_name === "premium_divination",
+    );
+    return (
+      premiumQuota &&
+      (premiumQuota.limit === null ||
+        (premiumQuota.remaining !== null && premiumQuota.remaining > 0))
+    );
+  }, [profileStatus]);
+
   // Fetch reading data
   const {
     data: reading,
@@ -54,7 +76,8 @@ export default function ResultPage() {
       return userApi.getUserReadingById(readingId);
     },
     enabled: !!readingId,
-    staleTime: Infinity, // Reading data is unlikely to change once fetched
+    staleTime: 1000 * 60 * 10, // 10 minutes - data doesn't change unless clarification is added
+    refetchOnMount: false, // Don't refetch on navigation unless forced by resetQueries
   });
 
   const clarificationMutation = useMutation({
@@ -87,9 +110,19 @@ export default function ResultPage() {
       setClarificationInput("");
       setIsMutationInProgress(false);
 
-      // Invalidate the query to refresh the data with the new clarification
-      queryClient.invalidateQueries({
+      // Invalidate the reading query with resetQueries to force a refetch
+      queryClient.resetQueries({
         queryKey: ["userReading", readingId],
+      });
+
+      // Also invalidate the user profile status to update quota numbers
+      queryClient.invalidateQueries({
+        queryKey: ["userProfileStatus"],
+      });
+
+      // Invalidate reading history to include the clarification update
+      queryClient.invalidateQueries({
+        queryKey: ["userReadings"],
       });
     },
     onError: (error: any) => {
@@ -231,25 +264,44 @@ export default function ResultPage() {
                       <h3 className="font-bold mb-4 text-gray-800">
                         Need Clarification?
                       </h3>
-                      <Textarea
-                        value={clarificationInput}
-                        onChange={(e) => setClarificationInput(e.target.value)}
-                        placeholder="Ask a follow-up question about your reading..."
-                        className="mb-4 bg-white text-gray-800"
-                      />
-                      <div className="flex justify-center">
-                        <Button
-                          onClick={handleClarificationSubmit}
-                          disabled={
-                            !clarificationInput.trim() || isMutationInProgress
-                          }
-                          className="bg-brand-button-bg hover:bg-brand-button-hover text-white px-6 py-2 rounded-full font-semibold"
-                        >
-                          {isMutationInProgress
-                            ? "Getting Clarification..."
-                            : "Get Clarification"}
-                        </Button>
-                      </div>
+                      {canClarify ? (
+                        <>
+                          <Textarea
+                            value={clarificationInput}
+                            onChange={(e) =>
+                              setClarificationInput(e.target.value)
+                            }
+                            placeholder="Ask a follow-up question about your reading..."
+                            className="mb-4 bg-white text-gray-800"
+                          />
+                          <div className="flex justify-center">
+                            <Button
+                              onClick={handleClarificationSubmit}
+                              disabled={
+                                !clarificationInput.trim() ||
+                                isMutationInProgress
+                              }
+                              className="bg-brand-button-bg hover:bg-brand-button-hover text-white px-6 py-2 rounded-full font-semibold"
+                            >
+                              {isMutationInProgress
+                                ? "Getting Clarification..."
+                                : "Get Clarification"}
+                            </Button>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center">
+                          <p className="text-gray-800 mb-4">
+                            You need premium access to ask clarification
+                            questions.
+                          </p>
+                          <Link href="/pricing">
+                            <Button className="bg-brand-button-bg hover:bg-brand-button-hover text-white px-6 py-2 rounded-full font-semibold">
+                              Upgrade to Premium
+                            </Button>
+                          </Link>
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 )}

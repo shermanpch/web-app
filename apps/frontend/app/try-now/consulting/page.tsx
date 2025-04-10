@@ -4,15 +4,15 @@ import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import PageLayout from "@/components/layout/PageLayout";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { divinationApi } from "@/lib/api/endpoints/divination";
-import { userApi } from "@/lib/api/endpoints/user";
 import { authApi } from "@/lib/api/endpoints/auth";
 import { motion } from "framer-motion";
 
 export default function ConsultingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hasMutationStarted, setHasMutationStarted] = useState(false);
 
@@ -69,8 +69,15 @@ export default function ConsultingPage() {
             prediction: readingData,
           });
 
-          // Only decrement quota after successful save
-          await userApi.decrementQuota();
+          // Invalidate reading history queries to reflect the new reading
+          queryClient.invalidateQueries({
+            queryKey: ["userReadings"],
+          });
+
+          // Also invalidate the user profile status to update quota numbers
+          queryClient.invalidateQueries({
+            queryKey: ["userProfileStatus"],
+          });
 
           // Navigate to result page with just the reading ID
           router.replace(`/try-now/result?id=${saveResponse.id}`);

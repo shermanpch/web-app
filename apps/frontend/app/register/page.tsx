@@ -43,13 +43,6 @@ export default function RegisterPage() {
         staleTime: 1000 * 60 * 5, // Keep prefetched data fresh for 5 minutes
       });
 
-      // Prefetch user quota/profile data immediately after registration
-      queryClient.prefetchQuery({
-        queryKey: ["userQuota"],
-        queryFn: userApi.getUserQuota,
-        staleTime: 1000 * 60 * 5, // Keep prefetched data fresh for 5 minutes
-      });
-
       toast.success("Registration successful!");
 
       // Navigate using Next.js router

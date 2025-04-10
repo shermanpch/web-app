@@ -3,54 +3,33 @@
  */
 
 /**
- * Request to get user quota information.
+ * Frontend user profile response from the backend.
  */
-export interface UserQuotaRequest {
-  user_id: string;
-}
-
-/**
- * Request to update (decrement) user quota.
- */
-export interface UpdateUserQuotaRequest {
-  user_id: string;
-}
-
-/**
- * Response containing user quota information.
- */
-export interface UserQuotaResponse {
-  user_id: string;
-  membership_type: string;
-  remaining_queries: number;
-  created_at?: string;
-  updated_at?: string;
-}
-
-/**
- * Response containing updated user quota information.
- */
-export interface UpdateUserQuotaResponse {
-  user_id: string;
-  membership_type: string;
-  remaining_queries: number;
-  created_at?: string;
-  updated_at?: string;
-}
-
-/**
- * Response containing a single user reading.
- */
-export interface UserReadingResponse {
+export interface FrontendUserProfileResponse {
   id: string;
-  user_id: string;
-  question: string;
-  first_number: number;
-  second_number: number;
-  third_number: number;
-  language: string;
-  prediction?: Record<string, any>;
-  clarifying_question?: string;
-  clarifying_answer?: string;
+  membership_tier_id: number;
+  membership_tier_name: string;
+  premium_expiration: string | null;
   created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Frontend user quota status for a specific feature.
+ */
+export interface FrontendUserQuotaStatus {
+  feature_id: number;
+  feature_name: string;
+  limit: number | null;
+  used: number;
+  remaining: number | null;
+  resets_at: string;
+}
+
+/**
+ * Combined frontend response with profile and quota status.
+ */
+export interface FrontendUserProfileStatusResponse {
+  profile: FrontendUserProfileResponse;
+  quotas: FrontendUserQuotaStatus[];
 }

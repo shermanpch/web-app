@@ -5,21 +5,46 @@ import PageLayout from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
-import { userApi } from "@/lib/api/endpoints/user";
 import { toast } from "sonner";
 import ContentContainer from "@/components/layout/ContentContainer";
 import Heading from "@/components/ui/heading";
+import { useQueryClient } from "@tanstack/react-query";
+import { FrontendUserProfileStatusResponse } from "@/types/user";
 
 export default function TryNowPage() {
   const [question, setQuestion] = useState("");
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const handleNext = async () => {
     try {
-      // Silently check user quota
-      const quota = await userApi.getUserQuota();
+      // Check cached profile status first
+      const profileStatus: FrontendUserProfileStatusResponse | undefined =
+        queryClient.getQueryData(["userProfileStatus"]);
 
-      if (!quota || quota.remaining_queries <= 0) {
+      let hasQuota = true; // Default to true (allow if cache miss)
+      if (profileStatus?.quotas) {
+        const basicDivinationQuota = profileStatus.quotas.find(
+          (q) => q.feature_name === "basic_divination",
+        );
+        if (basicDivinationQuota) {
+          // Check if limit is null (unlimited) OR remaining is greater than 0
+          hasQuota =
+            basicDivinationQuota.limit === null ||
+            (basicDivinationQuota.remaining !== null &&
+              basicDivinationQuota.remaining > 0);
+        } else {
+          // If basic_divination quota info is missing, cautiously allow (backend will check)
+          console.warn("Basic divination quota info not found in cached data.");
+        }
+      } else {
+        // If profileStatus or quotas are missing from cache, allow (backend will check)
+        console.warn(
+          "User profile/quota status not found in cache. Proceeding, backend will verify quota.",
+        );
+      }
+
+      if (!hasQuota) {
         toast.error(
           "You have no remaining readings. Please upgrade your membership to continue.",
           {
@@ -33,13 +58,14 @@ export default function TryNowPage() {
         return;
       }
 
-      // If we have quota, proceed to enter numbers
+      // If we have quota or cache miss, proceed to enter numbers
       router.push(
         `/try-now/enter-numbers?question=${encodeURIComponent(question)}`,
       );
     } catch (error) {
+      console.error("Error checking quota:", error);
       // If there's an error checking quota, just try to proceed
-      // The quota check will happen again in the consulting page
+      // The backend will perform the definitive check
       router.push(
         `/try-now/enter-numbers?question=${encodeURIComponent(question)}`,
       );

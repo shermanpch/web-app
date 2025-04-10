@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import ContentContainer from "@/components/layout/ContentContainer";
 import Heading from "@/components/ui/heading";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { userApi } from "@/lib/api/endpoints/user";
+import { toast } from "sonner";
 
 interface PricingTier {
   name: string;
@@ -63,6 +66,26 @@ const pricingTiers: PricingTier[] = [
 
 export default function PricingPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const upgradeMutation = useMutation({
+    mutationFn: userApi.upgradeToPremium,
+    onSuccess: () => {
+      toast.success("Membership upgraded to Premium!");
+
+      // Invalidate the cache
+      queryClient.invalidateQueries({ queryKey: ["userProfileStatus"] });
+
+      // Set a flag in sessionStorage to indicate the upgrade just happened
+      sessionStorage.setItem("justUpgraded", "true");
+
+      // Navigate to profile page
+      router.push("/profile");
+    },
+    onError: (error) => {
+      toast.error(`Upgrade failed: ${(error as Error).message}`);
+    },
+  });
 
   return (
     <PageLayout>
@@ -120,14 +143,23 @@ export default function PricingPage() {
               </ul>
 
               <Button
-                onClick={() => router.push("/login")}
+                onClick={() => {
+                  if (tier.name === "Premium") {
+                    upgradeMutation.mutate();
+                  } else {
+                    router.push("/login");
+                  }
+                }}
+                disabled={tier.name === "Premium" && upgradeMutation.isPending}
                 className={`w-full py-3 rounded-full text-white font-semibold ${
                   tier.isPopular
                     ? "bg-brand-button-bg hover:bg-brand-button-hover"
                     : "bg-gray-700 hover:bg-gray-600"
                 }`}
               >
-                {tier.buttonText}
+                {tier.name === "Premium" && upgradeMutation.isPending
+                  ? "Upgrading..."
+                  : tier.buttonText}
               </Button>
             </div>
           ))}
