@@ -26,8 +26,15 @@ export default async function RootLayout({
     <html lang="en">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        {/* Preload background image */}
+        <link
+          rel="preload"
+          href="/assets/background.png?v=2"
+          as="image"
+          type="image/png"
+        />
       </head>
-      <body className="font-serif bg-gray-900">
+      <body className="font-serif bg-black">
         <QueryProvider>
           <div className="min-h-screen flex flex-col">
             <div className="relative z-20">
