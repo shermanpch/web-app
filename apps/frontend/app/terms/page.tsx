@@ -19,17 +19,17 @@ export default function TermsOfServicePage() {
               1. Introduction
             </h2>
             <p>
-              Welcome to deltao.ai. These Terms of Service govern your
-              use of our website and services. By accessing or using our
-              service, you agree to be bound by these Terms.
+              Welcome to deltao.ai. These Terms of Service govern your use of
+              our website and services. By accessing or using our service, you
+              agree to be bound by these Terms.
             </p>
 
             <h2 className="text-2xl font-semibold mt-8 mb-6 font-serif">
               2. Definitions
             </h2>
             <p>
-              <strong>Service</strong> refers to the deltao.ai website
-              and related services.
+              <strong>Service</strong> refers to the deltao.ai website and
+              related services.
               <br />
               <strong>User</strong> refers to individuals who access or use our
               Service.
@@ -85,10 +85,10 @@ export default function TermsOfServicePage() {
               6. Limitation of Liability
             </h2>
             <p>
-              In no event shall deltao.ai, nor its directors,
-              employees, partners, agents, suppliers, or affiliates, be liable
-              for any indirect, incidental, special, consequential or punitive
-              damages, including without limitation, loss of profits, data, use,
+              In no event shall deltao.ai, nor its directors, employees,
+              partners, agents, suppliers, or affiliates, be liable for any
+              indirect, incidental, special, consequential or punitive damages,
+              including without limitation, loss of profits, data, use,
               goodwill, or other intangible losses, resulting from your access
               to or use of or inability to access or use the Service.
             </p>

@@ -100,7 +100,8 @@ export default function RegisterPage() {
         <div className="mb-8">
           <Heading>deltao.ai</Heading>
           <p className="text-xl text-gray-300 font-serif text-center">
-            Your personal Deltao AI oracle rooted in 3000 years of ancient Chinese Philosophy
+            Your personal Deltao AI oracle rooted in 3000 years of ancient
+            Chinese Philosophy
           </p>
         </div>
 

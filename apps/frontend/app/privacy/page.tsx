@@ -16,10 +16,9 @@ export default function PrivacyPolicyPage() {
         <div className="bg-[#D8CDBA] rounded-2xl p-8 shadow-lg mt-8">
           <div className="prose prose-lg max-w-none text-gray-800">
             <p className="lead">
-              This Privacy Policy describes how deltao.ai
-              (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) collects,
-              uses, and discloses your personal information when you use our
-              website and services.
+              This Privacy Policy describes how deltao.ai (&quot;we&quot;,
+              &quot;our&quot;, or &quot;us&quot;) collects, uses, and discloses
+              your personal information when you use our website and services.
             </p>
 
             <h2 className="text-2xl font-semibold mt-8 mb-6 font-serif">
