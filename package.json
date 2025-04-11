@@ -1,5 +1,5 @@
 {
-  "name": "web-app",
+  "name": "deltao.ai",
   "version": "0.0.1",
   "private": true,
   "workspaces": [
@@ -7,12 +7,13 @@
   ],
   "scripts": {
     "dev": "concurrently \"npm run frontend:dev\" \"npm run backend:dev\"",
-    "dev:https": "concurrently \"npm run netlify\" \"npm run backend:dev:https\"",
+    "dev:https": "concurrently \"NODE_TLS_REJECT_UNAUTHORIZED=0 npm run frontend:dev:https\" \"npm run backend:dev:https\"",
+    "dev:netlify": "concurrently \"npm run netlify\" \"npm run backend:dev:https\"",
     "frontend:dev": "npm run --prefix apps/frontend dev",
     "frontend:dev:https": "npm run --prefix apps/frontend dev:https",
-    "netlify": "NODE_EXTRA_CA_CERTS='/Users/sherman/Library/Application Support/mkcert/rootCA.pem' netlify dev --filter frontend",
     "backend:dev": "npm run --prefix apps/backend dev",
     "backend:dev:https": "npm run --prefix apps/backend dev:https",
+    "netlify": "NODE_EXTRA_CA_CERTS='/Users/sherman/Library/Application Support/mkcert/rootCA.pem' netlify dev --filter frontend",
     "format": "prettier --write \"**/*.{ts,tsx,md,js,jsx,json}\"",
     "test:backend": "npm run --prefix apps/backend test:all",
     "lint": "npm run --prefix apps/frontend lint",

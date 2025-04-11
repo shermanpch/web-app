@@ -16,7 +16,7 @@ export default function PrivacyPolicyPage() {
         <div className="bg-[#D8CDBA] rounded-2xl p-8 shadow-lg mt-8">
           <div className="prose prose-lg max-w-none text-gray-800">
             <p className="lead">
-              This Privacy Policy describes how I Ching Divination
+              This Privacy Policy describes how deltao.ai
               (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) collects,
               uses, and discloses your personal information when you use our
               website and services.
@@ -142,10 +142,10 @@ export default function PrivacyPolicyPage() {
               contact us at:
               <br />
               <a
-                href="mailto:support@ichingdivination.com"
+                href="mailto:support@deltao.ai"
                 className="text-[#B88A6A] hover:text-[#a87a5a]"
               >
-                support@ichingdivination.com
+                support@deltao.ai
               </a>
             </p>
 

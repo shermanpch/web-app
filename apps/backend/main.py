@@ -4,14 +4,15 @@ import sys
 # Add the parent directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.api.router import router as api_router
-from app.config import settings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.router import router as api_router
+from app.config import settings
+
 app = FastAPI(
-    title="Web App API",
-    description="Backend API for Web App",
+    title="deltao.ai API",
+    description="Backend API for deltao.ai",
     version="0.1.0",
 )
 
@@ -31,7 +32,7 @@ app.include_router(api_router)
 @app.get("/")
 async def root():
     """Root endpoint."""
-    return {"message": "Welcome to the Divination Web App API"}
+    return {"message": "Welcome to the deltao.ai API"}
 
 
 if __name__ == "__main__":

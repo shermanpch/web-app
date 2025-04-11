@@ -32,7 +32,7 @@ export default function HowItWorks() {
         </p>
 
         <p className="text-xl text-gray-300 mb-8 font-serif leading-relaxed text-left">
-          Unlike traditional platforms, this platform allows you to ask
+          Unlike traditional platforms, Deltao AI allows you to ask
           clarifying questions to provide tailored guidance to the user&apos;s
           circumstances.
         </p>

@@ -22,7 +22,7 @@ export default function AboutPage() {
           </p>
 
           <p className="text-xl text-gray-200 font-serif leading-relaxed text-left">
-            This platform uses AI to bridge that gap — delivering
+            deltao.ai uses Deltao AI to bridge that gap — delivering
             interpretations that are grounded in classical wisdom, yet
             personalized to your situation.
           </p>

@@ -10,8 +10,8 @@ import "./globals.css";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Web App",
-  description: "A web application",
+  title: "deltao.ai",
+  description: "deltao.ai: Your Personal Deltao AI Divination Assistant",
 };
 
 export default async function RootLayout({

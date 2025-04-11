@@ -51,7 +51,7 @@ export default function ForgotPasswordPage() {
       <ContentContainer>
         {/* Header */}
         <div className="mb-8">
-          <Heading>I Ching Divination</Heading>
+          <Heading>deltao.ai</Heading>
           <p className="text-xl text-gray-300 font-serif text-center">
             Recover your account access
           </p>

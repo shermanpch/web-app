@@ -6,12 +6,11 @@ export default function HomePage() {
   return (
     <PageLayout>
       <ContentContainer>
-        <Heading>Welcome to I Ching AI</Heading>
+        <Heading>Welcome to deltao.ai</Heading>
 
         <div className="space-y-8">
           <p className="text-xl text-gray-200 font-serif leading-relaxed text-left">
-            Discover personalized I Ching readings enhanced by artificial
-            intelligence.
+            Discover personalized I Ching readings enhanced by Deltao AI.
           </p>
 
           <p className="text-xl text-gray-200 font-serif leading-relaxed text-left">

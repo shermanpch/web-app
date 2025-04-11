@@ -19,7 +19,7 @@ export default function TermsOfServicePage() {
               1. Introduction
             </h2>
             <p>
-              Welcome to I Ching Divination. These Terms of Service govern your
+              Welcome to deltao.ai. These Terms of Service govern your
               use of our website and services. By accessing or using our
               service, you agree to be bound by these Terms.
             </p>
@@ -28,7 +28,7 @@ export default function TermsOfServicePage() {
               2. Definitions
             </h2>
             <p>
-              <strong>Service</strong> refers to the I Ching Divination website
+              <strong>Service</strong> refers to the deltao.ai website
               and related services.
               <br />
               <strong>User</strong> refers to individuals who access or use our
@@ -85,7 +85,7 @@ export default function TermsOfServicePage() {
               6. Limitation of Liability
             </h2>
             <p>
-              In no event shall I Ching Divination, nor its directors,
+              In no event shall deltao.ai, nor its directors,
               employees, partners, agents, suppliers, or affiliates, be liable
               for any indirect, incidental, special, consequential or punitive
               damages, including without limitation, loss of profits, data, use,
@@ -111,10 +111,10 @@ export default function TermsOfServicePage() {
               If you have any questions about these Terms, please contact us at:
               <br />
               <a
-                href="mailto:support@ichingdivination.com"
+                href="mailto:support@deltao.ai"
                 className="text-[#B88A6A] hover:text-[#a87a5a]"
               >
-                support@ichingdivination.com
+                support@deltao.ai
               </a>
             </p>
 

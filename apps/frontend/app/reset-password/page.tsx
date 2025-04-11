@@ -209,7 +209,7 @@ export default function ResetPasswordPage() {
       <ContentContainer>
         {/* Header */}
         <div className="mb-8">
-          <Heading>I Ching Divination</Heading>
+          <Heading>deltao.ai</Heading>
           <p className="text-xl text-gray-300 font-serif text-center">
             Reset your password
           </p>
