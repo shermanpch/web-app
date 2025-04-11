@@ -145,6 +145,11 @@ export default function PricingPage() {
               <Button
                 onClick={() => {
                   if (tier.name === "Premium") {
+                    const user = queryClient.getQueryData(["currentUser"]);
+                    if (!user) {
+                      router.push("/login");
+                      return;
+                    }
                     upgradeMutation.mutate();
                   } else {
                     router.push("/login");

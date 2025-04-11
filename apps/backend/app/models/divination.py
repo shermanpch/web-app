@@ -21,13 +21,6 @@ class IChingTextResponse(BaseModel):
     child_text: Optional[str] = None
 
 
-class IChingImageRequest(BaseModel):
-    """I Ching image request model."""
-
-    parent_coord: str
-    child_coord: str
-
-
 class IChingCoordinatesRequest(BaseModel):
     """I Ching coordinates request model."""
 

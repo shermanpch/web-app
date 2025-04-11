@@ -110,60 +110,6 @@ class TestDivination(BaseTest):
             preview = child_text[:50] + "..." if len(child_text) > 50 else child_text
             self.logger.info(f"Child text preview: {preview}")
 
-    def test_iching_image_retrieval_non_authenticated(self, client: TestClient) -> None:
-        """Test retrieving I-Ching image without authentication."""
-        # ARRANGE
-        self.logger.info("Testing I-Ching image retrieval without authentication")
-
-        # Test coordinates
-        test_parent_coord = "1-1"
-        test_child_coord = "2"
-
-        # Clear any existing cookies
-        client.cookies.clear()
-
-        # ACT - Make request without auth tokens/cookies
-        iching_response = client.get(
-            f"/api/divination/iching-image?parent_coord={test_parent_coord}&child_coord={test_child_coord}"
-        )
-
-        # ASSERT
-        assert (
-            iching_response.status_code == 401
-        ), "Request should fail with authentication error when no auth is provided"
-
-        self.logger.info("Non-authenticated image retrieval test passed successfully!")
-
-    def test_iching_image_retrieval_authenticated(
-        self, authenticated_client: Tuple[TestClient, Optional[str]]
-    ) -> None:
-        """Test retrieving I-Ching image using authentication cookies."""
-        # ARRANGE
-        self.logger.info("Testing I-Ching image retrieval with authentication")
-        client, user_id = authenticated_client
-
-        # Test coordinates
-        test_parent_coord = "1-1"
-        test_child_coord = "2"
-
-        # ACT - Make the API request
-        iching_response = client.get(
-            f"/api/divination/iching-image?parent_coord={test_parent_coord}&child_coord={test_child_coord}"
-        )
-
-        # ASSERT
-        assert (
-            iching_response.status_code == 200
-        ), f"I-Ching image retrieval failed: {iching_response.text}"
-
-        # Verify response headers and content
-        assert (
-            iching_response.headers["content-type"] == "image/jpeg"
-        ), "Response should be a JPEG image"
-        assert len(iching_response.content) > 0, "Response should contain image data"
-
-        self.logger.info("I-Ching image retrieval test passed successfully!")
-
     def test_iching_coordinates_conversion(self, client: TestClient) -> None:
         """Test the I-Ching coordinates conversion logic."""
         # ARRANGE

@@ -2,23 +2,16 @@
 """
 Script to migrate I Ching data from local storage to Supabase database.
 
-This script reads text and image files from the data directory and
-imports them into the Supabase iching_texts table and storage.
+This script reads text files from the data directory and
+imports them into the Supabase iching_texts table.
 
 Requirements:
 - You must have Supabase credentials configured in your app config
 
 Usage:
-    python migrate_to_supabase.py [--text] [--images]
-
-    --text:   Migrate text data
-    --images: Migrate image files
-
-    If no arguments are provided, both text and images will be migrated.
+    python migrate_to_supabase.py
 """
 
-import argparse
-import concurrent.futures
 import glob
 import logging
 import os
@@ -32,8 +25,9 @@ from functools import wraps
 # Add the parent directory to the system path to import config
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 import postgrest
-from app.config import settings
 from supabase import create_client
+
+from app.config import settings
 
 # Set up logging
 logs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../logs")
@@ -208,379 +202,135 @@ def process_text_record(parent_dir, parent_texts, data_dir, supabase_client):
     return success_count, skipped_count, error_count, messages, failed_records
 
 
-def process_image_upload(img_file, data_dir, bucket_name, storage_client):
-    """Process a single image upload to Supabase."""
-    try:
-        rel_path = os.path.relpath(img_file, data_dir)
-        path_parts = rel_path.split(os.sep)
-
-        parent_coord = path_parts[0]
-        child_coord = path_parts[1]
-
-        if not (
-            parent_coord
-            and child_coord
-            and "-" in parent_coord
-            and child_coord.isdigit()
-        ):
-            return (0, 0, 1, f"Invalid path format for {img_file}")
-
-        dest_path = f"{parent_coord}/{child_coord}/hexagram.jpg"
-        time.sleep(random.uniform(0.1, 0.5))
-
-        try:
-
-            @retry_with_backoff(max_retries=3, initial_delay=1)
-            def check_file_exists():
-                return storage_client.list(f"{parent_coord}/{child_coord}")
-
-            files_response = check_file_exists()
-
-            files = []
-            if isinstance(files_response, list):
-                files = files_response
-            elif hasattr(files_response, "data"):
-                files = files_response.data
-
-            if files and any(
-                isinstance(file, dict) and file.get("name") == "hexagram.jpg"
-                for file in files
-            ):
-                return (
-                    0,
-                    1,
-                    0,
-                    f"Image already exists at {dest_path}. Skipping (this is not an error).",
-                )
-        except Exception:
-            pass
-
-        with open(img_file, "rb") as f:
-            file_content = f.read()
-
-        try:
-
-            @retry_with_backoff(max_retries=3, initial_delay=1)
-            def upload_file():
-                storage_client.upload(dest_path, file_content)
-
-            upload_file()
-            return (
-                1,
-                0,
-                0,
-                f"Migrated image: {dest_path} (size: {len(file_content)} bytes)",
-            )
-        except Exception as e:
-            error_str = str(e)
-            if (
-                "409" in error_str
-                or "Duplicate" in error_str
-                or "already exists" in error_str
-            ):
-                return (
-                    0,
-                    1,
-                    0,
-                    f"Image already exists at {dest_path} (409 Conflict). Skipping (this is not an error).",
-                )
-            else:
-                raise
-    except Exception as e:
-        return (0, 0, 1, f"Error migrating image {img_file}: {str(e)}")
-
-
 def process_items_in_queue(
     task_queue, worker_function, max_workers, processor_args=None
 ):
-    """Generic queue processor for both text and image migration."""
-    if processor_args is None:
-        processor_args = {}
-
+    """Process items from a queue using multiple worker threads."""
     success_count = 0
     error_count = 0
     skipped_count = 0
-    conflict_count = 0
-    failed_items = []
-
-    semaphore = threading.Semaphore(max_workers)
+    all_messages = []
+    failed_records = []
 
     def worker():
-        nonlocal success_count, error_count, skipped_count, conflict_count
+        nonlocal success_count, error_count, skipped_count
 
         while True:
             try:
-                item = task_queue.get(timeout=5)
+                item = task_queue.get_nowait()
             except queue.Empty:
                 break
 
             try:
-                with semaphore:
-                    result = worker_function(item, **processor_args)
+                if processor_args:
+                    result = worker_function(item, *processor_args)
+                else:
+                    result = worker_function(item)
 
-                    if result[0] == "text":
-                        s_count, sk_count, e_count, msgs, failed = result[1]
-                        with count_lock:
-                            success_count += s_count
-                            skipped_count += sk_count
-                            error_count += e_count
-                            failed_items.extend(failed)
+                if isinstance(result, tuple) and len(result) == 5:
+                    s_count, sk_count, e_count, messages, failed = result
+                    with count_lock:
+                        success_count += s_count
+                        skipped_count += sk_count
+                        error_count += e_count
+                        all_messages.extend(messages)
+                        failed_records.extend(failed)
+                else:
+                    with count_lock:
+                        all_messages.append(result)
 
-                        for msg in msgs:
-                            if "Error" in msg:
-                                logger.error(msg)
-                            elif "Warning" in msg or "No " in msg:
-                                logger.warning(msg)
-                            else:
-                                logger.info(msg)
-                    else:  # image
-                        success, skipped, error, message = result[1]
-                        with count_lock:
-                            success_count += success
-                            skipped_count += skipped
-                            error_count += error
-                            if "409 Conflict" in message:
-                                conflict_count += 1
-                            if error:
-                                failed_items.append(item)
-
-                        if success or skipped:
-                            logger.info(message)
-                        elif error:
-                            logger.error(message)
-            except Exception as exc:
+            except Exception as e:
                 with count_lock:
                     error_count += 1
-                    failed_items.append(item)
-                logger.error(f"Processing error: {exc}", exc_info=True)
+                    all_messages.append(f"Error processing item {item}: {str(e)}")
+                logger.error(f"Error in worker thread: {str(e)}")
+
             finally:
                 task_queue.task_done()
 
-    workers = []
+    # Create and start worker threads
+    threads = []
     for _ in range(max_workers):
-        worker_thread = threading.Thread(target=worker)
-        worker_thread.daemon = True
-        worker_thread.start()
-        workers.append(worker_thread)
+        t = threading.Thread(target=worker)
+        t.start()
+        threads.append(t)
 
-    return workers, (
-        success_count,
-        skipped_count,
-        error_count,
-        conflict_count,
-        failed_items,
-    )
+    # Wait for all threads to complete
+    for t in threads:
+        t.join()
+
+    return success_count, skipped_count, error_count, all_messages, failed_records
 
 
 def migrate_texts_to_supabase():
-    """Migrate all text files from local storage to Supabase database."""
+    """Migrate I Ching text data to Supabase."""
+    logger.info("Starting I Ching text migration")
+
+    # Define the path to the data directory
     script_dir = os.path.dirname(os.path.abspath(__file__))
     data_dir = os.path.join(script_dir, "data")
-    MAX_WORKERS = 5
 
-    text_queue = queue.Queue()
+    if not os.path.exists(data_dir):
+        logger.error(f"Data directory not found: {data_dir}")
+        return
 
-    logger.info("Checking if iching_texts table exists...")
+    # Check if the iching_texts table exists
     if not check_if_table_exists("iching_texts"):
-        logger.error(
-            "The iching_texts table does not exist. Please run sql/iching_texts.sql first."
-        )
-        return False
+        logger.error("iching_texts table does not exist in Supabase")
+        return
 
-    try:
-        existing_records = supabase.table("iching_texts").select("id").execute()
-        existing_count = (
-            len(existing_records.data) if hasattr(existing_records, "data") else 0
-        )
-        logger.info(
-            f"Found iching_texts table with approximately {existing_count} records."
-        )
-    except Exception as e:
-        logger.warning(f"Found iching_texts table but couldn't count records: {str(e)}")
-
+    # First, collect all parent texts
     parent_texts = {}
-    logger.info(f"Starting to migrate text files from {data_dir} directory...")
-
-    logger.info("Processing parent texts...")
-    for parent_dir in glob.glob(f"{data_dir}/[0-9]*-[0-9]*"):
+    for parent_dir in glob.glob(os.path.join(data_dir, "*-*")):
         parent_coord = os.path.basename(parent_dir)
         parent_text_path = os.path.join(parent_dir, "html", "body.txt")
 
-        if not os.path.exists(parent_text_path):
-            logger.warning(f"No parent text file found at {parent_text_path}")
-            continue
+        if os.path.exists(parent_text_path):
+            try:
+                with open(parent_text_path, "r", encoding="utf-8") as f:
+                    parent_texts[parent_coord] = f.read()
+            except Exception as e:
+                logger.error(f"Error reading parent text for {parent_coord}: {str(e)}")
 
-        try:
-            with open(parent_text_path, "r", encoding="utf-8") as f:
-                parent_texts[parent_coord] = f.read()
-            logger.info(f"Found parent text for {parent_coord}")
-        except Exception as e:
-            logger.error(f"Error reading parent text for {parent_coord}: {str(e)}")
-
-    parent_dirs = glob.glob(f"{data_dir}/[0-9]*-[0-9]*")
-    logger.info(f"Found {len(parent_dirs)} parent directories to process")
-
-    # Queue up parent directories
-    for parent_dir in parent_dirs:
-        parent_coord = os.path.basename(parent_dir)
-        if parent_texts.get(parent_coord):
-            text_queue.put(parent_dir)
+    # Create a queue of parent directories to process
+    task_queue = queue.Queue()
+    for parent_dir in glob.glob(os.path.join(data_dir, "*-*")):
+        task_queue.put(parent_dir)
 
     def process_text_item(parent_dir):
-        result = process_text_record(parent_dir, parent_texts, data_dir, supabase)
-        return ("text", result)
+        return process_text_record(parent_dir, parent_texts, data_dir, supabase)
 
-    # Start workers and process queue
-    workers, counters = process_items_in_queue(
-        text_queue, process_text_item, MAX_WORKERS
-    )
+    # Process the queue with multiple workers
+    (
+        success_count,
+        skipped_count,
+        error_count,
+        messages,
+        failed_records,
+    ) = process_items_in_queue(task_queue, process_text_item, max_workers=5)
 
-    # Wait for queue to be processed
-    text_queue.join()
-
-    # Extract results
-    success_count, skipped_count, error_count, _, failed_records = counters
-
-    logger.info(
-        f"Text migration summary: {success_count} newly added, {skipped_count} updated (already existed), {error_count} failed"
-    )
+    # Log results
+    logger.info("Text migration completed!")
+    logger.info(f"Successfully processed: {success_count}")
+    logger.info(f"Skipped (already existed): {skipped_count}")
+    logger.info(f"Errors: {error_count}")
 
     if failed_records:
-        logger.error("Failed to process the following records:")
-        for i, coords in enumerate(failed_records, 1):
-            logger.error(f"  {i}. {coords}")
+        logger.warning("Failed records:")
+        for record in failed_records:
+            logger.warning(f"  {record}")
 
-    return success_count > 0 or skipped_count > 0
-
-
-def migrate_images_to_supabase():
-    """Migrate all image files from local storage to Supabase storage."""
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    data_dir = os.path.join(script_dir, "data")
-    bucket_name = "iching-images"
-    MAX_WORKERS = 5
-
-    image_queue = queue.Queue()
-
-    logger.info("Checking if storage bucket exists...")
-    try:
-        buckets_response = supabase.storage.list_buckets()
-
-        buckets = []
-        if isinstance(buckets_response, list):
-            buckets = buckets_response
-        elif hasattr(buckets_response, "data"):
-            buckets = buckets_response.data
-
-        bucket_exists = False
-        for bucket in buckets:
-            if isinstance(bucket, dict) and bucket.get("name") == bucket_name:
-                bucket_exists = True
-                break
-            elif hasattr(bucket, "name") and bucket.name == bucket_name:
-                bucket_exists = True
-                break
-
-        if not bucket_exists:
-            logger.info(f"Bucket '{bucket_name}' does not exist. Creating it...")
-            supabase.storage.create_bucket(bucket_name)
-            logger.info(f"Created bucket: {bucket_name}")
-        else:
-            logger.info(f"Found existing bucket: {bucket_name}")
-    except Exception as e:
-        logger.error(f"Error checking/creating bucket: {str(e)}")
-        return False
-
-    storage_client = supabase.storage.from_(bucket_name)
-
-    image_files = glob.glob(f"{data_dir}/**/images/hexagram.jpg", recursive=True)
-    logger.info(f"Found {len(image_files)} images to process")
-
-    # Queue up images
-    for img_file in image_files:
-        image_queue.put(img_file)
-
-    def process_image_item(img_file):
-        result = process_image_upload(img_file, data_dir, bucket_name, storage_client)
-        return ("image", result)
-
-    # Start workers and process queue
-    processor_args = {}
-    workers, counters = process_items_in_queue(
-        image_queue, process_image_item, MAX_WORKERS, processor_args
-    )
-
-    # Wait for queue to be processed
-    image_queue.join()
-
-    # Extract results
-    success_count, skipped_count, error_count, conflict_count, failed_files = counters
-
-    # Log summary
-    if conflict_count > 0:
-        logger.info(
-            f"Image migration summary: {success_count} newly uploaded, {skipped_count} skipped, "
-            f"including {conflict_count} 409 conflicts, {error_count} failed"
-        )
-    else:
-        logger.info(
-            f"Image migration summary: {success_count} newly uploaded, {skipped_count} skipped, {error_count} failed"
-        )
-
-    if failed_files:
-        logger.error("Failed to upload the following files:")
-        for i, file_path in enumerate(failed_files, 1):
-            logger.error(f"  {i}. {file_path}")
-
-    return success_count > 0 or skipped_count > 0
+    return success_count, error_count
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Migrate I Ching data to Supabase")
-    parser.add_argument(
-        "--migrate-text",
-        action="store_true",
-        help="Migrate text data to Supabase",
+    """Main function to run the migration script."""
+    logger.info("Starting text migration...")
+    success_count, error_count = migrate_texts_to_supabase()
+    logger.info(
+        f"Text migration completed with {success_count} successes and {error_count} errors"
     )
-    parser.add_argument(
-        "--migrate-images",
-        action="store_true",
-        help="Migrate image data to Supabase storage",
-    )
-    args = parser.parse_args()
-
-    # Default: migrate both if no specific argument is provided
-    if not args.migrate_text and not args.migrate_images:
-        args.migrate_text = True
-        args.migrate_images = True
-
-    success = True
-
-    if args.migrate_text:
-        logger.info("Starting text migration...")
-        text_success = migrate_texts_to_supabase()
-        if text_success:
-            logger.info("Text migration completed successfully.")
-        else:
-            logger.error("Text migration failed.")
-            success = False
-
-    if args.migrate_images:
-        logger.info("Starting image migration...")
-        image_success = migrate_images_to_supabase()
-        if image_success:
-            logger.info("Image migration completed successfully.")
-        else:
-            logger.error("Image migration failed.")
-            success = False
-
-    if success:
-        logger.info("Migration completed successfully.")
-        return 0
-    else:
-        logger.error("Migration completed with errors.")
-        return 1
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

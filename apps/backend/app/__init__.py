@@ -12,7 +12,6 @@ from .models.auth import UserData, UserLogin, UserSignup
 from .models.divination import (
     IChingCoordinatesRequest,
     IChingCoordinatesResponse,
-    IChingImageRequest,
     IChingReadingRequest,
     IChingReadingResponse,
     IChingSaveReadingRequest,
@@ -64,7 +63,6 @@ __all__ = [
     "UserSignup",
     "IChingCoordinatesRequest",
     "IChingCoordinatesResponse",
-    "IChingImageRequest",
     "IChingReadingRequest",
     "IChingReadingResponse",
     "IChingSaveReadingRequest",

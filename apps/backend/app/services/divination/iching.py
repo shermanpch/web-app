@@ -2,13 +2,11 @@
 
 import logging
 
-from fastapi import HTTPException
 from supabase.client import AsyncClient
 
 from ...models.divination import (
     IChingCoordinatesRequest,
     IChingCoordinatesResponse,
-    IChingImageRequest,
     IChingReadingRequest,
     IChingReadingResponse,
     IChingSaveReadingRequest,
@@ -81,54 +79,6 @@ async def get_iching_text_from_db(
     except Exception as e:
         logger.error(f"Error fetching I Ching text: {str(e)}")
         raise e
-
-
-async def fetch_iching_image_data(
-    request: IChingImageRequest,
-    client: AsyncClient,
-) -> bytes:
-    """
-    Fetch I Ching hexagram image data (bytes) from storage bucket for given coordinates.
-
-    Args:
-        request: IChingImageRequest containing parent and child coordinates
-        client: Authenticated Supabase client
-
-    Returns:
-        bytes: Raw image bytes
-
-    Raises:
-        HTTPException: If image data cannot be retrieved or not found
-    """
-    logger.info(
-        f"Fetching I Ching image data for parent: {request.parent_coord}, child: {request.child_coord}"
-    )
-
-    try:
-        # Construct the image path in the bucket
-        image_path = f"{request.parent_coord}/{request.child_coord}/hexagram.jpg"
-        bucket_name = "iching-images"
-
-        # Get the image bytes directly
-        bucket = client.storage.from_(bucket_name)
-        try:
-            response = await bucket.download(image_path)
-            return response
-        except Exception as download_error:
-            logger.error(f"Error downloading image from Supabase: {download_error}")
-            raise HTTPException(
-                status_code=404, detail=f"Image not found: {image_path}"
-            )
-
-    except HTTPException as http_exception:
-        # Re-raise HTTP exceptions with their status codes
-        logger.error(f"HTTP error fetching I Ching image: {http_exception}")
-        raise http_exception
-    except Exception as e:
-        logger.error(f"Error fetching I Ching image: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to fetch I Ching image: {str(e)}"
-        )
 
 
 async def get_iching_coordinates_from_oracle(

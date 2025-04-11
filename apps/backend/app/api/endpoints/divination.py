@@ -1,15 +1,13 @@
 """Divination API endpoints."""
 
 import logging
-from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from ...models.auth import AuthenticatedSession, UserData
 from ...models.divination import (
     IChingCoordinatesRequest,
     IChingCoordinatesResponse,
-    IChingImageRequest,
     IChingReadingRequest,
     IChingReadingResponse,
     IChingSaveReadingRequest,
@@ -22,7 +20,6 @@ from ...models.divination import (
 from ...services.auth.dependencies import get_auth_tokens, get_current_user
 from ...services.auth.supabase import get_authenticated_client
 from ...services.divination.iching import (
-    fetch_iching_image_data,
     get_iching_coordinates_from_oracle,
     get_iching_reading_from_oracle,
     get_iching_text_from_db,
@@ -72,67 +69,6 @@ async def get_iching_text(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve I Ching text: {str(e)}",
-        )
-
-
-@router.get("/iching-image")
-async def get_iching_image_data(
-    parent_coord: str = Query(
-        ..., description="Parent hexagram coordinate (e.g., '1-2')"
-    ),
-    child_coord: str = Query(..., description="Child hexagram coordinate (e.g., '3')"),
-    session: AuthenticatedSession = Depends(get_auth_tokens),
-):
-    """
-    Get I Ching image data for a specific coordinate pair.
-
-    This endpoint proxies requests to the Supabase storage bucket and returns the raw image data,
-    bypassing browser authentication issues with direct signed URLs.
-
-    Args:
-        parent_coord: Parent hexagram coordinate (Query parameter)
-        child_coord: Child hexagram coordinate (Query parameter)
-        session: Authenticated session extracted from cookies
-
-    Returns:
-        Response: Raw image data with appropriate content type
-    """
-    logger.info(
-        f"API: Getting image data for parent: {parent_coord}, child: {child_coord}"
-    )
-
-    try:
-        # Create authenticated client
-        client = await get_authenticated_client(
-            session.access_token, session.refresh_token
-        )
-
-        # Create image request model
-        image_request = IChingImageRequest(
-            parent_coord=parent_coord, child_coord=child_coord
-        )
-
-        # Get the image bytes from the service
-        image_bytes = await fetch_iching_image_data(
-            request=image_request, client=client
-        )
-
-        logger.info(
-            f"API: Successfully retrieved image data, returning {len(image_bytes)} bytes"
-        )
-
-        # Return the raw image data
-        return Response(content=image_bytes, media_type="image/jpeg")
-
-    except HTTPException as http_error:
-        # Re-raise HTTP exceptions with their status codes
-        logger.error(f"HTTP error retrieving I Ching image: {http_error.detail}")
-        raise http_error
-    except Exception as e:
-        logger.error(f"API error retrieving I Ching image data: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve I Ching image data: {str(e)}",
         )
 
 
