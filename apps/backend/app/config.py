@@ -2,6 +2,7 @@
 
 import os
 from typing import List
+from urllib.parse import urlparse
 
 from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
@@ -29,6 +30,22 @@ class Settings(BaseSettings):
         ]
         print(f"CORS Origins Allowed: {origins}")
         return origins
+
+    @property
+    def cookie_domain(self) -> str | None:
+        """Get the cookie domain based on the frontend URL."""
+        parsed_url = urlparse(self.FRONTEND_URL)
+        hostname = parsed_url.hostname
+        if not hostname:
+            return None
+
+        # For localhost development
+        if hostname == "localhost":
+            return None  # Browser will automatically set cookie domain to localhost
+
+        # For production with subdomains (e.g., deltao.ai and api.deltao.ai)
+        # Add a dot prefix to allow sharing between subdomains
+        return f".{hostname}" if "." in hostname else hostname
 
     # Supabase
     SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")

@@ -4,6 +4,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
+from ...config import settings
 from ...models.auth import (
     AuthenticatedSession,
     AuthResponse,
@@ -53,14 +54,26 @@ def set_auth_cookies(
     access_token_max_age = (
         30 * 24 * 60 * 60 if remember_me else expires_in
     )  # 30 days if remember_me
+
+    # Get cookie settings
+    cookie_settings = {
+        "httponly": True,
+        "secure": True,
+        "samesite": "None",
+        "path": "/",
+    }
+
+    # Add domain setting only if we have a specific domain to set
+    # For localhost, we let the browser handle it automatically
+    if settings.cookie_domain:
+        cookie_settings["domain"] = settings.cookie_domain
+
+    # Set access token cookie
     response.set_cookie(
         key="auth_token",
         value=access_token,
         max_age=access_token_max_age,
-        httponly=True,
-        secure=True,
-        samesite="None",
-        path="/",
+        **cookie_settings,
     )
 
     # Set refresh token cookie (longer lifespan)
@@ -71,10 +84,7 @@ def set_auth_cookies(
         key="refresh_token",
         value=refresh_token,
         max_age=refresh_token_max_age,
-        httponly=True,
-        secure=True,
-        samesite="None",
-        path="/",
+        **cookie_settings,
     )
 
 
