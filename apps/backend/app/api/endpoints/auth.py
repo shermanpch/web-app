@@ -95,8 +95,21 @@ def clear_auth_cookies(response: Response) -> None:
     Args:
         response: FastAPI Response object
     """
-    response.delete_cookie(key="auth_token", path="/")
-    response.delete_cookie(key="refresh_token", path="/")
+    # Prepare cookie deletion options
+    delete_cookie_options = {
+        "path": "/",
+        "httponly": True,
+        "secure": True,
+        "samesite": "None",
+    }
+
+    # Add domain setting only if we have a specific domain to set
+    if settings.cookie_domain:
+        delete_cookie_options["domain"] = settings.cookie_domain
+
+    # Clear both auth and refresh tokens with the same options
+    response.delete_cookie(key="auth_token", **delete_cookie_options)
+    response.delete_cookie(key="refresh_token", **delete_cookie_options)
 
 
 @router.get("/me", response_model=UserData)
