@@ -135,7 +135,9 @@ async def login_user(email: str, password: str) -> Dict[str, Any]:
 
         # --- Start Timing ---
         start_time = time.perf_counter()
-        logger.info(f"LOGIN_TIMING: Calling Supabase sign_in_with_password for {email}")
+        logger.warning(
+            f"LOGIN_TIMING: Calling Supabase sign_in_with_password for {email}"
+        )
         # ---
 
         response = await client.auth.sign_in_with_password(
@@ -145,7 +147,7 @@ async def login_user(email: str, password: str) -> Dict[str, Any]:
         # --- End Timing ---
         end_time = time.perf_counter()
         duration_ms = (end_time - start_time) * 1000
-        logger.info(
+        logger.warning(
             f"LOGIN_TIMING: Supabase sign_in_with_password for {email} took {duration_ms:.2f} ms"
         )
         # ---
@@ -300,7 +302,7 @@ async def logout_user(access_token: str, refresh_token: str) -> Dict[str, Any]:
 
         # --- Start Timing ---
         start_time = time.perf_counter()
-        logger.info("LOGOUT_TIMING: Calling Supabase sign_out")
+        logger.inwarningfo("LOGOUT_TIMING: Calling Supabase sign_out")
         # ---
 
         await client.auth.sign_out()
@@ -308,7 +310,7 @@ async def logout_user(access_token: str, refresh_token: str) -> Dict[str, Any]:
         # --- End Timing ---
         end_time = time.perf_counter()
         duration_ms = (end_time - start_time) * 1000
-        logger.info(f"LOGOUT_TIMING: Supabase sign_out took {duration_ms:.2f} ms")
+        logger.warning(f"LOGOUT_TIMING: Supabase sign_out took {duration_ms:.2f} ms")
         # ---
 
         logger.info("User logged out successfully")
@@ -320,7 +322,7 @@ async def logout_user(access_token: str, refresh_token: str) -> Dict[str, Any]:
         if "start_time" in locals():
             end_time = time.perf_counter()
             duration_ms = (end_time - start_time) * 1000
-            logger.info(
+            logger.warning(
                 f"LOGOUT_TIMING: Supabase sign_out call resulted in error after {duration_ms:.2f} ms (approx)"
             )
         # ---
