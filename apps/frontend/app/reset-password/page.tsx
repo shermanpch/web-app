@@ -32,7 +32,6 @@ function ResetPasswordContent() {
       // Check URL for direct token parameter (standard case)
       const token = searchParams?.get("token");
       if (token) {
-        console.log("Token found in standard query params");
         return token;
       }
 
@@ -44,7 +43,6 @@ function ResetPasswordContent() {
         const tokenRegex = /[?&]token=([^&#]*)/;
         const tokenMatch = url.match(tokenRegex);
         if (tokenMatch && tokenMatch[1]) {
-          console.log("Token found via regex in query params");
           return tokenMatch[1];
         }
 
@@ -54,7 +52,6 @@ function ResetPasswordContent() {
         );
         const hashToken = hashParams.get("access_token");
         if (hashToken) {
-          console.log("Token found in hash fragment");
           return hashToken;
         }
 
@@ -65,7 +62,6 @@ function ResetPasswordContent() {
             const fullTokenRegex = new RegExp(`token=([^&]*)`);
             const match = url.match(fullTokenRegex);
             if (match && match[1]) {
-              console.log(`Token found in ${type} flow`);
               return match[1];
             }
           }

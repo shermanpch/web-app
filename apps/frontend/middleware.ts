@@ -31,17 +31,11 @@ export function middleware(request: NextRequest) {
   if (isProtectedRoute && !authToken) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirectedFrom", pathname);
-    console.log(
-      `[Middleware] Unauthenticated access to ${pathname}, redirecting to login.`,
-    );
     return NextResponse.redirect(loginUrl);
   }
 
   // Redirect authenticated users trying to access login/register
   if (authToken && publicAuthRoutes.includes(pathname)) {
-    console.log(
-      `[Middleware] Authenticated user accessing ${pathname}, redirecting to try-now.`,
-    );
     return NextResponse.redirect(new URL("/try-now", request.url));
   }
 
