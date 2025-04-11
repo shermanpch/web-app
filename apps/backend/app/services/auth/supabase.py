@@ -1,6 +1,7 @@
 """Supabase client utilities."""
 
 import logging
+import time  # Add time import for performance measurement
 from typing import Any, Dict, Optional
 
 from fastapi import status
@@ -131,12 +132,30 @@ async def login_user(email: str, password: str) -> Dict[str, Any]:
     logger.info(f"Logging in user: {email}")
     try:
         client = await get_supabase_client()
+
+        # --- Start Timing ---
+        start_time = time.perf_counter()
+        logger.info(f"LOGIN_TIMING: Calling Supabase sign_in_with_password for {email}")
+        # ---
+
         response = await client.auth.sign_in_with_password(
             {"email": email, "password": password}
         )
 
+        # --- End Timing ---
+        end_time = time.perf_counter()
+        duration_ms = (end_time - start_time) * 1000
+        logger.info(
+            f"LOGIN_TIMING: Supabase sign_in_with_password for {email} took {duration_ms:.2f} ms"
+        )
+        # ---
+
         # Check if login succeeded
         if not response.user or not response.session:
+            # Log before raising
+            logger.warning(
+                f"Supabase login failed for {email}: No user or session data returned."
+            )
             raise SupabaseAuthError("Invalid email or password")
 
         logger.info(f"Login successful for: {email}")
@@ -145,7 +164,10 @@ async def login_user(email: str, password: str) -> Dict[str, Any]:
         # Re-raise our custom exceptions
         raise e
     except Exception as e:
-        logger.error(f"Login error for {email}: {str(e)}")
+        # Log the original error before raising SupabaseAuthError
+        logger.error(
+            f"Login error during Supabase call for {email}: {type(e).__name__} - {str(e)}"
+        )
         raise SupabaseAuthError("Invalid email or password")
 
 
@@ -275,13 +297,33 @@ async def logout_user(access_token: str, refresh_token: str) -> Dict[str, Any]:
     logger.info("Attempting to logout user")
     try:
         client = await get_authenticated_client(access_token, refresh_token)
+
+        # --- Start Timing ---
+        start_time = time.perf_counter()
+        logger.info("LOGOUT_TIMING: Calling Supabase sign_out")
+        # ---
+
         await client.auth.sign_out()
+
+        # --- End Timing ---
+        end_time = time.perf_counter()
+        duration_ms = (end_time - start_time) * 1000
+        logger.info(f"LOGOUT_TIMING: Supabase sign_out took {duration_ms:.2f} ms")
+        # ---
 
         logger.info("User logged out successfully")
         return {"success": True}
     except Exception as e:
         # Just log errors, don't raise them - we want logout to succeed even if
         # there's an issue with invalidating the token on the server
+        # --- Add timing log even on error if possible ---
+        if "start_time" in locals():
+            end_time = time.perf_counter()
+            duration_ms = (end_time - start_time) * 1000
+            logger.info(
+                f"LOGOUT_TIMING: Supabase sign_out call resulted in error after {duration_ms:.2f} ms (approx)"
+            )
+        # ---
         logger.error(f"Logout error: {str(e)}")
         return {"success": True}
 

@@ -41,7 +41,7 @@ export default async function RootLayout({
               <NavigationBar user={user} />
             </div>
             <main className="flex-grow flex flex-col">{children}</main>
-            <Toaster richColors position="top-center" />
+            <Toaster richColors position="top-center" duration={2000} />
           </div>
         </QueryProvider>
       </body>
