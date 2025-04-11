@@ -31,11 +31,6 @@ node_modules/
 # Next.js build output
 .next/
 
-# Playwright test artifacts
-**/test-results/
-**/playwright-report/
-**/playwright/.cache/
-
 # =========================================
 # Python
 # =========================================

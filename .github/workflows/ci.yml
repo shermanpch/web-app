@@ -11,7 +11,7 @@ env:
   HOST: "0.0.0.0"
   PORT: "8000"
   FRONTEND_URL: "http://localhost:3000"
-  NEXT_PUBLIC_BACKEND_API_URL: ""
+  NEXT_PUBLIC_BACKEND_API_URL: "http://localhost:8000"
   INTERNAL_BACKEND_API_URL: "http://localhost:8000"
 
   # To ensure frontend use a different port
@@ -24,7 +24,7 @@ env:
   SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
   TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
   OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-  OPENAI_MODEL: ${{ secrets.OPENAI_MODEL || 'gpt-4o' }}
+  OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
 
 jobs:
   lint:

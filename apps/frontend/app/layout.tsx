@@ -12,6 +12,27 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "deltao.ai",
   description: "deltao.ai: Your Personal Deltao AI Divination Assistant",
+  icons: {
+    icon: [
+      { url: "/assets/favicon/favicon.ico", sizes: "any" },
+      { url: "/assets/favicon/favicon.svg", type: "image/svg+xml" },
+      {
+        url: "/assets/favicon/favicon-96x96.png",
+        sizes: "96x96",
+        type: "image/png",
+      },
+    ],
+    apple: {
+      url: "/assets/favicon/apple-touch-icon.png",
+      type: "image/png",
+    },
+    other: [
+      {
+        rel: "manifest",
+        url: "/assets/favicon/site.webmanifest",
+      },
+    ],
+  },
 };
 
 export default async function RootLayout({
