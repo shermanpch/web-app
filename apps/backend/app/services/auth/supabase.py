@@ -206,7 +206,7 @@ async def change_password(
         logger.error(f"Password change error: {error_str}")
 
         # Check for specific error types
-        if "same_password" in error_str:
+        if "new password should be different from the old password" in error_str:
             raise SupabaseAuthError(
                 "New password should be different from your current password",
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -215,6 +215,11 @@ async def change_password(
             raise SupabaseAuthError(
                 "Your session has expired. Please log in again.",
                 status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+        elif "weak" in error_str or "strength" in error_str:
+            raise SupabaseAuthError(
+                "Password is too weak. Please use a stronger password with at least 8 characters, including numbers and special characters.",
+                status_code=status.HTTP_400_BAD_REQUEST,
             )
 
         # General error

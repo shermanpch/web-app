@@ -188,6 +188,34 @@ class TestAuthentication(BaseTest):
         login_response = client.post("/api/auth/login", json=new_credentials)
         assert_successful_response(login_response)
 
+    def test_password_change_same_password(
+        self,
+        authenticated_client: Tuple[TestClient, Optional[str]],
+        test_user: Dict[str, str],
+    ) -> None:
+        """Test attempting to change password to the same value."""
+        # ARRANGE
+        self.logger.info("Testing password change with same password")
+        client, user_id = authenticated_client
+
+        # ACT - Try to change password to the same value
+        change_request: Dict[str, str] = {"password": test_user["password"]}
+        response = client.post("/api/auth/password/change", json=change_request)
+
+        # Log the full response for debugging
+        self.logger.info(f"Response status code: {response.status_code}")
+        self.logger.info(f"Response body: {response.text}")
+
+        # ASSERT
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        data = response.json()
+        self.logger.info(f"Full error response data: {data}")
+        assert "detail" in data
+        assert (
+            data["detail"]
+            == "New password should be different from your current password"
+        )
+
     def test_unauthorized_access(self, client: TestClient) -> None:
         """Test access to protected endpoint without authentication."""
         # ARRANGE & ACT
