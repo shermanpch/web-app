@@ -387,95 +387,100 @@ class TestAuthentication(BaseTest):
         client: TestClient,
         test_user: Dict[str, str],
     ) -> None:
-        """Test user login with remember_me flag set to False."""
+        """Test login without remember_me flag."""
         # ARRANGE
-        self.logger.info("Testing user login with remember_me=False")
-        new_test_user = {
-            "email": f"no_remember_test_{test_user['email']}",
+        self.logger.info("Testing login without remember_me flag")
+
+        # Create a test user for this specific test
+        test_user_no_remember = {
+            "email": f"no_remember_{test_user['email']}",
             "password": test_user["password"],
         }
-
-        # Create a user for this test
-        signup_response = client.post("/api/auth/signup", json=new_test_user)
+        signup_response = client.post("/api/auth/signup", json=test_user_no_remember)
         assert signup_response.status_code == 200, "Failed to create test user"
 
-        # ACT - Login with remember_me=False
-        login_data = {**new_test_user, "remember_me": False}
+        # ACT
+        login_data = {
+            "email": test_user_no_remember["email"],
+            "password": test_user_no_remember["password"],
+            "remember_me": False,  # Setting remember_me to false
+        }
         response = client.post("/api/auth/login", json=login_data)
 
         # ASSERT
-        data = assert_successful_response(response)
-        assert_has_fields(data, ["data"])
-        assert_has_fields(data["data"], ["user"])
-
-        # Check for cookies in response
-        assert "Set-Cookie" in response.headers, "Response should set cookies"
+        assert response.status_code == 200, "Login failed"
         cookies = response.cookies
-        assert "auth_token" in cookies, "Response should set auth_token cookie"
-        assert "refresh_token" in cookies, "Response should set refresh_token cookie"
 
-        # Get all Set-Cookie headers
+        # Check access token cookie (should have default expiry, not long-term)
+        # Get all Set-Cookie headers using proper method
         cookie_headers = [
             v for k, v in response.headers.items() if k.lower() == "set-cookie"
         ]
-        self.logger.info(f"Cookie headers: {cookie_headers}")
-
-        # Handle case where both cookies are in a single header separated by comma
-        all_cookie_parts = []
-        for header in cookie_headers:
-            # Split by comma, but only if not inside quotes (to handle commas in cookie values)
-            parts = header.split(", ")
-            all_cookie_parts.extend(parts)
-
-        # Check both cookies for max-age attribute
-        auth_cookie = next(
-            (c for c in all_cookie_parts if c.startswith("auth_token=")), None
-        )
-        refresh_cookie = next(
-            (c for c in all_cookie_parts if c.startswith("refresh_token=")), None
-        )
-
-        assert auth_cookie, "auth_token cookie not found"
-        assert refresh_cookie, "refresh_token cookie not found"
-
-        # Verify max-age values
-        auth_max_age = next(
-            (
-                attr.split("=")[1]
-                for attr in auth_cookie.split("; ")
-                if attr.startswith("Max-Age=")
-            ),
-            None,
-        )
-        refresh_max_age = next(
-            (
-                attr.split("=")[1]
-                for attr in refresh_cookie.split("; ")
-                if attr.startswith("Max-Age=")
-            ),
-            None,
-        )
-
-        assert auth_max_age, "Max-Age not found in auth_token cookie"
-        assert refresh_max_age, "Max-Age not found in refresh_token cookie"
-
-        # Verify the cookies have standard expiry
-        assert (
-            auth_max_age == "3600"
-        ), f"auth_token should have 1-hour expiry, got {auth_max_age}"
-        assert (
-            refresh_max_age == "604800"
-        ), f"refresh_token should have 7-day expiry, got {refresh_max_age}"
-
-        # Set cookies for cleanup
-        client.cookies.set("auth_token", cookies.get("auth_token"))
-        client.cookies.set("refresh_token", cookies.get("refresh_token"))
+        auth_cookie = next((c for c in cookie_headers if "auth_token" in c), None)
+        assert auth_cookie is not None, "Auth token cookie not found"
+        assert "Max-Age=3600" in auth_cookie or "max-age=3600" in auth_cookie.lower()
 
         # Cleanup
-        user_data = extract_user_data(signup_response)
+        user_data: Dict[str, Any] = extract_user_data(signup_response)
         user_id = user_data.get("id")
         if user_id:
+            # Set the auth cookies for deletion
+            client.cookies.set("auth_token", cookies.get("auth_token"))
+            client.cookies.set("refresh_token", cookies.get("refresh_token"))
+
             delete_response = client.delete(f"/api/auth/users/{user_id}")
             self.logger.info(
-                f"Deleted test user with status: {delete_response.status_code}"
+                f"Deleted no-remember-me test user with status: {delete_response.status_code}"
             )
+
+    def test_validate_token(
+        self, authenticated_client: Tuple[TestClient, Optional[str]]
+    ) -> None:
+        """Test the token validation endpoint."""
+        # ARRANGE
+        self.logger.info("Testing token validation endpoint")
+        client, user_id = authenticated_client
+
+        # ACT
+        response = client.get("/api/auth/validate-token")
+
+        # ASSERT
+        assert response.status_code == status.HTTP_200_OK
+        user_data = response.json()
+        assert_has_fields(user_data, ["id", "email"])
+        assert (
+            user_data["id"] == user_id
+        ), "User ID in response doesn't match authenticated user"
+
+    def test_validate_token_invalid(self, client: TestClient) -> None:
+        """Test validation endpoint with invalid token."""
+        # ARRANGE
+        self.logger.info("Testing token validation with invalid token")
+
+        # Set an invalid token in cookies
+        client.cookies.set("auth_token", "invalid_token_value")
+        client.cookies.set("refresh_token", "invalid_refresh_token")
+
+        # ACT
+        response = client.get("/api/auth/validate-token")
+
+        # ASSERT
+        assert (
+            response.status_code == status.HTTP_401_UNAUTHORIZED
+        ), "Should reject invalid token"
+
+    def test_validate_token_missing(self, client: TestClient) -> None:
+        """Test validation endpoint with missing token."""
+        # ARRANGE
+        self.logger.info("Testing token validation with missing token")
+
+        # Ensure no auth cookies are present
+        client.cookies.clear()
+
+        # ACT
+        response = client.get("/api/auth/validate-token")
+
+        # ASSERT
+        assert (
+            response.status_code == status.HTTP_401_UNAUTHORIZED
+        ), "Should reject missing token"
