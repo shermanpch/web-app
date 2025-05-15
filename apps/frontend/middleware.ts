@@ -56,7 +56,7 @@ export async function middleware(request: NextRequest) {
         cookieHeader += `refresh_token=${refreshTokenCookie.value};`;
       }
 
-      const validationResponse = await fetch(`${backendApiUrl}/api/auth/validate-token`, {
+      const validationResponse = await fetch(`${backendApiUrl}/api/auth/me`, {
         method: 'GET',
         headers: {
           'Cookie': cookieHeader.trim()
@@ -97,7 +97,7 @@ export async function middleware(request: NextRequest) {
       }
 
       if (backendApiUrl && cookieHeader) { // only validate if URL and cookies exist
-        const validationResponse = await fetch(`${backendApiUrl}/api/auth/validate-token`, {
+        const validationResponse = await fetch(`${backendApiUrl}/api/auth/me`, {
           method: 'GET',
           headers: { 'Cookie': cookieHeader.trim() },
         });

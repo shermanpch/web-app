@@ -47,7 +47,7 @@ export default function NavigationBar({
       }
     },
     staleTime: 1000 * 60 * 5, // Reduce cache time to 5 minutes for more frequent checks
-    refetchOnMount: "always", // Always refetch when component mounts
+    refetchOnMount: true, // Changed from "always" to respect staleTime
     refetchOnWindowFocus: true, // Refetch when window gains focus
     refetchOnReconnect: true, // Refetch when reconnecting to network
     retry: 2, // Retry twice if fetch fails

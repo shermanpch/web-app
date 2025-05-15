@@ -385,7 +385,7 @@ async def logout(
         Logout response
     """
     try:
-        await logout_user(session.access_token)
+        await logout_user(session.access_token, session.refresh_token)
 
         # Clear auth cookies
         clear_auth_cookies(response)
@@ -396,15 +396,3 @@ async def logout(
         # Still clear cookies even if Supabase logout fails
         clear_auth_cookies(response)
         return AuthResponse(success=True, message="Successfully logged out")
-
-
-@router.get("/validate-token", response_model=UserData)
-async def validate_token(
-    current_user: UserData = Depends(get_current_user),
-) -> UserData:
-    """
-    Validates the current user's token.
-    Relies on the get_current_user dependency to perform validation.
-    If the token is invalid, get_current_user will raise an HTTPException.
-    """
-    return current_user
