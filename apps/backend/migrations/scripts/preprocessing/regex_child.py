@@ -102,10 +102,10 @@ def extract_final_hexagram_explanation(text):
 
 
 def extract_child_hexagram(text):
-    explanation = {}
-    explanation.update(extract_ancient_text(text))
-    explanation.update(extract_modern_text(text))
-    explanation.update(extract_expert_explanation(text))
+    final_hexagram = {}
+    final_hexagram.update(extract_final_hexagram_number(text))
+    final_hexagram.update(extract_final_hexagram_name(text))
+    final_hexagram.update(extract_expert_explanation(text))
 
     return {
         "Change": {
@@ -115,9 +115,5 @@ def extract_child_hexagram(text):
             "Expert's Explanation": extract_expert_explanation(text),
             "Specific Divination": extract_specific_divination(text),
         },
-        "Final Hexagram": {
-            "Final Hexagram Number": extract_final_hexagram_number(text),
-            "Final Hexagram Name": extract_final_hexagram_name(text),
-            "Final Hexagram Explanation": extract_final_hexagram_explanation(text),
-        },
+        "Final Hexagram": final_hexagram,
     }

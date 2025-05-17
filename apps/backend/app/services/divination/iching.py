@@ -47,7 +47,7 @@ async def get_iching_text_from_db(
         # Query the iching_texts table
         response = await (
             client.from_("iching_texts")
-            .select("parent_coord, child_coord, parent_text, child_text")
+            .select("parent_coord, child_coord, parent_json, child_json")
             .eq("parent_coord", request.parent_coord)
             .eq("child_coord", request.child_coord)
             .limit(1)
@@ -63,8 +63,8 @@ async def get_iching_text_from_db(
             return IChingTextResponse(
                 parent_coord=request.parent_coord,
                 child_coord=request.child_coord,
-                parent_text=None,
-                child_text=None,
+                parent_json=None,
+                child_json=None,
             )
 
         # Return the first (and should be only) result
@@ -72,8 +72,8 @@ async def get_iching_text_from_db(
         return IChingTextResponse(
             parent_coord=record["parent_coord"],
             child_coord=record["child_coord"],
-            parent_text=record["parent_text"],
-            child_text=record["child_text"],
+            parent_json=record["parent_json"],
+            child_json=record["child_json"],
         )
 
     except Exception as e:

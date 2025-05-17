@@ -81,7 +81,7 @@ class TestDivination(BaseTest):
         iching_data: Dict[str, Any] = iching_response.json()
         assert_has_fields(
             iching_data,
-            ["parent_coord", "child_coord", "parent_text", "child_text"],
+            ["parent_coord", "child_coord", "parent_json", "child_json"],
         )
 
         # Verify coordinates match request
@@ -99,15 +99,15 @@ class TestDivination(BaseTest):
 
     def _log_text_preview(self, iching_data: Dict[str, Any]) -> None:
         """Log preview of parent and child text content."""
-        parent_text = iching_data.get("parent_text", "")
-        child_text = iching_data.get("child_text", "")
+        parent_json = iching_data.get("parent_json", "")
+        child_json = iching_data.get("child_json", "")
 
-        if parent_text:
-            preview = parent_text[:50] + "..." if len(parent_text) > 50 else parent_text
+        if parent_json:
+            preview = parent_json[:50] + "..." if len(parent_json) > 50 else parent_json
             self.logger.info(f"Parent text preview: {preview}")
 
-        if child_text:
-            preview = child_text[:50] + "..." if len(child_text) > 50 else child_text
+        if child_json:
+            preview = child_json[:50] + "..." if len(child_json) > 50 else child_json
             self.logger.info(f"Child text preview: {preview}")
 
     def test_iching_coordinates_conversion(self, client: TestClient) -> None:

@@ -104,8 +104,8 @@ class Oracle:
         """
 
         system_prompt_with_text = self.system_prompt.format(
-            parent_text=text.parent_text,
-            child_text=text.child_text,
+            parent_json=text.parent_json,
+            child_json=text.child_json,
             language=reading.language,
         )
 

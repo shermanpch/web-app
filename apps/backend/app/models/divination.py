@@ -1,6 +1,6 @@
 """Divination models for the application."""
 
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
 
@@ -17,8 +17,8 @@ class IChingTextResponse(BaseModel):
 
     parent_coord: str
     child_coord: str
-    parent_text: Optional[str] = None
-    child_text: Optional[str] = None
+    parent_json: Optional[Dict[str, Any]] = None
+    child_json: Optional[Dict[str, Any]] = None
 
 
 class IChingCoordinatesRequest(BaseModel):
