@@ -78,6 +78,9 @@ wheels/
 apps/backend/migrations/scripts/data/
 apps/backend/migrations/scripts/scrapers/.scraper_cache/
 
+# Preprocessed data
+apps/backend/migrations/scripts/preprocessing/data/
+
 # Cursor tool config
 .cursorrules
 

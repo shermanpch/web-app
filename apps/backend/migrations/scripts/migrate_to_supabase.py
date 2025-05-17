@@ -2,7 +2,7 @@
 """
 Script to migrate I Ching data from local storage to Supabase database.
 
-This script reads text files from the data directory and
+This script reads JSON files from the data directory and
 imports them into the Supabase iching_texts table.
 
 Requirements:
@@ -13,6 +13,7 @@ Usage:
 """
 
 import glob
+import json
 import logging
 import os
 import queue
@@ -99,105 +100,135 @@ def check_if_table_exists(table_name):
         raise
 
 
-def process_text_record(parent_dir, parent_texts, data_dir, supabase_client):
-    """Process a single parent directory's text records."""
+def load_parent_json(parent_coord, data_dir):
+    """Load parent JSON data for a given parent coordinate."""
+    parent_json_path = os.path.join(data_dir, "parent", f"{parent_coord}.json")
+    if not os.path.exists(parent_json_path):
+        logger.warning(f"No parent JSON file found at {parent_json_path}")
+        return None
+
+    try:
+        with open(parent_json_path, "r", encoding="utf-8") as f:
+            parent_data = json.load(f)
+        return parent_data
+    except Exception as e:
+        logger.error(f"Error reading parent JSON for {parent_coord}: {str(e)}")
+        return None
+
+
+def process_child_json(child_file, data_dir, supabase_client):
+    """Process a single child JSON file."""
     success_count = 0
     error_count = 0
     skipped_count = 0
     messages = []
     failed_records = []
 
-    parent_coord = os.path.basename(parent_dir)
-    parent_text = parent_texts.get(parent_coord)
+    try:
+        with open(child_file, "r", encoding="utf-8") as f:
+            child_data = json.load(f)
 
-    if not parent_text:
-        messages.append(f"No parent text found for {parent_coord}, skipping children")
-        return success_count, skipped_count, error_count, messages, failed_records
+        parent_coord = child_data.get("parent_coordinate")
+        child_coord = child_data.get("child_coordinate")
+        child_json = child_data.get("data")
 
-    for child_dir in glob.glob(os.path.join(parent_dir, "[0-9]")):
-        child_coord = os.path.basename(child_dir)
-        child_text_path = os.path.join(child_dir, "html", "body.txt")
+        if not parent_coord or not child_coord or not child_json:
+            error_msg = f"Missing required fields in child JSON: {child_file}"
+            messages.append(error_msg)
+            error_count += 1
+            failed_records.append(os.path.basename(child_file))
+            return success_count, skipped_count, error_count, messages, failed_records
 
-        if not os.path.exists(child_text_path):
-            messages.append(f"No child text file found at {child_text_path}")
-            continue
+        # Load parent JSON data
+        parent_data = load_parent_json(parent_coord, data_dir)
+        if not parent_data:
+            error_msg = f"Could not load parent JSON for {parent_coord}"
+            messages.append(error_msg)
+            error_count += 1
+            failed_records.append(os.path.basename(child_file))
+            return success_count, skipped_count, error_count, messages, failed_records
+
+        parent_json = parent_data.get("data")
+        if not parent_json:
+            error_msg = f"Missing 'data' field in parent JSON for {parent_coord}"
+            messages.append(error_msg)
+            error_count += 1
+            failed_records.append(os.path.basename(child_file))
+            return success_count, skipped_count, error_count, messages, failed_records
+
+        time.sleep(random.uniform(0.1, 0.5))
 
         try:
-            with open(child_text_path, "r", encoding="utf-8") as f:
-                child_text = f.read()
+            with db_lock:
 
-            time.sleep(random.uniform(0.1, 0.5))
+                @retry_with_backoff(max_retries=3, initial_delay=1)
+                def check_record_exists():
+                    return (
+                        supabase_client.table("iching_texts")
+                        .select("id")
+                        .eq("parent_coord", parent_coord)
+                        .eq("child_coord", child_coord)
+                        .execute()
+                    )
 
-            try:
-                with db_lock:
+                existing = check_record_exists()
+
+                if existing.data and len(existing.data) > 0:
 
                     @retry_with_backoff(max_retries=3, initial_delay=1)
-                    def check_record_exists():
+                    def update_record():
+                        record_id = existing.data[0]["id"]
                         return (
                             supabase_client.table("iching_texts")
-                            .select("id")
-                            .eq("parent_coord", parent_coord)
-                            .eq("child_coord", child_coord)
+                            .update(
+                                {
+                                    "parent_json": parent_json,
+                                    "child_json": child_json,
+                                }
+                            )
+                            .eq("id", record_id)
                             .execute()
                         )
 
-                    existing = check_record_exists()
+                    update_record()
+                    messages.append(
+                        f"Updated record for {parent_coord}/{child_coord} (already existed, not counted as new)"
+                    )
+                    skipped_count += 1
+                else:
 
-                    if existing.data and len(existing.data) > 0:
-
-                        @retry_with_backoff(max_retries=3, initial_delay=1)
-                        def update_record():
-                            record_id = existing.data[0]["id"]
-                            return (
-                                supabase_client.table("iching_texts")
-                                .update(
-                                    {
-                                        "parent_text": parent_text,
-                                        "child_text": child_text,
-                                    }
-                                )
-                                .eq("id", record_id)
-                                .execute()
+                    @retry_with_backoff(max_retries=3, initial_delay=1)
+                    def insert_record():
+                        return (
+                            supabase_client.table("iching_texts")
+                            .insert(
+                                {
+                                    "parent_coord": parent_coord,
+                                    "child_coord": child_coord,
+                                    "parent_json": parent_json,
+                                    "child_json": child_json,
+                                    "created_at": time.strftime(
+                                        "%Y-%m-%dT%H:%M:%SZ", time.gmtime()
+                                    ),
+                                }
                             )
-
-                        update_record()
-                        messages.append(
-                            f"Updated child text record for {parent_coord}/{child_coord} (already existed, not counted as new)"
+                            .execute()
                         )
-                        skipped_count += 1
-                    else:
 
-                        @retry_with_backoff(max_retries=3, initial_delay=1)
-                        def insert_record():
-                            return (
-                                supabase_client.table("iching_texts")
-                                .insert(
-                                    {
-                                        "parent_coord": parent_coord,
-                                        "child_coord": child_coord,
-                                        "parent_text": parent_text,
-                                        "child_text": child_text,
-                                    }
-                                )
-                                .execute()
-                            )
-
-                        insert_record()
-                        messages.append(
-                            f"Created child text record for {parent_coord}/{child_coord}"
-                        )
-                        success_count += 1
-            except Exception as e:
-                error_msg = f"Error processing child text for {parent_coord}/{child_coord} after retries: {str(e)}"
-                messages.append(error_msg)
-                error_count += 1
-                failed_records.append(f"{parent_coord}/{child_coord}")
-
+                    insert_record()
+                    messages.append(f"Created record for {parent_coord}/{child_coord}")
+                    success_count += 1
         except Exception as e:
-            error_msg = f"Error processing child text for {parent_coord}/{child_coord}: {str(e)}"
+            error_msg = f"Error processing record for {parent_coord}/{child_coord} after retries: {str(e)}"
             messages.append(error_msg)
             error_count += 1
-            failed_records.append(f"{parent_coord}/{child_coord}")
+            failed_records.append(os.path.basename(child_file))
+
+    except Exception as e:
+        error_msg = f"Error processing child file {child_file}: {str(e)}"
+        messages.append(error_msg)
+        error_count += 1
+        failed_records.append(os.path.basename(child_file))
 
     return success_count, skipped_count, error_count, messages, failed_records
 
@@ -262,13 +293,13 @@ def process_items_in_queue(
     return success_count, skipped_count, error_count, all_messages, failed_records
 
 
-def migrate_texts_to_supabase():
-    """Migrate I Ching text data to Supabase."""
-    logger.info("Starting I Ching text migration")
+def migrate_data_to_supabase():
+    """Migrate I Ching JSON data to Supabase."""
+    logger.info("Starting I Ching data migration")
 
     # Define the path to the data directory
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    data_dir = os.path.join(script_dir, "data")
+    data_dir = os.path.join(script_dir, "preprocessing", "data")
 
     if not os.path.exists(data_dir):
         logger.error(f"Data directory not found: {data_dir}")
@@ -279,26 +310,14 @@ def migrate_texts_to_supabase():
         logger.error("iching_texts table does not exist in Supabase")
         return
 
-    # First, collect all parent texts
-    parent_texts = {}
-    for parent_dir in glob.glob(os.path.join(data_dir, "*-*")):
-        parent_coord = os.path.basename(parent_dir)
-        parent_text_path = os.path.join(parent_dir, "html", "body.txt")
-
-        if os.path.exists(parent_text_path):
-            try:
-                with open(parent_text_path, "r", encoding="utf-8") as f:
-                    parent_texts[parent_coord] = f.read()
-            except Exception as e:
-                logger.error(f"Error reading parent text for {parent_coord}: {str(e)}")
-
-    # Create a queue of parent directories to process
+    # Create a queue of child JSON files to process
     task_queue = queue.Queue()
-    for parent_dir in glob.glob(os.path.join(data_dir, "*-*")):
-        task_queue.put(parent_dir)
+    child_dir = os.path.join(data_dir, "child")
+    for child_file in glob.glob(os.path.join(child_dir, "*.json")):
+        task_queue.put(child_file)
 
-    def process_text_item(parent_dir):
-        return process_text_record(parent_dir, parent_texts, data_dir, supabase)
+    def process_json_item(child_file):
+        return process_child_json(child_file, data_dir, supabase)
 
     # Process the queue with multiple workers
     (
@@ -307,10 +326,10 @@ def migrate_texts_to_supabase():
         error_count,
         messages,
         failed_records,
-    ) = process_items_in_queue(task_queue, process_text_item, max_workers=5)
+    ) = process_items_in_queue(task_queue, process_json_item, max_workers=5)
 
     # Log results
-    logger.info("Text migration completed!")
+    logger.info("Data migration completed!")
     logger.info(f"Successfully processed: {success_count}")
     logger.info(f"Skipped (already existed): {skipped_count}")
     logger.info(f"Errors: {error_count}")
@@ -325,10 +344,10 @@ def migrate_texts_to_supabase():
 
 def main():
     """Main function to run the migration script."""
-    logger.info("Starting text migration...")
-    success_count, error_count = migrate_texts_to_supabase()
+    logger.info("Starting data migration...")
+    success_count, error_count = migrate_data_to_supabase()
     logger.info(
-        f"Text migration completed with {success_count} successes and {error_count} errors"
+        f"Data migration completed with {success_count} successes and {error_count} errors"
     )
 
 
