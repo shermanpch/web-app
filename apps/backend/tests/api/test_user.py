@@ -98,14 +98,23 @@ class TestUser(BaseTest):
             readings_response.status_code == 200
         ), f"User readings retrieval failed: {readings_response.text}"
 
-        # Readings might be empty, but response should be a list
-        readings_data: List[Dict[str, Any]] = readings_response.json()
-        assert isinstance(readings_data, list), "Response should be a JSON array"
+        # Readings are now paginated in a dictionary, not a direct list
+        paginated_response: Dict[str, Any] = readings_response.json()
+        assert isinstance(paginated_response, dict), "Response should be a JSON object"
+
+        # Access the list of readings using the "items" key
+        actual_readings_list: List[Dict[str, Any]] = paginated_response["items"]
+
+        # Verify paginated response structure
+        assert_has_fields(
+            paginated_response,
+            ["items", "total_items", "total_pages", "current_page", "page_size"],
+        )
 
         # If we have readings, verify their structure
-        if readings_data:
-            self.logger.info(f"Found {len(readings_data)} readings for user")
-            first_reading: Dict[str, Any] = readings_data[0]
+        if actual_readings_list:
+            self.logger.info(f"Found {len(actual_readings_list)} readings for user")
+            first_reading: Dict[str, Any] = actual_readings_list[0]
             assert_has_fields(
                 first_reading,
                 [
@@ -120,7 +129,7 @@ class TestUser(BaseTest):
                 ],
             )
         else:
-            self.logger.info("No readings found for user (empty array returned)")
+            self.logger.info("No readings found for user (empty items array returned)")
 
         self.logger.info("Get readings test passed successfully!")
 
@@ -345,8 +354,8 @@ class TestUser(BaseTest):
         assert readings_response.status_code == 200, "Failed to get readings"
 
         # Check if the deleted reading is missing from the list
-        readings = readings_response.json()
-        for reading in readings:
+        paginated_response = readings_response.json()
+        for reading in paginated_response["items"]:
             assert (
                 reading["id"] != reading_id
             ), f"Reading {reading_id} should have been deleted"
@@ -372,8 +381,10 @@ class TestUser(BaseTest):
         # Step 2: Verify readings were created
         readings_response = client.get("/api/user/readings")
         assert readings_response.status_code == 200, "Failed to get readings"
-        readings_data: List[Dict[str, Any]] = readings_response.json()
-        assert len(readings_data) >= num_readings, "Not all test readings were created"
+        paginated_response: Dict[str, Any] = readings_response.json()
+        assert (
+            paginated_response["total_items"] >= num_readings
+        ), "Not all test readings were created"
 
         # Step 3: Delete all readings
         self.logger.info("Deleting all readings")
@@ -394,8 +405,8 @@ class TestUser(BaseTest):
         assert (
             final_response.status_code == 200
         ), "Failed to get readings after deletion"
-        final_data: List[Dict[str, Any]] = final_response.json()
-        assert len(final_data) == 0, "Not all readings were deleted"
+        final_paginated_data: Dict[str, Any] = final_response.json()
+        assert final_paginated_data["total_items"] == 0, "Not all readings were deleted"
 
         self.logger.info("Delete all readings test passed successfully!")
 
