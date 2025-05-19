@@ -1,6 +1,7 @@
 """Service functions for user readings."""
 
 import logging
+import math
 from typing import List, Optional
 from uuid import UUID
 
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 async def get_user_readings_from_db(
     user_id: UUID, client: AsyncClient, page: int = 1, limit: int = 10
-) -> List[UserReadingResponse]:
+) -> dict:
     """
     Fetch paginated historical readings for a specific user from the database.
 
@@ -25,7 +26,7 @@ async def get_user_readings_from_db(
         limit: The number of readings per page.
 
     Returns:
-        A list of UserReadingResponse objects for the requested page, ordered by creation date descending.
+        A dictionary containing the paginated items and metadata.
 
     Raises:
         Exception: If the database query fails.
@@ -33,6 +34,23 @@ async def get_user_readings_from_db(
     logger.info(f"Fetching readings for user: {user_id} (page: {page}, limit: {limit})")
 
     try:
+        # Get total count of readings for the user
+        count_response = (
+            await client.from_("user_readings")
+            .select("id", count="exact")
+            .eq("user_id", str(user_id))
+            .execute()
+        )
+        total_items = count_response.count if count_response.count is not None else 0
+
+        # Calculate total pages
+        if total_items == 0:
+            total_pages = 0
+        elif limit <= 0:  # Should not happen with Query validation but good to handle
+            total_pages = 1 if total_items > 0 else 0
+        else:
+            total_pages = math.ceil(total_items / limit)
+
         # Calculate offset from page and limit
         offset = (page - 1) * limit
 
@@ -50,17 +68,21 @@ async def get_user_readings_from_db(
 
         # Check if we have any data
         data = response.data
-        if not data:
-            logger.info(f"No readings found for user: {user_id} on page {page}")
-            return []
-
-        # Convert list of dicts to list of UserReadingResponse objects
-        # Pydantic v2 handles ORM mode automatically with model_config
-        readings = [UserReadingResponse.model_validate(item) for item in data]
-        logger.info(
-            f"Found {len(readings)} readings for user: {user_id} on page {page}"
+        items_list = (
+            [UserReadingResponse.model_validate(item) for item in data] if data else []
         )
-        return readings
+
+        logger.info(
+            f"Found {len(items_list)} readings for user: {user_id} on page {page}. Total items: {total_items}, Total pages: {total_pages}"
+        )
+
+        return {
+            "items": items_list,
+            "total_items": total_items,
+            "total_pages": total_pages,
+            "current_page": page,
+            "page_size": limit,
+        }
 
     except Exception as e:
         logger.error(f"Error fetching user readings for {user_id}: {str(e)}")

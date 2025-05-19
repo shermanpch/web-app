@@ -4,6 +4,7 @@ import { UserReadingHistoryEntry } from "@/types/divination";
 import {
   FrontendUserProfileStatusResponse,
   FrontendUserProfileResponse,
+  PaginatedUserReadingsResponse,
 } from "@/types/user";
 
 const API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
@@ -14,17 +15,17 @@ export const userApi = {
    * This function is intended for client-side usage if needed later.
    * The ReadingsHistoryPage uses server-side fetching instead.
    * @param options Pagination options
-   * @returns List of user readings for the requested page
+   * @returns Paginated response with user readings and pagination metadata
    */
   async getUserReadings(options?: {
     page?: number;
     limit?: number;
-  }): Promise<UserReadingHistoryEntry[]> {
+  }): Promise<PaginatedUserReadingsResponse> {
     const page = options?.page || 1;
     const limit = options?.limit || 10;
 
     try {
-      const response = await axios.get<UserReadingHistoryEntry[]>(
+      const response = await axios.get<PaginatedUserReadingsResponse>(
         `${API_URL}/api/user/readings?page=${page}&limit=${limit}`,
         {
           headers: {

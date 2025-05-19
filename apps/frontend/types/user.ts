@@ -2,6 +2,8 @@
  * User quota and reading related types.
  */
 
+import { UserReadingHistoryEntry } from "./divination";
+
 /**
  * Frontend user profile response from the backend.
  */
@@ -32,4 +34,15 @@ export interface FrontendUserQuotaStatus {
 export interface FrontendUserProfileStatusResponse {
   profile: FrontendUserProfileResponse;
   quotas: FrontendUserQuotaStatus[];
+}
+
+/**
+ * Paginated response for user readings.
+ */
+export interface PaginatedUserReadingsResponse {
+  items: UserReadingHistoryEntry[];
+  total_items: number;
+  total_pages: number;
+  current_page: number;
+  page_size: number;
 }

@@ -67,3 +67,15 @@ class DeleteReadingResponse(BaseModel):
     reading_id: UUID
     user_id: UUID
     message: str
+
+
+class UserReadingsPaginatedResponse(BaseModel):
+    """Paginated response model for user readings."""
+
+    items: List[UserReadingResponse]
+    total_items: int
+    total_pages: int
+    current_page: int
+    page_size: int
+
+    model_config = ConfigDict(from_attributes=True)

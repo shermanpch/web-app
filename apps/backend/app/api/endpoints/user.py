@@ -14,6 +14,7 @@ from ...models.users import (
     UserProfileStatusResponse,
     UserQuotaStatusResponse,
     UserReadingResponse,
+    UserReadingsPaginatedResponse,
 )
 from ...services.auth.dependencies import get_auth_tokens, get_current_user
 from ...services.auth.supabase import get_authenticated_client
@@ -156,7 +157,7 @@ async def upgrade_membership(
         )
 
 
-@router.get("/readings", response_model=List[UserReadingResponse])
+@router.get("/readings", response_model=UserReadingsPaginatedResponse)
 async def get_user_readings(
     current_user: UserData = Depends(get_current_user),
     session: AuthenticatedSession = Depends(get_auth_tokens),
@@ -173,7 +174,7 @@ async def get_user_readings(
         limit: Number of readings per page (max 100)
 
     Returns:
-        A list of the user's historical readings for the requested page
+        A paginated response with the user's historical readings and pagination metadata
 
     Raises:
         HTTPException: If readings cannot be retrieved
@@ -187,13 +188,13 @@ async def get_user_readings(
             session.access_token, session.refresh_token
         )
 
-        readings = await get_user_readings_from_db(
+        paginated_result_dict = await get_user_readings_from_db(
             user_id=current_user.id,
             client=client,
             page=page,
             limit=limit,
         )
-        return readings
+        return UserReadingsPaginatedResponse(**paginated_result_dict)
     except Exception as e:
         logger.error(
             f"API error fetching readings for user {current_user.id}: {str(e)}"
