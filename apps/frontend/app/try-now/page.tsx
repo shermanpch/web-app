@@ -14,12 +14,30 @@ import { useQueryClient } from "@tanstack/react-query";
 import { FrontendUserProfileStatusResponse } from "@/types/user";
 
 export default function TryNowPage() {
+  // Define predefined options
+  const AREA_OF_LIFE_OPTIONS = ["Career", "Relationships", "Personal Growth", "Health", "Finances", "Spirituality", "Other"];
+  const CURRENT_FEELINGS_OPTIONS = ["Anxious", "Hopeful", "Confused", "Excited", "Sad", "Peaceful", "Stressed", "Grateful"];
+  const DESIRED_OUTCOME_OPTIONS = ["Clarity", "Guidance", "Reassurance", "Insight", "Direction", "Understanding", "Other"];
+
   const [question, setQuestion] = useState("");
   const [mode, setMode] = useState<"basic" | "deep_dive">("basic");
+  
+  // Area of Life states
   const [areaOfLife, setAreaOfLife] = useState("");
-  const [backgroundSituation, setBackgroundSituation] = useState("");
-  const [currentFeelings, setCurrentFeelings] = useState("");
+  const [customAreaOfLife, setCustomAreaOfLife] = useState("");
+  const [showCustomAreaOfLifeInput, setShowCustomAreaOfLifeInput] = useState(false);
+
+  // Current Feelings states - change from string to array
+  const [currentFeelingsList, setCurrentFeelingsList] = useState<string[]>([]);
+  const [customFeeling, setCustomFeeling] = useState("");
+
+  // Desired Outcome states
   const [desiredOutcome, setDesiredOutcome] = useState("");
+  const [customDesiredOutcome, setCustomDesiredOutcome] = useState("");
+  const [showCustomDesiredOutcomeInput, setShowCustomDesiredOutcomeInput] = useState(false);
+
+  // Keep Background Situation as is
+  const [backgroundSituation, setBackgroundSituation] = useState("");
   
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -73,11 +91,14 @@ export default function TryNowPage() {
       let queryString = `?question=${encodeURIComponent(question)}&mode=${mode}`;
       
       if (mode === "deep_dive") {
-        // Only include filled fields
-        if (areaOfLife) queryString += `&areaOfLife=${encodeURIComponent(areaOfLife)}`;
-        if (backgroundSituation) queryString += `&backgroundSituation=${encodeURIComponent(backgroundSituation)}`;
-        if (currentFeelings) queryString += `&currentFeelings=${encodeURIComponent(currentFeelings)}`;
-        if (desiredOutcome) queryString += `&desiredOutcome=${encodeURIComponent(desiredOutcome)}`;
+        // Updated processing of deep dive context
+        const finalAreaOfLife = areaOfLife === "Other" ? customAreaOfLife : areaOfLife;
+        const finalDesiredOutcome = desiredOutcome === "Other" ? customDesiredOutcome : desiredOutcome;
+
+        if (finalAreaOfLife.trim()) queryString += `&areaOfLife=${encodeURIComponent(finalAreaOfLife.trim())}`;
+        if (backgroundSituation.trim()) queryString += `&backgroundSituation=${encodeURIComponent(backgroundSituation.trim())}`;
+        if (currentFeelingsList.length > 0) queryString += `&currentFeelings=${encodeURIComponent(currentFeelingsList.join(','))}`;
+        if (finalDesiredOutcome.trim()) queryString += `&desiredOutcome=${encodeURIComponent(finalDesiredOutcome.trim())}`;
       }
       
       // Navigate to enter numbers with the constructed query string
@@ -156,19 +177,42 @@ export default function TryNowPage() {
               </p>
             </div>
             
+            {/* Area of Life - now with selectable buttons */}
             <div>
-              <Label htmlFor="areaOfLife" className="text-gray-300 font-serif mb-2 block">
+              <Label htmlFor="areaOfLifeButtons" className="text-gray-300 font-serif mb-2 block">
                 Area of Life
               </Label>
-              <Input
-                id="areaOfLife"
-                placeholder="Career, Relationships, Personal Growth, etc."
-                value={areaOfLife}
-                onChange={(e) => setAreaOfLife(e.target.value)}
-                className="w-full bg-brand-input-bg text-gray-800 placeholder:text-brand-input-text border-none rounded-lg p-2 focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none"
-              />
+              <div id="areaOfLifeButtons" className="flex flex-wrap gap-2 mb-2">
+                {AREA_OF_LIFE_OPTIONS.map(option => (
+                  <Button
+                    key={option}
+                    type="button"
+                    onClick={() => {
+                      setAreaOfLife(option);
+                      setShowCustomAreaOfLifeInput(option === "Other");
+                    }}
+                    className={`px-4 py-2 rounded-lg transition-all ${
+                      areaOfLife === option 
+                        ? "bg-brand-button-bg text-white shadow-md border border-brand-button-bg" 
+                        : "bg-gray-800/40 text-gray-300 border border-gray-700 hover:bg-gray-700/60 hover:border-gray-600"
+                    }`}
+                  >
+                    {option}
+                  </Button>
+                ))}
+              </div>
+              {showCustomAreaOfLifeInput && (
+                <Input
+                  id="customAreaOfLife"
+                  placeholder="Please specify your area of life"
+                  value={customAreaOfLife}
+                  onChange={(e) => setCustomAreaOfLife(e.target.value)}
+                  className="mt-2 w-full bg-brand-input-bg text-gray-800 placeholder:text-brand-input-text border-none rounded-lg p-2 focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none"
+                />
+              )}
             </div>
             
+            {/* Background Situation - keep as is */}
             <div>
               <Label htmlFor="backgroundSituation" className="text-gray-300 font-serif mb-2 block">
                 Background Situation
@@ -183,30 +227,106 @@ export default function TryNowPage() {
               />
             </div>
             
+            {/* Current Feelings - now with multi-select and custom input */}
             <div>
-              <Label htmlFor="currentFeelings" className="text-gray-300 font-serif mb-2 block">
-                Current Feelings
+              <Label className="text-gray-300 font-serif mb-2 block">
+                Current Feelings (Select all that apply)
               </Label>
-              <Input
-                id="currentFeelings"
-                placeholder="Anxious, Hopeful, Confused, etc. (comma separated)"
-                value={currentFeelings}
-                onChange={(e) => setCurrentFeelings(e.target.value)}
-                className="w-full bg-brand-input-bg text-gray-800 placeholder:text-brand-input-text border-none rounded-lg p-2 focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none"
-              />
+              <div className="flex flex-wrap gap-2 mb-2">
+                {CURRENT_FEELINGS_OPTIONS.map(feeling => (
+                  <Button
+                    key={feeling}
+                    type="button"
+                    onClick={() => {
+                      setCurrentFeelingsList(prev => 
+                        prev.includes(feeling) ? prev.filter(f => f !== feeling) : [...prev, feeling]
+                      );
+                    }}
+                    className={`px-4 py-2 rounded-lg transition-all ${
+                      currentFeelingsList.includes(feeling) 
+                        ? "bg-brand-button-bg text-white shadow-md border border-brand-button-bg" 
+                        : "bg-gray-800/40 text-gray-300 border border-gray-700 hover:bg-gray-700/60 hover:border-gray-600"
+                    }`}
+                  >
+                    {feeling}
+                  </Button>
+                ))}
+              </div>
+              <div className="flex gap-2 items-center mb-2">
+                <Input
+                  id="customFeeling"
+                  placeholder="Add a custom feeling"
+                  value={customFeeling}
+                  onChange={(e) => setCustomFeeling(e.target.value)}
+                  className="flex-1 bg-brand-input-bg text-gray-800 placeholder:text-brand-input-text border-none rounded-lg p-2 focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none"
+                />
+                <Button
+                  type="button"
+                  onClick={() => {
+                    if (customFeeling.trim() && !currentFeelingsList.includes(customFeeling.trim())) {
+                      setCurrentFeelingsList(prev => [...prev, customFeeling.trim()]);
+                      setCustomFeeling("");
+                    }
+                  }}
+                  className="bg-amber-600/90 hover:bg-amber-500 text-white px-4 py-2 rounded-lg border border-amber-500"
+                >
+                  Add
+                </Button>
+              </div>
+              {currentFeelingsList.length > 0 && (
+                <div className="mt-2 p-3 border border-amber-600/40 rounded-lg bg-gray-900/40">
+                  <span className="text-amber-400/80 text-sm mb-1 block">Selected feelings:</span>
+                  <div className="flex flex-wrap gap-1">
+                    {currentFeelingsList.map((feeling, index) => (
+                      <span key={index} className="inline-flex items-center bg-gray-800/70 text-amber-200 text-sm px-3 py-1 rounded-md my-1">
+                        {feeling}
+                        <button 
+                          onClick={() => setCurrentFeelingsList(prev => prev.filter(f => f !== feeling))} 
+                          className="ml-2 text-amber-400 hover:text-white focus:outline-none"
+                          aria-label={`Remove ${feeling}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             
+            {/* Desired Outcome - now with selectable buttons */}
             <div>
-              <Label htmlFor="desiredOutcome" className="text-gray-300 font-serif mb-2 block">
+              <Label htmlFor="desiredOutcomeButtons" className="text-gray-300 font-serif mb-2 block">
                 Desired Outcome
               </Label>
-              <Input
-                id="desiredOutcome"
-                placeholder="What you hope to gain from this reading (clarity, reassurance, etc.)"
-                value={desiredOutcome}
-                onChange={(e) => setDesiredOutcome(e.target.value)}
-                className="w-full bg-brand-input-bg text-gray-800 placeholder:text-brand-input-text border-none rounded-lg p-2 focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none"
-              />
+              <div id="desiredOutcomeButtons" className="flex flex-wrap gap-2 mb-2">
+                {DESIRED_OUTCOME_OPTIONS.map(option => (
+                  <Button
+                    key={option}
+                    type="button"
+                    onClick={() => {
+                      setDesiredOutcome(option);
+                      setShowCustomDesiredOutcomeInput(option === "Other");
+                    }}
+                    className={`px-4 py-2 rounded-lg transition-all ${
+                      desiredOutcome === option 
+                        ? "bg-brand-button-bg text-white shadow-md border border-brand-button-bg" 
+                        : "bg-gray-800/40 text-gray-300 border border-gray-700 hover:bg-gray-700/60 hover:border-gray-600"
+                    }`}
+                  >
+                    {option}
+                  </Button>
+                ))}
+              </div>
+              {showCustomDesiredOutcomeInput && (
+                <Input
+                  id="customDesiredOutcome"
+                  placeholder="Please specify your desired outcome"
+                  value={customDesiredOutcome}
+                  onChange={(e) => setCustomDesiredOutcome(e.target.value)}
+                  className="mt-2 w-full bg-brand-input-bg text-gray-800 placeholder:text-brand-input-text border-none rounded-lg p-2 focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none"
+                />
+              )}
             </div>
           </div>
         )}

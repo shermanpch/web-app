@@ -8,7 +8,7 @@ import Heading from "@/components/ui/heading";
 export default function SettingsPage() {
   return (
     <PageLayout>
-      <ContentContainer className="max-w-4xl">
+      <ContentContainer className="max-w-3xl">
         <Heading>Change Password</Heading>
         <div className="mt-8">
           <ChangePasswordForm />

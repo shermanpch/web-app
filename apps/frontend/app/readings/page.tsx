@@ -271,7 +271,7 @@ export default function ReadingsPage() {
                           onClick={() => toggleExpand(reading.id)}
                           className="flex-grow"
                         >
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-gray-700">
                             {format(
                               new Date(reading.created_at),
                               "MMMM d, yyyy 'at' h:mm a",
@@ -352,7 +352,7 @@ export default function ReadingsPage() {
                                   <div className="w-20 h-20 md:w-24 md:h-24 flex items-center justify-center mx-auto">
                                     <AnimatedHexagram lines={initialLines} />
                                   </div>
-                                  <p className="text-gray-600 font-serif text-sm mt-1">
+                                  <p className="text-gray-700 font-serif text-sm mt-1">
                                     Primary
                                   </p>
                                 </div>
@@ -365,7 +365,7 @@ export default function ReadingsPage() {
                                   <div className="w-20 h-20 md:w-24 md:h-24 flex items-center justify-center mx-auto">
                                     <AnimatedHexagram lines={finalLines} />
                                   </div>
-                                  <p className="text-gray-600 font-serif text-sm mt-1">
+                                  <p className="text-gray-700 font-serif text-sm mt-1">
                                     Transformed
                                   </p>
                                 </div>
@@ -391,7 +391,7 @@ export default function ReadingsPage() {
                           </h4>
                           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-2 -mt-1">
                             <span className="text-gray-900 font-medium font-serif">{reading.prediction.hexagram_name}</span>
-                            <span className="text-gray-600 italic font-serif">{reading.prediction.pinyin}</span>
+                            <span className="text-gray-700 italic font-serif">{reading.prediction.pinyin}</span>
                           </div>
                           <p className="text-gray-700 font-serif">
                             {reading.prediction.interpretation}
@@ -406,7 +406,7 @@ export default function ReadingsPage() {
                             </h4>
                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-2 -mt-1">
                               <span className="text-gray-900 font-medium font-serif">{reading.prediction.line_change.line}</span>
-                              <span className="text-gray-600 italic font-serif">{reading.prediction.line_change.pinyin}</span>
+                              <span className="text-gray-700 italic font-serif">{reading.prediction.line_change.pinyin}</span>
                             </div>
                             <p className="text-gray-700 font-serif">
                               {reading.prediction.line_change.interpretation}
@@ -422,7 +422,7 @@ export default function ReadingsPage() {
                             </h4>
                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-2 -mt-1">
                               <span className="text-gray-900 font-medium font-serif">{reading.prediction.result.name}</span>
-                              <span className="text-gray-600 italic font-serif">{reading.prediction.result.pinyin || "dì shuǐ shī"}</span>
+                              <span className="text-gray-700 italic font-serif">{reading.prediction.result.pinyin || "dì shuǐ shī"}</span>
                             </div>
                             <p className="text-gray-700 font-serif">
                               {reading.prediction.result.interpretation}

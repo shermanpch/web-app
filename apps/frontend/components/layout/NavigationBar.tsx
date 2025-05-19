@@ -99,7 +99,7 @@ export default function NavigationBar({
         <div className="flex items-center">
           {/* Hamburger menu button - only visible on mobile */}
           <button
-            className="md:hidden text-[#EDE6D6] hover:text-white transition-colors"
+            className="md:hidden text-[#EDE6D6] hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-md p-1"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Toggle menu"
           >
@@ -117,7 +117,7 @@ export default function NavigationBar({
             <Link
               key={link.href}
               href={link.href}
-              className="text-[#EDE6D6] hover:text-white hover:border-b hover:border-[rgba(218,165,32,0.6)] pb-1 transition-colors text-lg"
+              className="text-[#EDE6D6] hover:text-white hover:border-b hover:border-[rgba(218,165,32,0.6)] pb-1 transition-colors text-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-sm"
             >
               {link.label}
             </Link>
@@ -131,7 +131,7 @@ export default function NavigationBar({
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="relative h-10 w-10 rounded-full p-0 hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                  className="relative h-10 w-10 rounded-full p-0 hover:bg-transparent focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                 >
                   <Avatar className="h-10 w-10">
                     {user.image && (

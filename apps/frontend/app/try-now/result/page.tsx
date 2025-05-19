@@ -194,7 +194,7 @@ export default function ResultPage() {
     <PageLayout>
       <motion.div variants={containerVariants} initial="hidden" animate="show">
         <motion.div variants={itemVariants}>
-          <ContentContainer className="max-w-4xl text-gray-200">
+          <ContentContainer className="max-w-5xl text-gray-200">
             <Heading>Your Hexagram Result</Heading>
 
             {/* Question Display */}
@@ -230,7 +230,7 @@ export default function ResultPage() {
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <ContentContainer className="max-w-4xl">
+          <ContentContainer className="max-w-5xl">
             <div className="bg-[#D8CDBA] rounded-lg p-4 sm:p-6 md:p-8 font-serif text-gray-800 shadow-md">
               <motion.div className="space-y-4 sm:space-y-6 text-sm sm:text-base text-gray-800">
                 <motion.div variants={itemVariants}>

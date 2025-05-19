@@ -6,7 +6,7 @@ import Heading from "@/components/ui/heading";
 export default function TermsOfServicePage() {
   return (
     <PageLayout>
-      <ContentContainer className="max-w-4xl">
+      <ContentContainer className="max-w-3xl">
         <Heading>Terms of Service</Heading>
         <p className="text-xl text-gray-200 font-serif text-center mt-4">
           Please read these terms carefully before using our service

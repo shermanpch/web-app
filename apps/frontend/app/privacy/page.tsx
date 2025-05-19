@@ -6,7 +6,7 @@ import Heading from "@/components/ui/heading";
 export default function PrivacyPolicyPage() {
   return (
     <PageLayout>
-      <ContentContainer className="max-w-4xl">
+      <ContentContainer className="max-w-3xl">
         <Heading>Privacy Policy</Heading>
         <p className="text-xl text-gray-200 font-serif text-center mt-4">
           How we collect, use, and protect your information

@@ -39,7 +39,7 @@ export default function AuthInput({
           value={value}
           onChange={onChange}
           required={required}
-          className="pl-10 h-12"
+          className="pl-10"
         />
       </div>
     </div>
