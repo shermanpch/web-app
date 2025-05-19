@@ -222,7 +222,7 @@ export default function ResultPage() {
                   <AnimatedHexagram lines={initialLines} />
                 </div>
                 <p className="text-gray-200 font-serif text-sm sm:text-base">
-                  Initial Hexagram
+                  Primary Hexagram
                 </p>
               </div>
 
@@ -235,7 +235,7 @@ export default function ResultPage() {
                   <AnimatedHexagram lines={finalLines} />
                 </div>
                 <p className="text-gray-200 font-serif text-sm sm:text-base">
-                  Final Hexagram
+                  Transformed Hexagram
                 </p>
               </div>
             </div>
@@ -244,83 +244,112 @@ export default function ResultPage() {
 
         <motion.div variants={itemVariants}>
           <ContentContainer className="max-w-4xl">
-            <div className="bg-[#D8CDBA] rounded-lg p-4 sm:p-6 md:p-8 font-serif text-gray-800">
+            <div className="bg-[#D8CDBA] rounded-lg p-4 sm:p-6 md:p-8 font-serif text-gray-800 shadow-md">
               <motion.div className="space-y-4 sm:space-y-6 text-sm sm:text-base text-gray-800">
                 <motion.div variants={itemVariants}>
-                  <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-gray-800">
-                    {prediction.hexagram_name}
+                  <h2 className="mb-3 sm:mb-4 text-gray-900">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                      <span className="text-2xl sm:text-3xl md:text-4xl font-semibold">{prediction.hexagram_name}</span>
+                      <span className="text-lg sm:text-xl font-normal text-gray-700">
+                        {prediction.pinyin}
+                      </span>
+                    </div>
                   </h2>
 
-                  <div className="italic mb-4 sm:mb-6 text-sm sm:text-base text-gray-800">
-                    Keywords: {prediction.summary}
+                  <div className="mb-4 sm:mb-6 text-sm sm:text-base">
+                    <span className="font-medium text-gray-800 mr-2">Summary:</span>
+                    <span className="italic text-gray-700">{prediction.summary}</span>
                   </div>
                 </motion.div>
 
                 <motion.div variants={itemVariants}>
-                  <h3 className="font-bold mb-1 sm:mb-2 text-gray-800">
-                    Initial Hexagram Interpretation
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 tracking-wide uppercase">
+                    Primary Hexagram Interpretation
                   </h3>
-                  <p className="text-justify text-gray-800">
+                  <p className="text-justify text-gray-700 leading-relaxed">
                     {prediction.interpretation}
                   </p>
                 </motion.div>
 
+                <hr className="my-6 border-amber-600/30" />
+
                 <motion.div variants={itemVariants}>
-                  <h3 className="font-bold mb-1 sm:mb-2 text-gray-800">
-                    Changing Line ({prediction.line_change.line})
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 tracking-wide uppercase">
+                    Changing Line
                   </h3>
-                  <p className="text-justify text-gray-800">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-3 -mt-1">
+                    <span className="text-lg text-gray-900 font-medium">{prediction.line_change.line}</span>
+                    <span className="text-gray-600 italic">{prediction.line_change.pinyin}</span>
+                  </div>
+                  <p className="text-justify text-gray-700 leading-relaxed">
                     {prediction.line_change.interpretation}
                   </p>
                 </motion.div>
 
+                <hr className="my-6 border-amber-600/30" />
+
                 <motion.div variants={itemVariants}>
-                  <h3 className="font-bold mb-1 sm:mb-2 text-gray-800">
-                    Resulting Hexagram ({prediction.result.name})
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 tracking-wide uppercase">
+                    Transformed Hexagram
                   </h3>
-                  <p className="text-justify text-gray-800">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-3 -mt-1">
+                    <span className="text-lg text-gray-900 font-medium">{prediction.result.name}</span>
+                    <span className="text-gray-600 italic">{prediction.result.pinyin || "dì shuǐ shī"}</span>
+                  </div>
+                  <p className="text-justify text-gray-700 leading-relaxed">
                     {prediction.result.interpretation}
+                  </p>
+                </motion.div>
+
+                <hr className="my-6 border-amber-600/30" />
+
+                <motion.div variants={itemVariants}>
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 tracking-wide uppercase">
+                    Advice
+                  </h3>
+                  <p className="text-justify text-gray-700 leading-relaxed">
+                    {prediction.advice}
                   </p>
                 </motion.div>
 
                 {/* Clarification Section */}
                 {reading.clarifying_answer ? (
                   <motion.div variants={itemVariants}>
-                    <div className="mt-6 pt-4 border-t border-amber-600/20">
-                      <h3 className="font-bold mb-1 sm:mb-2 text-gray-800">
+                    <div className="mt-6 pt-6 border-t border-amber-600/30">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 tracking-wide uppercase">
                         Clarification Question
                       </h3>
-                      <p className="text-justify text-gray-800">
+                      <p className="text-justify text-gray-700 leading-relaxed">
                         {reading.clarifying_question}
                       </p>
                     </div>
 
                     <div className="mt-4">
-                      <h3 className="font-bold mb-1 sm:mb-2 text-gray-800">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 tracking-wide uppercase">
                         Clarification Answer
                       </h3>
-                      <p className="text-justify text-gray-800">
+                      <p className="text-justify text-gray-700 leading-relaxed">
                         {reading.clarifying_answer}
                       </p>
                     </div>
                   </motion.div>
                 ) : reading.clarifying_question && isMutationInProgress ? (
                   <motion.div variants={itemVariants}>
-                    <div className="mt-6 pt-4 border-t border-amber-600/20">
-                      <h3 className="font-bold mb-1 sm:mb-2 text-gray-800">
+                    <div className="mt-6 pt-6 border-t border-amber-600/30">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 tracking-wide uppercase">
                         Clarification Question
                       </h3>
-                      <p className="text-justify text-gray-800">
+                      <p className="text-justify text-gray-700 leading-relaxed">
                         {reading.clarifying_question}
                       </p>
                     </div>
 
                     <div className="mt-4">
-                      <h3 className="font-bold mb-1 sm:mb-2 text-gray-800">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 tracking-wide uppercase">
                         Clarification Answer
                       </h3>
                       <div className="text-center py-4">
-                        <div className="text-gray-800 font-serif mb-4">
+                        <div className="text-gray-700 font-serif mb-4">
                           Consulting the Oracle...
                         </div>
                         <div className="relative mx-auto w-8 h-8">
@@ -332,15 +361,15 @@ export default function ResultPage() {
                   </motion.div>
                 ) : (
                   <motion.div variants={itemVariants}>
-                    <div className="mt-8">
-                      <h3 className="font-bold mb-4 text-gray-800">
+                    <div className="mt-8 pt-6 border-t border-amber-600/30">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 tracking-wide uppercase">
                         Need Clarification?
                       </h3>
                       {canClarify ? (
                         <>
                           {isMutationInProgress ? (
                             <div className="text-center py-8">
-                              <div className="mb-6 text-gray-800 text-lg font-serif">
+                              <div className="mb-6 text-gray-700 text-lg font-serif">
                                 Consulting the Oracle...
                               </div>
                               <div className="relative mx-auto w-10 h-10">
@@ -356,7 +385,7 @@ export default function ResultPage() {
                                   setClarificationInput(e.target.value)
                                 }
                                 placeholder="Ask a follow-up question about your reading..."
-                                className="mb-4 bg-white text-gray-800"
+                                className="mb-4 bg-[#F5F0E6] text-gray-800 border-gray-400 focus:border-amber-600 focus:ring-amber-600"
                                 disabled={isMutationInProgress}
                               />
                               <div className="flex justify-center">
@@ -376,7 +405,7 @@ export default function ResultPage() {
                         </>
                       ) : (
                         <div className="text-center">
-                          <p className="text-gray-800 mb-4">
+                          <p className="text-gray-700 mb-4 leading-relaxed">
                             You need premium access to ask clarification
                             questions.
                           </p>

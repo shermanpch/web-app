@@ -18,6 +18,7 @@ export interface DivinationRequest {
  */
 export interface LineChange {
   line: string;
+  pinyin: string;
   interpretation: string;
 }
 
@@ -26,6 +27,7 @@ export interface LineChange {
  */
 export interface HexagramResult {
   name: string;
+  pinyin: string;
   interpretation: string;
 }
 
@@ -34,6 +36,7 @@ export interface HexagramResult {
  */
 export interface IChingPrediction {
   hexagram_name: string;
+  pinyin: string;
   summary: string;
   interpretation: string;
   line_change: LineChange;

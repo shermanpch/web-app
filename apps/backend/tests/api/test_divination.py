@@ -194,6 +194,7 @@ class TestDivination(BaseTest):
             reading_data,
             [
                 "hexagram_name",
+                "pinyin",
                 "summary",
                 "interpretation",
                 "line_change",
@@ -204,22 +205,33 @@ class TestDivination(BaseTest):
 
         # Check that line_change and result are properly structured
         assert_has_fields(reading_data["line_change"], ["line", "interpretation"])
-        assert_has_fields(reading_data["result"], ["name", "interpretation"])
+        assert_has_fields(reading_data["result"], ["name", "pinyin", "interpretation"])
 
         # Log the reading data for inspection
+        # fmt:off
         self.logger.info("I-Ching Reading Results:")
-        self.logger.info(f"Hexagram Name: {reading_data.get('hexagram_name', 'N/A')}")
-        self.logger.info(f"Summary: {reading_data.get('summary', 'N/A')}")
-        self.logger.info(
-            f"Interpretation: {reading_data.get('interpretation', '')[:100]}..."
-        )
-        self.logger.info(
-            f"Line Change: {reading_data.get('line_change', {}).get('line', 'N/A')} - {reading_data.get('line_change', {}).get('interpretation', '')[:50]}..."
-        )
-        self.logger.info(
-            f"Result Hexagram: {reading_data.get('result', {}).get('name', 'N/A')} - {reading_data.get('result', {}).get('interpretation', '')[:50]}..."
-        )
-        self.logger.info(f"Advice: {reading_data.get('advice', '')[:100]}...")
+        self.logger.info(f"  Question: {request_data.get('question', 'N/A')}")
+        self.logger.info(f"  First Number: {reading_data.get('first_number', 'N/A')}")
+        self.logger.info(f"  Second Number: {reading_data.get('second_number', 'N/A')}")
+        self.logger.info(f"  Third Number: {reading_data.get('third_number', 'N/A')}")
+        self.logger.info(f"  Language: {request_data.get('language', 'N/A')}")
+        self.logger.info(f"  Hexagram Name: {reading_data.get('hexagram_name', 'N/A')}")
+        self.logger.info(f"  Pinyin: {reading_data.get('pinyin', 'N/A')}")
+        self.logger.info(f"  Summary: {reading_data.get('summary', 'N/A')}")
+        self.logger.info(f"  Interpretation: {reading_data.get('interpretation', 'N/A')[:100]}...")
+
+        # Format line_change as separate lines
+        self.logger.info("  Line Change:")
+        self.logger.info(f"    Line: {reading_data.get('line_change', {}).get('line', 'N/A')}")
+        self.logger.info(f"    Interpretation: {reading_data.get('line_change', {}).get('interpretation', '')[:50]}...")
+
+        # Format result as separate lines
+        self.logger.info("  Result Hexagram:")
+        self.logger.info(f"    Name: {reading_data.get('result', {}).get('name', 'N/A')}")
+        self.logger.info(f"    Pinyin: {reading_data.get('result', {}).get('pinyin', 'N/A')}")
+        self.logger.info(f"    Interpretation: {reading_data.get('result', {}).get('interpretation', '')[:50]}...")
+        self.logger.info(f"  Advice: {reading_data.get('advice', '')[:100]}...")
+        # fmt:on
 
         self.logger.info("I-Ching reading test passed successfully!")
 
@@ -429,13 +441,39 @@ class TestDivination(BaseTest):
         ), "Expected clarifying answer to be provided"
 
         # Log the updated reading details
+        # fmt:off
         self.logger.info("I-Ching Reading Update Results:")
         self.logger.info(f"Reading ID: {update_data.get('id', 'N/A')}")
         self.logger.info(f"User ID: {update_data.get('user_id', 'N/A')}")
-        self.logger.info(
-            f"Clarifying Question: {update_data.get('clarifying_question', 'N/A')}"
-        )
-        self.logger.info(
-            f"Clarifying Answer: {update_data.get('clarifying_answer', '')[:100]}..."
-        )
+        self.logger.info(f"Question: {update_data.get('question', 'N/A')}")
+        self.logger.info(f"First Number: {update_data.get('first_number', 'N/A')}")
+        self.logger.info(f"Second Number: {update_data.get('second_number', 'N/A')}")
+        self.logger.info(f"Third Number: {update_data.get('third_number', 'N/A')}")
+        self.logger.info(f"Language: {update_data.get('language', 'N/A')}")
+        
+        # Log prediction details
+        prediction = update_data.get('prediction', {})
+        self.logger.info(f"Hexagram Name: {prediction.get('hexagram_name', 'N/A')}")
+        self.logger.info(f"Pinyin: {prediction.get('pinyin', 'N/A')}")
+        self.logger.info(f"Summary: {prediction.get('summary', 'N/A')}")
+        self.logger.info(f"Interpretation: {prediction.get('interpretation', 'N/A')[:100]}...")
+        
+        # Format line_change as separate lines
+        self.logger.info("Line Change:")
+        self.logger.info(f"  Line: {prediction.get('line_change', {}).get('line', 'N/A')}")
+        self.logger.info(f"  Interpretation: {prediction.get('line_change', {}).get('interpretation', '')[:50]}...")
+        
+        # Format result as separate lines
+        self.logger.info("Result Hexagram:")
+        self.logger.info(f"  Name: {prediction.get('result', {}).get('name', 'N/A')}")
+        self.logger.info(f"  Pinyin: {prediction.get('result', {}).get('pinyin', 'N/A')}")
+        self.logger.info(f"  Interpretation: {prediction.get('result', {}).get('interpretation', '')[:50]}...")
+        self.logger.info(f"Advice: {prediction.get('advice', '')[:100]}...")
+        
+        # Log clarification details
+        self.logger.info("Clarification Details:")
+        self.logger.info(f"  Clarifying Question: {update_data.get('clarifying_question', 'N/A')}")
+        self.logger.info(f"  Clarifying Answer: {update_data.get('clarifying_answer', '')[:100]}...")
+        
         self.logger.info("I-Ching reading update test passed successfully!")
+        # fmt:on

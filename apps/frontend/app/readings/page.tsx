@@ -46,10 +46,12 @@ export default function ReadingsPage() {
     refetchOnMount: true, // Enable refetch on mount to get latest data
   });
 
-  // Extract readings and pagination info
-  const readings = paginatedData?.items || [];
+  // Extract pagination info
   const totalPages = paginatedData?.total_pages || 0;
   const totalItems = paginatedData?.total_items || 0;
+  
+  // Memoize readings to ensure stable reference
+  const readings = useMemo(() => paginatedData?.items || [], [paginatedData]);
 
   // Initialize filteredReadings with an empty array, not a state derived from readings
   const [expandedReadingId, setExpandedReadingId] = useState<string | null>(
@@ -351,7 +353,7 @@ export default function ReadingsPage() {
                                     <AnimatedHexagram lines={initialLines} />
                                   </div>
                                   <p className="text-gray-600 font-serif text-sm mt-1">
-                                    Initial
+                                    Primary
                                   </p>
                                 </div>
 
@@ -364,7 +366,7 @@ export default function ReadingsPage() {
                                     <AnimatedHexagram lines={finalLines} />
                                   </div>
                                   <p className="text-gray-600 font-serif text-sm mt-1">
-                                    Final
+                                    Transformed
                                   </p>
                                 </div>
                               </>
@@ -375,20 +377,23 @@ export default function ReadingsPage() {
                         {/* Keywords Section */}
                         <div className="mb-4">
                           <h4 className="font-bold text-gray-800 font-serif">
-                            Keywords
+                            Summary
                           </h4>
                           <p className="text-gray-700 italic font-serif">
                             {reading.prediction.summary}
                           </p>
                         </div>
 
-                        {/* Initial Interpretation Section */}
+                        {/* Primary Interpretation Section */}
                         <div className="mb-4">
                           <h4 className="font-bold text-gray-800 font-serif">
-                            Initial Interpretation
+                            Primary Hexagram Interpretation
                           </h4>
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-2 -mt-1">
+                            <span className="text-gray-900 font-medium font-serif">{reading.prediction.hexagram_name}</span>
+                            <span className="text-gray-600 italic font-serif">{reading.prediction.pinyin}</span>
+                          </div>
                           <p className="text-gray-700 font-serif">
-                            The hexagram {reading.prediction.hexagram_name}{" "}
                             {reading.prediction.interpretation}
                           </p>
                         </div>
@@ -397,22 +402,28 @@ export default function ReadingsPage() {
                         {reading.prediction.line_change && (
                           <div className="mb-4">
                             <h4 className="font-bold text-gray-800 font-serif">
-                              Changing Line (
-                              {reading.prediction.line_change.line})
+                              Changing Line
                             </h4>
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-2 -mt-1">
+                              <span className="text-gray-900 font-medium font-serif">{reading.prediction.line_change.line}</span>
+                              <span className="text-gray-600 italic font-serif">{reading.prediction.line_change.pinyin}</span>
+                            </div>
                             <p className="text-gray-700 font-serif">
                               {reading.prediction.line_change.interpretation}
                             </p>
                           </div>
                         )}
 
-                        {/* Resulting Hexagram Section */}
+                        {/* Transformed Hexagram Section */}
                         {reading.prediction.result && (
                           <div className="mb-4">
                             <h4 className="font-bold text-gray-800 font-serif">
-                              Resulting Hexagram (
-                              {reading.prediction.result.name})
+                              Transformed Hexagram
                             </h4>
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-2 -mt-1">
+                              <span className="text-gray-900 font-medium font-serif">{reading.prediction.result.name}</span>
+                              <span className="text-gray-600 italic font-serif">{reading.prediction.result.pinyin || "dì shuǐ shī"}</span>
+                            </div>
                             <p className="text-gray-700 font-serif">
                               {reading.prediction.result.interpretation}
                             </p>

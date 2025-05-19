@@ -2,8 +2,9 @@
 
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+# fmt:off
 
 class IChingTextRequest(BaseModel):
     """I Ching text request model."""
@@ -39,26 +40,29 @@ class IChingCoordinatesResponse(BaseModel):
 class HexagramResult(BaseModel):
     """Represents the resulting hexagram interpretation."""
 
-    name: str
-    interpretation: str
+    name: str = Field(description="Name of the resulting hexagram after changes in Chinese, e.g., '火山旅'.")
+    pinyin: str = Field(description="Pinyin of the resulting hexagram, e.g., 'huǒ shān lǚ'.")
+    interpretation: str = Field(description="Interpretation of the resulting hexagram.")
 
 
 class LineChange(BaseModel):
     """Represents a specific changing line in the hexagram."""
 
-    line: str
-    interpretation: str
+    line: str = Field(description="The specific changing line, e.g., '初六'.")
+    pinyin: str = Field(description="Pinyin of the changing line, e.g., 'chū liù'.")
+    interpretation: str = Field(description="Interpretation of this changing line.")
 
 
 class IChingPrediction(BaseModel):
     """Structured I Ching prediction model."""
 
-    hexagram_name: str
-    summary: str
-    interpretation: str
-    line_change: LineChange
-    result: HexagramResult
-    advice: str
+    hexagram_name: str = Field(description="The hexagram's name in Chinese, e.g., '小过卦'.")
+    pinyin: str = Field(description="Pinyin of the hexagram, e.g., 'xiǎo guò guà'.")
+    summary: str = Field(description="A brief, one-sentence summary of the hexagram's central theme.")
+    interpretation: str = Field(description="A detailed interpretation of the hexagram (exactly five sentences) related to the user's question, based on the Parent Context.")
+    line_change: LineChange = Field(description="Details of the changing line based on the Child Context.")
+    result: HexagramResult = Field(description="The resulting hexagram after line changes, based on the Child Context.")
+    advice: str = Field(description="Clear, specific, and practical recommendation directly answering the user's question.")
 
 
 class IChingReadingRequest(BaseModel):
@@ -84,7 +88,7 @@ class IChingReadingResponse(IChingPrediction):
 class IChingSaveReadingRequest(BaseModel):
     """Request model for saving I Ching reading to database."""
 
-    user_id: str  # UUID but passed as string
+    user_id: str
     question: str
     first_number: int
     second_number: int
@@ -108,8 +112,8 @@ class IChingSaveReadingResponse(BaseModel):
 class IChingUpdateReadingRequest(BaseModel):
     """Request model for updating I Ching reading."""
 
-    id: str  # UUID but passed as string
-    user_id: str  # UUID but passed as string
+    id: str
+    user_id: str
     question: str
     first_number: int
     second_number: int
@@ -123,8 +127,8 @@ class IChingUpdateReadingRequest(BaseModel):
 class IChingUpdateReadingResponse(BaseModel):
     """Response model for updating I Ching reading."""
 
-    id: str  # UUID but passed as string
-    user_id: str  # UUID but passed as string
+    id: str
+    user_id: str
     question: str
     first_number: int
     second_number: int
@@ -133,3 +137,5 @@ class IChingUpdateReadingResponse(BaseModel):
     prediction: IChingPrediction
     clarifying_question: str
     clarifying_answer: str
+
+# fmt:on
