@@ -2,12 +2,13 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
 import PageLayout from "@/components/layout/PageLayout";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { divinationApi } from "@/lib/api/endpoints/divination";
 import { authApi } from "@/lib/api/endpoints/auth";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useTransform, animate } from "framer-motion";
+import Heading from "@/components/ui/heading";
+import { calculateCoordsFromNumbers, getInitialHexagramLines } from "@/lib/divinationUtils";
 
 export default function ConsultingPage() {
   const router = useRouter();
@@ -15,6 +16,32 @@ export default function ConsultingPage() {
   const queryClient = useQueryClient();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hasMutationStarted, setHasMutationStarted] = useState(false);
+  const question = searchParams.get("question");
+  const n1 = searchParams.get("n1") ? parseInt(searchParams.get("n1")!) : 1;
+  const n2 = searchParams.get("n2") ? parseInt(searchParams.get("n2")!) : 2;
+  const n3 = searchParams.get("n3") ? parseInt(searchParams.get("n3")!) : 3;
+  
+  // Loading messages that will cycle
+  const loadingMessages = [
+    "Interpreting the patterns...",
+    "Seeking clarity in the changes...",
+    "Aligning with ancient wisdom...",
+    "The lines are forming...",
+    "Consulting the oracle...",
+    "Discerning the meaning..."
+  ];
+  
+  // State for the current message index
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  
+  // Cycle through loading messages
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setCurrentMessageIndex((prev) => (prev + 1) % loadingMessages.length);
+    }, 3500);
+    
+    return () => clearInterval(intervalId);
+  }, [loadingMessages.length]);
 
   const readingMutation = useMutation({
     mutationFn: async () => {
@@ -124,68 +151,33 @@ export default function ConsultingPage() {
             <div className="text-red-500 mb-4">{errorMessage}</div>
           ) : (
             <>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-8 sm:mb-12 md:mb-16 font-serif">
+              <Heading className="mb-8 sm:mb-10 md:mb-12 text-white">
                 Consulting the Oracle...
-              </h1>
+              </Heading>
 
-              <div className="flex flex-col md:flex-row items-center justify-center md:space-x-8 lg:space-x-24 space-y-8 md:space-y-0">
-                {/* Turtle Shell */}
-                <motion.div
-                  className="relative w-[16rem] h-[16rem] sm:w-[24rem] sm:h-[24rem] md:w-[32rem] md:h-[32rem] lg:w-[36rem] lg:h-[36rem]"
-                  animate={{
-                    rotate: [-15, 15, -15, 15, -15, 15, -15],
-                  }}
-                  transition={{
-                    duration: 0.7,
-                    repeat: Infinity,
-                    ease: "linear",
-                    times: [0, 0.2, 0.4, 0.6, 0.8, 1],
-                  }}
-                >
-                  <Image
-                    src="/assets/turtle-shell.png"
-                    alt="Turtle Shell"
-                    width={576}
-                    height={576}
-                    className="w-full h-full object-contain"
-                    priority
-                  />
-                  {/* Add a subtle shadow that moves with the shell */}
-                  <div className="absolute -bottom-4 sm:-bottom-6 left-1/2 -translate-x-1/2 w-[80%] sm:w-[85%] h-4 sm:h-6 bg-black/20 rounded-full blur-md" />
-                </motion.div>
+              {/* User's Question Display */}
+              <p className="text-xl text-gray-300 font-serif text-center mt-2 mb-12">
+                Seeking wisdom for: "{question || 'your query'}"
+              </p>
 
-                {/* Coins */}
-                <div className="flex flex-row space-x-4 sm:space-x-8 md:space-x-12">
-                  {[0, 1, 2].map((index) => (
-                    <motion.div
-                      key={index}
-                      className="relative w-20 h-20 sm:w-32 sm:h-32 md:w-40 md:h-40"
-                      initial={{ opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{
-                        delay: 0.6 + index * 0.3,
-                        duration: 0.3,
-                        repeat: Infinity,
-                        repeatDelay: 1.5,
-                        ease: "easeOut",
-                      }}
-                    >
-                      <Image
-                        src={
-                          index % 2 === 0
-                            ? "/assets/coin-head.png"
-                            : "/assets/coin-tail.png"
-                        }
-                        alt={`Coin ${index + 1}`}
-                        width={160}
-                        height={160}
-                        className="w-full h-full object-contain"
-                        priority
-                      />
-                    </motion.div>
-                  ))}
-                </div>
+              {/* Abstract Loading Animation */}
+              <div className="w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 mb-12 relative">
+                <AbstractLoadingAnimation n1={n1} n2={n2} n3={n3} />
               </div>
+
+              {/* Cycling Loading Messages */}
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={currentMessageIndex}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.5 }}
+                  className="text-lg sm:text-xl text-gray-300 font-serif mt-4"
+                >
+                  {loadingMessages[currentMessageIndex]}
+                </motion.p>
+              </AnimatePresence>
             </>
           )}
         </div>
@@ -193,3 +185,171 @@ export default function ConsultingPage() {
     </PageLayout>
   );
 }
+
+// Abstract Loading Animation Component
+interface AbstractLoadingAnimationProps {
+  n1: number;
+  n2: number;
+  n3: number;
+}
+
+const AbstractLoadingAnimation = ({ n1, n2, n3 }: AbstractLoadingAnimationProps) => {
+  // Timing helper function
+  const loop = (d: number, ease = "easeInOut") => ({
+    duration: d,
+    repeat: Infinity,
+    ease,
+  });
+  
+  // Orbital particles motion control
+  const t = useMotionValue(0);
+  useEffect(() => {
+    const controls = animate(t, 1, { duration: 12, repeat: Infinity, ease: "linear" });
+    return controls.stop; // Cleanup
+  }, []);
+  
+  // Calculate hexagram lines based on the three numbers
+  const { parentCoord } = calculateCoordsFromNumbers(n1, n2, n3);
+  const initialLines = getInitialHexagramLines(parentCoord);
+  
+  // Convert line types to broken/solid values for our animation
+  const hexagramLines = initialLines.map((type: "solid" | "broken", i: number) => ({
+    y: i * 24 - 60, // Positioning
+    broken: type === "broken"
+  }));
+  
+  // Hexagram line variants for staggered animation
+  const lineVariants = {
+    initial: { opacity: 0.4, x: 0, scale: 1 },
+    animate: { 
+      opacity: [0.4, 0.7, 0.4],
+      x: [0, 6, -6, 0],
+      scale: [1, 1.1, 1],
+      transition: { duration: 4, repeat: Infinity, ease: "easeInOut" }
+    }
+  };
+  
+  // Orbit radii for particles
+  const orbits = [...Array(12)].map((_, i) => 60 + (i % 3) * 15);
+  
+  return (
+    <div className="relative w-full h-full flex items-center justify-center">
+      {/* Background glow effect */}
+      <motion.div
+        className="absolute w-[60%] h-[60%] rounded-full bg-amber-500/10 blur-xl"
+        animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.5, 0.2] }}
+        transition={loop(4)}
+      />
+      
+      {/* SVG orbital rings and elements */}
+      <svg className="absolute w-full h-full" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <radialGradient id="coreGradient">
+            <stop offset="0%" stopColor="#f59e0b"/>
+            <stop offset="80%" stopColor="#d97706"/>
+          </radialGradient>
+        </defs>
+        
+        {/* Orbital rings */}
+        <motion.circle
+          r="80" cx="100" cy="100"
+          fill="none" 
+          strokeWidth="1"
+          stroke="rgba(252, 211, 77, 0.3)"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+          style={{ transformOrigin: "center" }}
+        />
+        
+        <motion.circle
+          r="60" cx="100" cy="100"
+          fill="none" 
+          strokeWidth="1"
+          stroke="rgba(217, 119, 6, 0.4)"
+          animate={{ rotate: -360 }}
+          transition={{ duration: 24, repeat: Infinity, ease: "linear" }}
+          style={{ transformOrigin: "center" }}
+        />
+        
+        <motion.circle
+          r="40" cx="100" cy="100"
+          fill="none" 
+          strokeWidth="1"
+          stroke="rgba(245, 158, 11, 0.5)"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+          style={{ transformOrigin: "center" }}
+        />
+        
+        {/* Orbital particles */}
+        <g>
+          {orbits.map((r, i) => {
+            const angle = useTransform(t, (value: number) => ((value * 360) + i * 30) * (Math.PI / 180));
+            const x = useTransform(angle, (angleValue: number) => 100 + Math.cos(angleValue) * (r * 0.8));
+            const y = useTransform(angle, (angleValue: number) => 100 + Math.sin(angleValue) * (r * 0.8));
+            return (
+              <motion.circle 
+                key={`particle-${i}`}
+                cx={x} 
+                cy={y} 
+                r={i % 4 === 0 ? 2 : 1.5}
+                fill="#fcd34d"
+                style={{ opacity: 0.3 + (i % 5) * 0.1 }}
+              />
+            );
+          })}
+        </g>
+        
+        {/* Hexagram lines - these are the most important elements */}
+        <motion.g
+          initial="initial"
+          animate="animate"
+          variants={{ animate: { transition: { staggerChildren: 0.25 } } }}
+        >
+          {hexagramLines.map(({ y, broken }: { y: number; broken: boolean }, idx: number) => (
+            <React.Fragment key={`hex-line-${idx}`}>
+              {broken ? (
+                <>
+                  <motion.line
+                    variants={lineVariants}
+                    x1="82" y1={100 + y} x2="94" y2={100 + y}
+                    strokeWidth="2.5"
+                    stroke="#f59e0b"
+                    strokeLinecap="round"
+                  />
+                  <motion.line
+                    variants={lineVariants}
+                    x1="106" y1={100 + y} x2="118" y2={100 + y}
+                    strokeWidth="2.5"
+                    stroke="#f59e0b"
+                    strokeLinecap="round"
+                  />
+                </>
+              ) : (
+                <motion.line
+                  variants={lineVariants}
+                  x1="82" y1={100 + y} x2="118" y2={100 + y}
+                  strokeWidth="2.5"
+                  stroke="#f59e0b"
+                  strokeLinecap="round"
+                />
+              )}
+            </React.Fragment>
+          ))}
+        </motion.g>
+        
+        {/* Center element - without rays */}
+        <motion.circle
+          r="10" cx="100" cy="100"
+          fill="url(#coreGradient)"
+          animate={{ 
+            r: [10, 12, 10],
+            opacity: [0.9, 1, 0.9]
+          }}
+          transition={loop(3)}
+          filter="drop-shadow(0 0 3px rgba(245, 158, 11, 0.5))"
+        />
+      </svg>
+    </div>
+  );
+};
