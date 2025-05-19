@@ -30,7 +30,7 @@ export default function AuthFormWrapper({
       {children}
 
       {footerContent && (
-        <div className="mt-6 text-center text-sm text-gray-700 font-serif">
+        <div className="mt-6 text-center text-sm text-gray-900 font-serif">
           {footerContent}
         </div>
       )}

@@ -1,5 +1,6 @@
 """Test configuration and fixtures for pytest."""
 
+import asyncio
 import logging
 import os
 import sys
@@ -38,6 +39,28 @@ logger.setLevel(logging.INFO)
 
 
 @pytest.fixture(scope="session")
+def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
+    """Create an instance of the default event loop for each test case."""
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    # Close the loop explicitly
+    if loop.is_running():
+        loop.call_soon_threadsafe(loop.stop)
+    pending_tasks = asyncio.all_tasks(loop)
+    if pending_tasks:
+        # Cancel all pending tasks
+        for task in pending_tasks:
+            task.cancel()
+        # Allow the loop to run to process the cancelled tasks
+        if not loop.is_running() and not loop.is_closed():
+            loop.run_until_complete(
+                asyncio.gather(*pending_tasks, return_exceptions=True)
+            )
+    if not loop.is_closed():
+        loop.close()
+
+
+@pytest.fixture(scope="session")
 def client() -> Generator[TestClient, None, None]:
     """
     Create a test client for FastAPI application.
@@ -45,7 +68,8 @@ def client() -> Generator[TestClient, None, None]:
     Returns:
         TestClient: FastAPI test client
     """
-    yield TestClient(app)
+    with TestClient(app) as test_client:
+        yield test_client
 
 
 @pytest.fixture(scope="function")
@@ -153,6 +177,9 @@ def authenticated_client(
 
     # Yield the authenticated client and user_id as a tuple
     yield client, auth_tokens["user_id"]
+
+    # Make sure to clear cookies after use
+    client.cookies.clear()
 
 
 @pytest.fixture(scope="function")

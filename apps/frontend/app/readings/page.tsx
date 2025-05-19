@@ -440,6 +440,100 @@ export default function ReadingsPage() {
                           </p>
                         </div>
 
+                        {/* Deep Dive Details Section */}
+                        {reading.mode === "deep_dive" && reading.prediction.deep_dive_details && (
+                          <>
+                            <hr className="my-6 border-amber-600/30" />
+                            
+                            <div className="mb-4">
+                              <h4 className="font-bold text-gray-800 font-serif">
+                                Deeper Insights: Primary Hexagram
+                              </h4>
+                              <p className="text-gray-700 font-serif">
+                                {reading.prediction.deep_dive_details.expanded_primary_interpretation}
+                              </p>
+                            </div>
+                            
+                            <hr className="my-6 border-amber-600/30" />
+                            
+                            <div className="mb-4">
+                              <h4 className="font-bold text-gray-800 font-serif">
+                                Significance of the Changing Line
+                              </h4>
+                              <p className="text-gray-700 font-serif">
+                                {reading.prediction.deep_dive_details.contextual_changing_line_interpretation}
+                              </p>
+                            </div>
+                            
+                            <hr className="my-6 border-amber-600/30" />
+                            
+                            <div className="mb-4">
+                              <h4 className="font-bold text-gray-800 font-serif">
+                                Deeper Insights: Transformed Hexagram
+                              </h4>
+                              <p className="text-gray-700 font-serif">
+                                {reading.prediction.deep_dive_details.expanded_transformed_interpretation}
+                              </p>
+                            </div>
+                            
+                            <hr className="my-6 border-amber-600/30" />
+                            
+                            <div className="mb-4">
+                              <h4 className="font-bold text-gray-800 font-serif">
+                                Key Themes & Lessons
+                              </h4>
+                              <ul className="list-disc list-inside text-gray-700 font-serif pl-2 space-y-2">
+                                {reading.prediction.deep_dive_details.thematic_connections.map((theme, index) => (
+                                  <li key={index}>
+                                    {theme}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                            
+                            <hr className="my-6 border-amber-600/30" />
+                            
+                            <div className="mb-4">
+                              <h4 className="font-bold text-gray-800 font-serif">
+                                Tailored Guidance & Reflections
+                              </h4>
+                              <p className="text-gray-700 font-serif">
+                                {reading.prediction.deep_dive_details.actionable_insights_and_reflections}
+                              </p>
+                            </div>
+                            
+                            {reading.prediction.deep_dive_details.potential_pitfalls && (
+                              <>
+                                <hr className="my-6 border-amber-600/30" />
+                                
+                                <div className="mb-4">
+                                  <h4 className="font-bold text-gray-800 font-serif">
+                                    Potential Pitfalls to Consider
+                                  </h4>
+                                  <p className="text-gray-700 font-serif">
+                                    {reading.prediction.deep_dive_details.potential_pitfalls}
+                                  </p>
+                                </div>
+                              </>
+                            )}
+                            
+                            {reading.prediction.deep_dive_details.key_strengths && (
+                              <>
+                                <hr className="my-6 border-amber-600/30" />
+                                
+                                <div className="mb-4">
+                                  <h4 className="font-bold text-gray-800 font-serif">
+                                    Key Strengths to Leverage
+                                  </h4>
+                                  <p className="text-gray-700 font-serif">
+                                    {reading.prediction.deep_dive_details.key_strengths}
+                                  </p>
+                                </div>
+                              </>
+                            )}
+                          </>
+                        )}
+
                         {/* Clarifying Question Section */}
                         {reading.clarifying_question &&
                           reading.clarifying_answer && (

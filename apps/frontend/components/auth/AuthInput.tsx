@@ -26,11 +26,11 @@ export default function AuthInput({
 }: AuthInputProps) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={id} className="text-gray-700 font-serif">
+      <Label htmlFor={id} className="text-gray-900 font-serif">
         {label}
       </Label>
       <div className="relative">
-        <Icon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
+        <Icon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-700 h-5 w-5" />
         <Input
           id={id}
           name={id}
@@ -39,7 +39,7 @@ export default function AuthInput({
           value={value}
           onChange={onChange}
           required={required}
-          className="pl-10 w-full bg-[#EDE6D6] border-none rounded-lg h-12 text-gray-800 placeholder:text-gray-500 focus:ring-2 focus:ring-[#B88A6A] focus:ring-offset-2 focus:ring-offset-[#D8CDBA]"
+          className="pl-10 h-12"
         />
       </div>
     </div>

@@ -3,6 +3,25 @@
  */
 
 /**
+ * Deep Dive context information provided by the user
+ */
+export interface DeepDiveContext {
+  areaOfLife?: string;
+  backgroundSituation?: string;
+  currentFeelings?: string[];
+  desiredOutcome?: string;
+}
+
+/**
+ * Initial divination data collected from the try-now page
+ */
+export interface InitialDivinationData {
+  question: string;
+  mode: "basic" | "deep_dive";
+  deepDiveContext?: DeepDiveContext;
+}
+
+/**
  * Request for getting an I Ching reading
  */
 export interface DivinationRequest {
@@ -10,7 +29,14 @@ export interface DivinationRequest {
   second_number: number;
   third_number: number;
   question: string;
+  mode: string;
   language: string;
+  deep_dive_context?: {
+    area_of_life?: string;
+    background_situation?: string;
+    current_feelings?: string[];
+    desired_outcome?: string;
+  };
 }
 
 /**
@@ -42,6 +68,20 @@ export interface IChingPrediction {
   line_change: LineChange;
   result: HexagramResult;
   advice: string;
+  deep_dive_details?: IChingDeepDivePredictionDetails;
+}
+
+/**
+ * Detailed information for a Deep Dive reading
+ */
+export interface IChingDeepDivePredictionDetails {
+  expanded_primary_interpretation: string;
+  contextual_changing_line_interpretation: string;
+  expanded_transformed_interpretation: string;
+  thematic_connections: string[];
+  actionable_insights_and_reflections: string;
+  potential_pitfalls?: string;
+  key_strengths?: string;
 }
 
 /**
@@ -61,10 +101,11 @@ export interface DivinationResponse extends IChingPrediction {
 export interface SaveReadingRequest {
   user_id: string;
   question: string;
+  mode: string;
+  language: string;
   first_number: number;
   second_number: number;
   third_number: number;
-  language: string;
   prediction: IChingPrediction;
   clarifying_question?: string;
   clarifying_answer?: string;
@@ -88,10 +129,11 @@ export interface UpdateReadingRequest {
   id: string;
   user_id: string;
   question: string;
+  mode: string;
+  language: string;
   first_number: number;
   second_number: number;
   third_number: number;
-  language: string;
   prediction: IChingPrediction;
   clarifying_question: string;
   clarifying_answer?: string;
@@ -104,10 +146,11 @@ export interface UpdateReadingResponse {
   id: string;
   user_id: string;
   question: string;
+  mode: string;
+  language: string;
   first_number: number;
   second_number: number;
   third_number: number;
-  language: string;
   prediction: IChingPrediction;
   clarifying_question: string;
   clarifying_answer: string;
@@ -118,13 +161,14 @@ export interface UpdateReadingResponse {
  * Matches the structure of backend's UserReadingResponse.
  */
 export interface UserReadingHistoryEntry {
-  id: string; // UUID as string
-  user_id: string; // UUID as string
+  id: string;
+  user_id: string;
   question: string;
+  mode: string;
+  language: string;
   first_number: number;
   second_number: number;
   third_number: number;
-  language: string;
   prediction: IChingPrediction | null;
   clarifying_question: string | null;
   clarifying_answer: string | null;

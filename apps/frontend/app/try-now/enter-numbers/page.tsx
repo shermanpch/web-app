@@ -12,7 +12,16 @@ import Heading from "@/components/ui/heading";
 export default function EnterNumbersPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  
+  // Get query parameters
   const question = searchParams.get("question") || "";
+  const mode = searchParams.get("mode") || "basic";
+  
+  // Deep Dive context parameters
+  const areaOfLife = searchParams.get("areaOfLife") || "";
+  const backgroundSituation = searchParams.get("backgroundSituation") || "";
+  const currentFeelings = searchParams.get("currentFeelings") || "";
+  const desiredOutcome = searchParams.get("desiredOutcome") || "";
 
   const [firstNumber, setFirstNumber] = useState("");
   const [secondNumber, setSecondNumber] = useState("");
@@ -59,9 +68,18 @@ export default function EnterNumbersPage() {
     const padNumber = (num: string) =>
       parseInt(num).toString().padStart(3, "0");
 
-    router.replace(
-      `/try-now/consulting?question=${encodeURIComponent(question)}&n1=${padNumber(firstNumber)}&n2=${padNumber(secondNumber)}&n3=${padNumber(thirdNumber)}`,
-    );
+    // Build base query string with required parameters
+    let queryString = `/try-now/consulting?question=${encodeURIComponent(question)}&n1=${padNumber(firstNumber)}&n2=${padNumber(secondNumber)}&n3=${padNumber(thirdNumber)}&mode=${mode}`;
+    
+    // Add Deep Dive context parameters if present
+    if (mode === "deep_dive") {
+      if (areaOfLife) queryString += `&areaOfLife=${encodeURIComponent(areaOfLife)}`;
+      if (backgroundSituation) queryString += `&backgroundSituation=${encodeURIComponent(backgroundSituation)}`;
+      if (currentFeelings) queryString += `&currentFeelings=${encodeURIComponent(currentFeelings)}`;
+      if (desiredOutcome) queryString += `&desiredOutcome=${encodeURIComponent(desiredOutcome)}`;
+    }
+    
+    router.replace(queryString);
   };
 
   return (
@@ -82,7 +100,7 @@ export default function EnterNumbersPage() {
           <div>
             <Label
               htmlFor="firstNumber"
-              className="text-gray-400 font-serif mb-2 block"
+              className="text-gray-300 font-serif mb-2 block"
             >
               First Number
             </Label>
@@ -100,7 +118,7 @@ export default function EnterNumbersPage() {
                   setFirstNumberError,
                 )
               }
-              className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-800 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
+              className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-900 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
             />
             {firstNumberError && (
               <p className="text-red-500 text-sm mt-2">{firstNumberError}</p>
@@ -110,7 +128,7 @@ export default function EnterNumbersPage() {
           <div>
             <Label
               htmlFor="secondNumber"
-              className="text-gray-400 font-serif mb-2 block"
+              className="text-gray-300 font-serif mb-2 block"
             >
               Second Number
             </Label>
@@ -128,7 +146,7 @@ export default function EnterNumbersPage() {
                   setSecondNumberError,
                 )
               }
-              className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-800 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
+              className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-900 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
             />
             {secondNumberError && (
               <p className="text-red-500 text-sm mt-2">{secondNumberError}</p>
@@ -138,7 +156,7 @@ export default function EnterNumbersPage() {
           <div>
             <Label
               htmlFor="thirdNumber"
-              className="text-gray-400 font-serif mb-2 block"
+              className="text-gray-300 font-serif mb-2 block"
             >
               Third Number
             </Label>
@@ -156,7 +174,7 @@ export default function EnterNumbersPage() {
                   setThirdNumberError,
                 )
               }
-              className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-800 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
+              className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-900 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
             />
             {thirdNumberError && (
               <p className="text-red-500 text-sm mt-2">{thirdNumberError}</p>

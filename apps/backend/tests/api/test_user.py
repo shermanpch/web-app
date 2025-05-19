@@ -25,6 +25,7 @@ class TestUser(BaseTest):
             "second_number": 456,
             "third_number": 789,
             "question": f"Test question {uuid.uuid4()}",
+            "mode": "basic",
             "language": "en",
         }
 
@@ -42,6 +43,7 @@ class TestUser(BaseTest):
             json={
                 "user_id": user_id,
                 "question": reading_data["question"],
+                "mode": reading_data["mode"],
                 "first_number": reading_data["first_number"],
                 "second_number": reading_data["second_number"],
                 "third_number": reading_data["third_number"],
@@ -121,10 +123,11 @@ class TestUser(BaseTest):
                     "id",
                     "user_id",
                     "question",
+                    "mode",
+                    "language",
                     "first_number",
                     "second_number",
                     "third_number",
-                    "language",
                     "created_at",
                 ],
             )
@@ -194,10 +197,11 @@ class TestUser(BaseTest):
                 "id",
                 "user_id",
                 "question",
+                "mode",
+                "language",
                 "first_number",
                 "second_number",
                 "third_number",
-                "language",
                 "created_at",
             ],
         )

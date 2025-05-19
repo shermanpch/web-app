@@ -58,7 +58,7 @@ async def get_user_readings_from_db(
         response = (
             await client.from_("user_readings")
             .select(
-                "id, user_id, question, first_number, second_number, third_number, language, prediction, clarifying_question, clarifying_answer, created_at"
+                "id, user_id, question, mode, language, first_number, second_number, third_number, prediction, clarifying_question, clarifying_answer, created_at"
             )
             .eq("user_id", str(user_id))
             .order("created_at", desc=True)  # Order by most recent first
@@ -223,7 +223,7 @@ async def get_reading_by_id(
         response = (
             await client.from_("user_readings")
             .select(
-                "id, user_id, question, first_number, second_number, third_number, language, prediction, clarifying_question, clarifying_answer, created_at"
+                "id, user_id, question, mode, language, first_number, second_number, third_number, prediction, clarifying_question, clarifying_answer, created_at"
             )
             .eq("id", str(reading_id))
             .eq("user_id", str(user_id))  # Ensure reading belongs to user

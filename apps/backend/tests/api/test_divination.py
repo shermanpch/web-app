@@ -157,21 +157,22 @@ class TestDivination(BaseTest):
 
         self.logger.info("I-Ching coordinates conversion test passed successfully!")
 
-    def test_iching_reading_authenticated(
+    def test_iching_reading_basic_mode_authenticated(
         self, authenticated_client: Tuple[TestClient, Optional[str]]
     ) -> None:
-        """Test generating a complete I Ching reading."""
+        """Test generating a complete I Ching reading in basic mode."""
         # ARRANGE
-        self.logger.info("Testing I-Ching reading generation")
+        self.logger.info("Testing I-Ching basic mode reading generation")
         client, user_id = authenticated_client
 
         # Test input data
         request_data = {
+            "question": "What path should I take in life?",
+            "mode": "basic",
+            "language": "en",
             "first_number": 123,
             "second_number": 456,
             "third_number": 789,
-            "question": "What path should I take in life?",
-            "language": "en",
         }
 
         # ACT - Make the API request
@@ -193,6 +194,7 @@ class TestDivination(BaseTest):
         assert_has_fields(
             reading_data,
             [
+                "mode",
                 "hexagram_name",
                 "pinyin",
                 "summary",
@@ -203,6 +205,14 @@ class TestDivination(BaseTest):
             ],
         )
 
+        # Verify mode is basic
+        assert reading_data["mode"] == "basic", "Expected mode to be 'basic'"
+
+        # Check that deep_dive_details is None or not present for basic mode
+        assert (
+            reading_data.get("deep_dive_details") is None
+        ), "deep_dive_details should be None for basic mode"
+
         # Check that line_change and result are properly structured
         assert_has_fields(reading_data["line_change"], ["line", "interpretation"])
         assert_has_fields(reading_data["result"], ["name", "pinyin", "interpretation"])
@@ -211,10 +221,11 @@ class TestDivination(BaseTest):
         # fmt:off
         self.logger.info("I-Ching Reading Results:")
         self.logger.info(f"  Question: {request_data.get('question', 'N/A')}")
+        self.logger.info(f"  Mode: {reading_data.get('mode', 'N/A')}")
+        self.logger.info(f"  Language: {request_data.get('language', 'N/A')}")
         self.logger.info(f"  First Number: {reading_data.get('first_number', 'N/A')}")
         self.logger.info(f"  Second Number: {reading_data.get('second_number', 'N/A')}")
         self.logger.info(f"  Third Number: {reading_data.get('third_number', 'N/A')}")
-        self.logger.info(f"  Language: {request_data.get('language', 'N/A')}")
         self.logger.info(f"  Hexagram Name: {reading_data.get('hexagram_name', 'N/A')}")
         self.logger.info(f"  Pinyin: {reading_data.get('pinyin', 'N/A')}")
         self.logger.info(f"  Summary: {reading_data.get('summary', 'N/A')}")
@@ -231,9 +242,133 @@ class TestDivination(BaseTest):
         self.logger.info(f"    Pinyin: {reading_data.get('result', {}).get('pinyin', 'N/A')}")
         self.logger.info(f"    Interpretation: {reading_data.get('result', {}).get('interpretation', '')[:50]}...")
         self.logger.info(f"  Advice: {reading_data.get('advice', '')[:100]}...")
+        
+        # Log deep dive details (should be None for basic mode)
+        deep_dive_details = reading_data.get("deep_dive_details")
+        self.logger.info(f"  Deep Dive Details: {'N/A' if deep_dive_details is None else deep_dive_details}")
         # fmt:on
 
-        self.logger.info("I-Ching reading test passed successfully!")
+        self.logger.info("I-Ching basic mode reading test passed successfully!")
+
+    def test_iching_reading_deep_dive_mode_authenticated(
+        self, authenticated_client: Tuple[TestClient, Optional[str]]
+    ) -> None:
+        """Test generating a complete I Ching reading in deep dive mode."""
+        self.logger.info("Testing I-Ching deep dive reading generation")
+        client, user_id = authenticated_client
+
+        request_data = {
+            "question": "How can I improve my career prospects?",
+            "mode": "deep_dive",
+            "language": "en",
+            "first_number": 234,
+            "second_number": 567,
+            "third_number": 890,
+            "deep_dive_context": {
+                "area_of_life": "Career",
+                "background_situation": "Feeling stuck in my current role.",
+                "current_feelings": ["Anxious", "Hopeful"],
+                "desired_outcome": "Clarity on next steps",
+            },
+        }
+
+        iching_response = client.post(
+            "/api/divination/iching-reading",
+            json=request_data,
+        )
+
+        assert (
+            iching_response.status_code == 200
+        ), f"I-Ching deep dive reading retrieval failed: {iching_response.text}"
+
+        reading_data = iching_response.json()
+        assert isinstance(reading_data, dict), "Response should be a JSON object"
+
+        # Assert basic fields are present
+        assert_has_fields(
+            reading_data,
+            [
+                "mode",
+                "hexagram_name",
+                "pinyin",
+                "summary",
+                "interpretation",
+                "line_change",
+                "result",
+                "advice",
+            ],
+        )
+        assert reading_data["mode"] == "deep_dive"
+
+        # Assert deep_dive_details is present and structured correctly
+        assert (
+            "deep_dive_details" in reading_data
+        ), "deep_dive_details should be present for deep_dive mode"
+        deep_dive_details = reading_data["deep_dive_details"]
+        assert deep_dive_details is not None, "deep_dive_details should not be None"
+
+        assert_has_fields(
+            deep_dive_details,
+            [
+                "expanded_primary_interpretation",
+                "contextual_changing_line_interpretation",
+                "expanded_transformed_interpretation",
+                "thematic_connections",
+                "actionable_insights_and_reflections",
+                # "potential_pitfalls", # Optional
+                # "key_strengths", # Optional
+            ],
+        )
+        assert isinstance(deep_dive_details["thematic_connections"], list)
+
+        # Log the reading data for inspection
+        # fmt:off
+        self.logger.info("I-Ching Deep Dive Reading Results:")
+        self.logger.info(f"  Question: {request_data.get('question', 'N/A')}")
+        self.logger.info(f"  Mode: {reading_data.get('mode', 'N/A')}")
+        self.logger.info(f"  Language: {request_data.get('language', 'N/A')}")
+        self.logger.info(f"  First Number: {reading_data.get('first_number', 'N/A')}")
+        self.logger.info(f"  Second Number: {reading_data.get('second_number', 'N/A')}")
+        self.logger.info(f"  Third Number: {reading_data.get('third_number', 'N/A')}")
+        self.logger.info(f"  Hexagram Name: {reading_data.get('hexagram_name', 'N/A')}")
+        self.logger.info(f"  Pinyin: {reading_data.get('pinyin', 'N/A')}")
+        self.logger.info(f"  Summary: {reading_data.get('summary', 'N/A')}")
+        self.logger.info(f"  Interpretation: {reading_data.get('interpretation', 'N/A')[:100]}...")
+
+        # Format line_change as separate lines
+        self.logger.info("  Line Change:")
+        self.logger.info(f"    Line: {reading_data.get('line_change', {}).get('line', 'N/A')}")
+        self.logger.info(f"    Interpretation: {reading_data.get('line_change', {}).get('interpretation', '')[:50]}...")
+
+        # Format result as separate lines
+        self.logger.info("  Result Hexagram:")
+        self.logger.info(f"    Name: {reading_data.get('result', {}).get('name', 'N/A')}")
+        self.logger.info(f"    Pinyin: {reading_data.get('result', {}).get('pinyin', 'N/A')}")
+        self.logger.info(f"    Interpretation: {reading_data.get('result', {}).get('interpretation', '')[:50]}...")
+        self.logger.info(f"  Advice: {reading_data.get('advice', '')[:100]}...")
+        
+        # Log deep dive details
+        self.logger.info("  Deep Dive Details:")
+        if deep_dive_details:
+            self.logger.info(f"    Expanded Primary Interpretation: {deep_dive_details.get('expanded_primary_interpretation', 'N/A')[:100]}...")
+            self.logger.info(f"    Contextual Changing Line Interpretation: {deep_dive_details.get('contextual_changing_line_interpretation', 'N/A')[:100]}...")
+            self.logger.info(f"    Expanded Transformed Interpretation: {deep_dive_details.get('expanded_transformed_interpretation', 'N/A')[:100]}...")
+            
+            thematic_connections = deep_dive_details.get('thematic_connections', [])
+            self.logger.info(f"    Thematic Connections: {', '.join(thematic_connections) if thematic_connections else 'N/A'}")
+            
+            self.logger.info(f"    Actionable Insights and Reflections: {deep_dive_details.get('actionable_insights_and_reflections', 'N/A')[:100]}...")
+            
+            potential_pitfalls = deep_dive_details.get('potential_pitfalls')
+            self.logger.info(f"    Potential Pitfalls: {'N/A' if potential_pitfalls is None else potential_pitfalls[:100]}")
+            
+            key_strengths = deep_dive_details.get('key_strengths')
+            self.logger.info(f"    Key Strengths: {'N/A' if key_strengths is None else key_strengths[:100]}")
+        else:
+            self.logger.info(f"    {'N/A'}")
+        # fmt:on
+
+        self.logger.info("I-Ching deep dive reading test passed successfully!")
 
     def test_save_iching_reading(
         self, authenticated_client: Tuple[TestClient, Optional[str]]
@@ -245,11 +380,12 @@ class TestDivination(BaseTest):
 
         # Create a reading first
         reading_data = {
+            "question": "What should I focus on today?",
+            "mode": "basic",
+            "language": "en",
             "first_number": 123,
             "second_number": 456,
             "third_number": 789,
-            "question": "What should I focus on today?",
-            "language": "en",
         }
 
         # Get a reading first
@@ -278,10 +414,11 @@ class TestDivination(BaseTest):
             json={
                 "user_id": user_id,
                 "question": reading_data.get("question", ""),
+                "mode": reading_data.get("mode", "basic"),
+                "language": reading_data.get("language", "en"),
                 "first_number": reading_data.get("first_number", 0),
                 "second_number": reading_data.get("second_number", 0),
                 "third_number": reading_data.get("third_number", 0),
-                "language": reading_data.get("language", "en"),
                 "prediction": reading_data,
             },
         )
@@ -330,11 +467,18 @@ class TestDivination(BaseTest):
 
         # Create and save a reading first
         reading_data = {
-            "first_number": 123,
-            "second_number": 456,
-            "third_number": 789,
-            "question": "What should I focus on today?",
+            "question": "How can I improve my career prospects?",
+            "mode": "deep_dive",
             "language": "en",
+            "first_number": 234,
+            "second_number": 567,
+            "third_number": 890,
+            "deep_dive_context": {
+                "area_of_life": "Career",
+                "background_situation": "Feeling stuck in my current role.",
+                "current_feelings": ["Anxious", "Hopeful"],
+                "desired_outcome": "Clarity on next steps",
+            },
         }
 
         # Step 1: Get a reading
@@ -363,10 +507,11 @@ class TestDivination(BaseTest):
             json={
                 "user_id": user_id,
                 "question": reading_data.get("question", ""),
+                "mode": reading_data.get("mode", "basic"),
+                "language": reading_data.get("language", "en"),
                 "first_number": reading_data.get("first_number", 0),
                 "second_number": reading_data.get("second_number", 0),
                 "third_number": reading_data.get("third_number", 0),
-                "language": reading_data.get("language", "en"),
                 "prediction": reading_data,
                 "clarifying_question": None,
                 "clarifying_answer": None,
@@ -395,10 +540,11 @@ class TestDivination(BaseTest):
                 "id": reading_id,
                 "user_id": user_id,
                 "question": reading_data.get("question", ""),
+                "mode": reading_data.get("mode", "basic"),
+                "language": reading_data.get("language", "en"),
                 "first_number": reading_data.get("first_number", 0),
                 "second_number": reading_data.get("second_number", 0),
                 "third_number": reading_data.get("third_number", 0),
-                "language": reading_data.get("language", "en"),
                 "prediction": reading_data,
                 "clarifying_question": test_clarifying_question,
             },
@@ -446,10 +592,11 @@ class TestDivination(BaseTest):
         self.logger.info(f"Reading ID: {update_data.get('id', 'N/A')}")
         self.logger.info(f"User ID: {update_data.get('user_id', 'N/A')}")
         self.logger.info(f"Question: {update_data.get('question', 'N/A')}")
+        self.logger.info(f"Mode: {update_data.get('mode', 'N/A')}")
+        self.logger.info(f"Language: {update_data.get('language', 'N/A')}")
         self.logger.info(f"First Number: {update_data.get('first_number', 'N/A')}")
         self.logger.info(f"Second Number: {update_data.get('second_number', 'N/A')}")
         self.logger.info(f"Third Number: {update_data.get('third_number', 'N/A')}")
-        self.logger.info(f"Language: {update_data.get('language', 'N/A')}")
         
         # Log prediction details
         prediction = update_data.get('prediction', {})
@@ -469,6 +616,27 @@ class TestDivination(BaseTest):
         self.logger.info(f"  Pinyin: {prediction.get('result', {}).get('pinyin', 'N/A')}")
         self.logger.info(f"  Interpretation: {prediction.get('result', {}).get('interpretation', '')[:50]}...")
         self.logger.info(f"Advice: {prediction.get('advice', '')[:100]}...")
+        
+        # Log deep dive details
+        self.logger.info("Deep Dive Details:")
+        deep_dive_details = prediction.get('deep_dive_details')
+        if deep_dive_details:
+            self.logger.info(f"  Expanded Primary Interpretation: {deep_dive_details.get('expanded_primary_interpretation', 'N/A')[:100]}...")
+            self.logger.info(f"  Contextual Changing Line Interpretation: {deep_dive_details.get('contextual_changing_line_interpretation', 'N/A')[:100]}...")
+            self.logger.info(f"  Expanded Transformed Interpretation: {deep_dive_details.get('expanded_transformed_interpretation', 'N/A')[:100]}...")
+            
+            thematic_connections = deep_dive_details.get('thematic_connections', [])
+            self.logger.info(f"  Thematic Connections: {', '.join(thematic_connections) if thematic_connections else 'N/A'}")
+            
+            self.logger.info(f"  Actionable Insights and Reflections: {deep_dive_details.get('actionable_insights_and_reflections', 'N/A')[:100]}...")
+            
+            potential_pitfalls = deep_dive_details.get('potential_pitfalls')
+            self.logger.info(f"  Potential Pitfalls: {'N/A' if potential_pitfalls is None else potential_pitfalls[:100]}")
+            
+            key_strengths = deep_dive_details.get('key_strengths')
+            self.logger.info(f"  Key Strengths: {'N/A' if key_strengths is None else key_strengths[:100]}")
+        else:
+            self.logger.info(f"  {'N/A'}")
         
         # Log clarification details
         self.logger.info("Clarification Details:")

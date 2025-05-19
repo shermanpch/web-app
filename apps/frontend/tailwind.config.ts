@@ -12,11 +12,20 @@ const config: Config = {
         serif: ["Georgia", "Times New Roman", "serif"],
       },
       colors: {
-        "brand-input-bg": "#D8CDBA",
-        "brand-button-bg": "#5A7D60",
-        "brand-button-hover": "#4A6D50",
-        "brand-input-text": "#6b7280",
-        "brand-hexagram": "#B8860B",
+        // Primary Action Colors
+        "brand-button-bg": "#4A6D50",      // Primary button background
+        "brand-button-hover": "#3E5A44",   // Primary button hover state
+        
+        // Secondary Action/Accent Colors
+        "brand-accent": "#B88A6A",         // Secondary action/accent color
+        "brand-accent-hover": "#a87a5a",   // Secondary action/accent hover
+        
+        // Input Field Colors
+        "brand-input-bg": "#D8CDBA",       // Input standard background
+        "brand-input-text": "#505762",     // Input text color (darker for better contrast)
+        
+        // Other brand colors
+        "brand-hexagram": "#B8860B",       // Hexagram color
       },
     },
   },

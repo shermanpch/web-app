@@ -158,10 +158,11 @@ async def save_iching_reading_to_db(
         reading_data = {
             "user_id": request.user_id,
             "question": request.question,
+            "mode": request.mode,
+            "language": request.language,
             "first_number": request.first_number,
             "second_number": request.second_number,
             "third_number": request.third_number,
-            "language": request.language,
         }
 
         # Add optional fields if provided

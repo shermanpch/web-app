@@ -117,12 +117,12 @@ export default function ProfilePage() {
         ) : (
           <>
             {/* Account Info Section */}
-            <div className="bg-[#EDE6D6] rounded-2xl p-8 shadow-lg w-full text-gray-800 mt-8">
-              <h2 className="text-2xl font-serif text-gray-800 mb-6">
+            <div className="bg-[#EDE6D6] rounded-2xl p-8 shadow-lg w-full text-gray-900 mt-8">
+              <h2 className="text-2xl font-serif text-gray-900 mb-6">
                 Account Info
               </h2>
 
-              <div className="space-y-2 text-gray-800">
+              <div className="space-y-2 text-gray-900">
                 <p>
                   <span className="font-medium">User ID:</span>{" "}
                   {data?.profile.id || "-"}
@@ -145,8 +145,8 @@ export default function ProfilePage() {
             </div>
 
             {/* Usage Section */}
-            <div className="bg-[#EDE6D6] rounded-2xl p-8 shadow-lg w-full text-gray-800 mt-8">
-              <h2 className="text-2xl font-serif text-gray-800 mb-6">Usage</h2>
+            <div className="bg-[#EDE6D6] rounded-2xl p-8 shadow-lg w-full text-gray-900 mt-8">
+              <h2 className="text-2xl font-serif text-gray-900 mb-6">Usage</h2>
 
               <div className="space-y-6">
                 {data?.quotas.map((quota) => {
@@ -166,7 +166,7 @@ export default function ProfilePage() {
                   return (
                     <div
                       key={quota.feature_id}
-                      className="space-y-4 text-gray-800 border-b border-gray-300 pb-6 last:border-0"
+                      className="space-y-4 text-gray-900 border-b border-gray-300 pb-6 last:border-0"
                     >
                       <div className="relative">
                         <h3 className="text-lg font-medium inline-flex items-center">
@@ -174,7 +174,7 @@ export default function ProfilePage() {
 
                           {isPremiumDivination && (
                             <span
-                              className="ml-2 cursor-help text-gray-500"
+                              className="ml-2 cursor-help text-gray-700"
                               onMouseEnter={() => setShowTooltip(featureIdStr)}
                               onMouseLeave={() => setShowTooltip(null)}
                             >
@@ -197,8 +197,7 @@ export default function ProfilePage() {
                         {showTooltip === featureIdStr &&
                           isPremiumDivination && (
                             <div className="absolute z-10 bg-gray-900 text-white text-sm p-3 rounded shadow-lg max-w-xs mt-1">
-                              Premium Divination allows you to ask clarification
-                              questions on top of the basic divination.
+                              Premium Divination allows you to access Deep Dive readings for more detailed and personalized interpretations.
                             </div>
                           )}
                       </div>

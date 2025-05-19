@@ -48,10 +48,11 @@ class UserReadingResponse(BaseModel):
     id: UUID
     user_id: UUID
     question: str
+    mode: str
+    language: str
     first_number: int
     second_number: int
     third_number: int
-    language: str
     prediction: Optional[dict] = None
     clarifying_question: Optional[str] = None
     clarifying_answer: Optional[str] = None

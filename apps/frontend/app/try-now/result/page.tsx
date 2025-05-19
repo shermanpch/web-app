@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import PageLayout from "@/components/layout/PageLayout";
@@ -13,7 +13,6 @@ import { userApi } from "@/lib/api/endpoints/user";
 import type { DivinationResponse } from "@/types/divination";
 import ContentContainer from "@/components/layout/ContentContainer";
 import Heading from "@/components/ui/heading";
-import Link from "next/link";
 import AnimatedHexagram from "@/components/divination/AnimatedHexagram";
 import {
   calculateCoordsFromNumbers,
@@ -49,26 +48,13 @@ export default function ResultPage() {
   const [clarificationInput, setClarificationInput] = useState("");
   const [isMutationInProgress, setIsMutationInProgress] = useState(false);
 
-  // Fetch user profile status for quota check
-  const { data: profileStatus } = useQuery({
+  // Fetch user profile status for quota check - used for invalidation only
+  useQuery({
     queryKey: ["userProfileStatus"],
     queryFn: userApi.getUserProfileStatus,
     staleTime: 1000 * 60, // Reduce staleTime to 1 minute
     refetchOnMount: true, // Always refetch when component mounts
   });
-
-  // Determine if user can submit clarification
-  const canClarify = useMemo(() => {
-    if (!profileStatus?.quotas) return false;
-    const premiumQuota = profileStatus.quotas.find(
-      (q) => q.feature_name === "premium_divination",
-    );
-    return (
-      premiumQuota &&
-      (premiumQuota.limit === null ||
-        (premiumQuota.remaining !== null && premiumQuota.remaining > 0))
-    );
-  }, [profileStatus]);
 
   // Fetch reading data
   const {
@@ -103,10 +89,11 @@ export default function ResultPage() {
         id: reading.id,
         user_id: user.id,
         question: reading.question,
+        mode: reading.mode,
+        language: reading.language,
         first_number: reading.first_number,
         second_number: reading.second_number,
         third_number: reading.third_number,
-        language: reading.language,
         prediction: reading.prediction!,
         clarifying_question: clarificationInput,
       });
@@ -312,6 +299,100 @@ export default function ResultPage() {
                   </p>
                 </motion.div>
 
+                {/* Deep Dive Content */}
+                {(reading.mode === "deep_dive" || prediction.deep_dive_details) && (
+                  <>
+                    <hr className="my-6 border-amber-600/30" />
+                    
+                    <motion.div variants={itemVariants}>
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 tracking-wide uppercase">
+                        Deeper Insights: Primary Hexagram
+                      </h3>
+                      <p className="text-justify text-gray-700 leading-relaxed">
+                        {prediction.deep_dive_details?.expanded_primary_interpretation}
+                      </p>
+                    </motion.div>
+                    
+                    <hr className="my-6 border-amber-600/30" />
+                    
+                    <motion.div variants={itemVariants}>
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 tracking-wide uppercase">
+                        Significance of the Changing Line
+                      </h3>
+                      <p className="text-justify text-gray-700 leading-relaxed">
+                        {prediction.deep_dive_details?.contextual_changing_line_interpretation}
+                      </p>
+                    </motion.div>
+                    
+                    <hr className="my-6 border-amber-600/30" />
+                    
+                    <motion.div variants={itemVariants}>
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 tracking-wide uppercase">
+                        Deeper Insights: Transformed Hexagram
+                      </h3>
+                      <p className="text-justify text-gray-700 leading-relaxed">
+                        {prediction.deep_dive_details?.expanded_transformed_interpretation}
+                      </p>
+                    </motion.div>
+                    
+                    <hr className="my-6 border-amber-600/30" />
+                    
+                    <motion.div variants={itemVariants}>
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 tracking-wide uppercase">
+                        Key Themes & Lessons
+                      </h3>
+                      <ul className="list-disc list-inside text-gray-700 leading-relaxed pl-2 space-y-2">
+                        {prediction.deep_dive_details?.thematic_connections.map((theme, index) => (
+                          <li key={index} className="text-justify">
+                            {theme}
+                          </li>
+                        ))}
+                      </ul>
+                    </motion.div>
+                    
+                    <hr className="my-6 border-amber-600/30" />
+                    
+                    <motion.div variants={itemVariants}>
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 tracking-wide uppercase">
+                        Tailored Guidance & Reflections
+                      </h3>
+                      <p className="text-justify text-gray-700 leading-relaxed">
+                        {prediction.deep_dive_details?.actionable_insights_and_reflections}
+                      </p>
+                    </motion.div>
+                    
+                    {prediction.deep_dive_details?.potential_pitfalls && (
+                      <>
+                        <hr className="my-6 border-amber-600/30" />
+                        
+                        <motion.div variants={itemVariants}>
+                          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 tracking-wide uppercase">
+                            Potential Pitfalls to Consider
+                          </h3>
+                          <p className="text-justify text-gray-700 leading-relaxed">
+                            {prediction.deep_dive_details.potential_pitfalls}
+                          </p>
+                        </motion.div>
+                      </>
+                    )}
+                    
+                    {prediction.deep_dive_details?.key_strengths && (
+                      <>
+                        <hr className="my-6 border-amber-600/30" />
+                        
+                        <motion.div variants={itemVariants}>
+                          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 tracking-wide uppercase">
+                            Key Strengths to Leverage
+                          </h3>
+                          <p className="text-justify text-gray-700 leading-relaxed">
+                            {prediction.deep_dive_details.key_strengths}
+                          </p>
+                        </motion.div>
+                      </>
+                    )}
+                  </>
+                )}
+
                 {/* Clarification Section */}
                 {reading.clarifying_answer ? (
                   <motion.div variants={itemVariants}>
@@ -365,7 +446,7 @@ export default function ResultPage() {
                       <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 tracking-wide uppercase">
                         Need Clarification?
                       </h3>
-                      {canClarify ? (
+                      {!reading?.clarifying_answer && !clarificationMutation.isPending && !isMutationInProgress && (
                         <>
                           {isMutationInProgress ? (
                             <div className="text-center py-8">
@@ -403,18 +484,6 @@ export default function ResultPage() {
                             </>
                           )}
                         </>
-                      ) : (
-                        <div className="text-center">
-                          <p className="text-gray-700 mb-4 leading-relaxed">
-                            You need premium access to ask clarification
-                            questions.
-                          </p>
-                          <Link href="/pricing">
-                            <Button className="bg-brand-button-bg hover:bg-brand-button-hover text-white px-6 py-2 rounded-full font-semibold">
-                              Upgrade to Premium
-                            </Button>
-                          </Link>
-                        </div>
                       )}
                     </div>
                   </motion.div>

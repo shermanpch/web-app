@@ -123,14 +123,14 @@ async def get_iching_reading(
     Generate a complete I Ching reading based on input numbers and question.
 
     This endpoint orchestrates the full I Ching reading process:
-    1. Checks if user has quota available for basic divination
+    1. Checks if user has quota available for the requested mode (basic or premium)
     2. Converts input numbers to coordinates
     3. Retrieves the appropriate hexagram text
     4. Generates the reading interpretation using LLM
     5. Logs the usage for quota tracking
 
     Args:
-        request_data: Request model containing numbers, question, and preferences
+        request_data: Request model containing numbers, question, mode, and preferences
         current_user: The authenticated user data obtained from the token
         session: Authenticated session with tokens
 
@@ -146,14 +146,21 @@ async def get_iching_reading(
             session.access_token, session.refresh_token
         )
 
+        # Determine feature name based on the reading mode
+        feature_name = (
+            "premium_divination"
+            if request_data.mode == "deep_dive"
+            else "basic_divination"
+        )
+
         # Check quota before proceeding
-        await check_quota(current_user.id, "basic_divination", client)
+        await check_quota(current_user.id, feature_name, client)
 
         # Get the reading
         result = await get_iching_reading_from_oracle(request_data, client)
 
         # Log usage after successful reading
-        await log_usage(current_user.id, "basic_divination", client)
+        await log_usage(current_user.id, feature_name, client)
 
         return result
 
@@ -235,16 +242,8 @@ async def update_iching_reading(
             session.access_token, session.refresh_token
         )
 
-        # Check quota before proceeding with clarifying question
-        if request_data.clarifying_question:
-            await check_quota(current_user.id, "premium_divination", client)
-
         # Update the reading
         result = await update_iching_reading_in_db(request_data, client)
-
-        # Log usage if clarifying question was added
-        if request_data.clarifying_question:
-            await log_usage(current_user.id, "premium_divination", client)
 
         return result
 

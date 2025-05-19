@@ -48,6 +48,7 @@ export default function ConsultingPage() {
       const n1 = searchParams.get("n1");
       const n2 = searchParams.get("n2");
       const n3 = searchParams.get("n3");
+      const modeFromParams = searchParams.get("mode") || "basic";
 
       // Validate parameters
       if (!question || !n1 || !n2 || !n3) {
@@ -62,6 +63,13 @@ export default function ConsultingPage() {
           second_number: parseInt(n2),
           third_number: parseInt(n3),
           language: "English", // Default to English
+          mode: modeFromParams,
+          deep_dive_context: modeFromParams === "deep_dive" ? {
+            area_of_life: searchParams.get("areaOfLife") || undefined,
+            background_situation: searchParams.get("backgroundSituation") || undefined,
+            current_feelings: searchParams.get("currentFeelings")?.split(',').map(f => f.trim()).filter(f => f.length > 0) || undefined,
+            desired_outcome: searchParams.get("desiredOutcome") || undefined,
+          } : undefined,
         });
 
         return {
@@ -71,6 +79,7 @@ export default function ConsultingPage() {
             n1: parseInt(n1),
             n2: parseInt(n2),
             n3: parseInt(n3),
+            mode: modeFromParams,
           },
         };
       } catch (error) {
@@ -92,6 +101,7 @@ export default function ConsultingPage() {
             second_number: params.n2,
             third_number: params.n3,
             language: "English",
+            mode: params.mode,
             prediction: readingData,
           });
 

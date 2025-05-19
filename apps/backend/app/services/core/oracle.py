@@ -23,12 +23,14 @@ logger = logging.getLogger(__name__)
 class Oracle:
     # fmt:off
     SYSTEM_PROMPT_PATH = os.path.join(os.path.dirname(__file__), "system_prompt.txt")
+    DEEP_DIVE_SYSTEM_PROMPT_PATH = os.path.join(os.path.dirname(__file__), "deep_dive_system_prompt.txt")
     CLARIFICATION_PROMPT_PATH = os.path.join(os.path.dirname(__file__), "clarification_prompt.txt")
     # fmt:on
 
     def __init__(self):
         """Initialize the Oracle instance."""
         self.system_prompt = self._load_prompt(self.SYSTEM_PROMPT_PATH)
+        self.deep_dive_prompt = self._load_prompt(self.DEEP_DIVE_SYSTEM_PROMPT_PATH)
         self.clarification_prompt = self._load_prompt(self.CLARIFICATION_PROMPT_PATH)
 
         # Initialize LangChain ChatOpenAI model
@@ -99,13 +101,14 @@ class Oracle:
         text: IChingTextResponse,
     ) -> IChingReadingResponse:
         """
-        Generate an initial I Ching reading based on the provided text and question.
+        Generate an I Ching reading based on the provided text and question.
 
         This method combines the I Ching text associated with the parent and child coordinates
         with the user's question to generate a complete reading through the LLM.
+        It supports both basic and deep dive reading modes.
 
         Args:
-            reading: IChingReadingRequest containing the user's question and input numbers
+            reading: IChingReadingRequest containing the user's question, input numbers, and mode
             text: IChingTextResponse containing the parent and child hexagram texts
 
         Returns:
@@ -114,15 +117,29 @@ class Oracle:
         parent_markdown = self._convert_dict_to_markdown(text.parent_json)
         child_markdown = self._convert_dict_to_markdown(text.child_json)
 
-        system_prompt_with_text = self.system_prompt.format(
-            parent_context_md=parent_markdown,
-            child_context_md=child_markdown,
-            language=reading.language,
-        )
+        prompt_format_args = {
+            "parent_context_md": parent_markdown,
+            "child_context_md": child_markdown,
+            "language": reading.language,
+        }
+
+        # Select the appropriate system prompt based on the reading mode
+        if reading.mode == "deep_dive" and reading.deep_dive_context:
+            # Format deep dive context for inclusion in the prompt
+            deep_dive_context_md = self._convert_dict_to_markdown(
+                reading.deep_dive_context.model_dump(exclude_none=True)
+            )
+            system_prompt_template = self.deep_dive_prompt
+            prompt_format_args["deep_dive_user_context_md"] = deep_dive_context_md
+        else:
+            # Use basic prompt for basic mode or if deep dive context is missing
+            system_prompt_template = self.system_prompt
+
+        system_prompt_with_text = system_prompt_template.format(**prompt_format_args)
 
         try:
             logger.info(
-                f"Sending initial reading request with model {settings.OPENAI_MODEL} for question: {reading.question[:50]}..."
+                f"Sending {reading.mode} reading request with model {settings.OPENAI_MODEL} for question: {reading.question[:50]}..."
             )
 
             # Create structured LLM with output parser
@@ -137,18 +154,20 @@ class Oracle:
             chain = prompt | structured_llm
             prediction_data = await chain.ainvoke({"question": reading.question})
 
-            logger.info(f"Received structured prediction data")
+            logger.info(f"Received structured prediction data for {reading.mode} mode")
 
             # Construct the final response object
-            final_response = IChingReadingResponse(
+            final_response_data = {
                 **prediction_data.model_dump(),
-                first_number=reading.first_number,
-                second_number=reading.second_number,
-                third_number=reading.third_number,
-                question=reading.question,
-                language=reading.language,
-            )
+                "first_number": reading.first_number,
+                "second_number": reading.second_number,
+                "third_number": reading.third_number,
+                "question": reading.question,
+                "language": reading.language,
+                "mode": reading.mode,
+            }
 
+            final_response = IChingReadingResponse(**final_response_data)
             return final_response
 
         except Exception as e:
@@ -248,90 +267,51 @@ class Oracle:
             indent_level: Current indentation level (0 for top level)
 
         Returns:
-            List of Markdown-formatted strings
+            List[str]: A list of formatted Markdown strings representing the data
         """
         lines = []
-        prefix = "  " * indent_level  # Two spaces per indent level
+        indent = "  " * indent_level
 
         if isinstance(data, dict):
             for key, value in data.items():
-                formatted_key = key.replace("_", " ").title()
-                if isinstance(value, dict) or isinstance(value, list):
-                    lines.append(f"{prefix}- **{formatted_key}:**")
+                # Format the key as a header or label
+                key_str = str(key).replace("_", " ").title()
+
+                if isinstance(value, (dict, list)):
+                    lines.append(f"{indent}**{key_str}**:")
                     lines.extend(
                         self._format_nested_dict_to_markdown(value, indent_level + 1)
                     )
-                elif isinstance(value, str):
-                    # For multiline strings, indent subsequent lines appropriately
-                    str_lines = value.split("\n")
-                    lines.append(f"{prefix}- **{formatted_key}:** {str_lines[0]}")
-                    for i in range(1, len(str_lines)):
-                        lines.append(
-                            f"{prefix}  {str_lines[i]}"
-                        )  # Indent continued lines
-                elif value is None:
-                    lines.append(f"{prefix}- **{formatted_key}:** N/A")
                 else:
-                    lines.append(f"{prefix}- **{formatted_key}:** {str(value)}")
+                    if value is not None:
+                        lines.append(f"{indent}**{key_str}**: {value}")
+
         elif isinstance(data, list):
-            for i, item in enumerate(data):
-                lines.append(f"{prefix}- Item {i+1}:")
-                lines.extend(
-                    self._format_nested_dict_to_markdown(item, indent_level + 1)
-                )
-        elif isinstance(data, str):
-            str_lines = data.split("\n")
-            # If called with a string directly (e.g. from a list of strings), prefix it directly
-            lines.append(f"{prefix}{str_lines[0]}")
-            for i in range(1, len(str_lines)):
-                lines.append(f"{prefix}  {str_lines[i]}")
-        elif data is None:
-            lines.append(f"{prefix}N/A")
+            for item in data:
+                if isinstance(item, (dict, list)):
+                    lines.extend(
+                        self._format_nested_dict_to_markdown(item, indent_level)
+                    )
+                    lines.append("")  # Add a blank line between list items
+                else:
+                    lines.append(f"{indent}- {item}")
         else:
-            lines.append(f"{prefix}{str(data)}")
+            lines.append(f"{indent}{data}")
 
         return lines
 
     def _convert_dict_to_markdown(self, data_dict: Optional[Dict[str, Any]]) -> str:
         """
-        Converts a dictionary to a well-formatted Markdown string.
+        Convert a dictionary to a Markdown formatted string.
 
         Args:
-            data_dict: The dictionary to convert
+            data_dict: The dictionary to convert. Can be None.
 
         Returns:
-            Markdown-formatted string representation of the dictionary
+            str: A Markdown formatted string representation of the dictionary
         """
         if not data_dict:
-            return "No data provided for this section."
+            return "No data available"
 
-        markdown_sections = []
-        for top_key, top_value in data_dict.items():
-            formatted_top_key = top_key.replace("_", " ").title()
-            markdown_sections.append(f"### {formatted_top_key}")
-
-            if isinstance(top_value, dict):
-                # Indent level is 0 since _format_nested_dict_to_markdown handles its own indentation
-                markdown_sections.extend(
-                    self._format_nested_dict_to_markdown(top_value, indent_level=0)
-                )
-            elif isinstance(top_value, str):
-                str_lines = top_value.split("\n")
-                # For a simple string value directly under an H3, just print it.
-                for i, line_part in enumerate(str_lines):
-                    if i == 0:
-                        markdown_sections.append(line_part)
-                    else:
-                        markdown_sections.append(
-                            f"  {line_part}"
-                        )  # Basic indent for continued lines
-            elif top_value is None:
-                markdown_sections.append("N/A")
-            else:  # For lists or other simple types directly under top_key
-                markdown_sections.extend(
-                    self._format_nested_dict_to_markdown(top_value, indent_level=0)
-                )
-
-            markdown_sections.append("")
-
-        return "\n".join(markdown_sections).strip()
+        lines = self._format_nested_dict_to_markdown(data_dict)
+        return "\n".join(lines)
