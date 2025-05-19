@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { User, Settings, LogOut, History, Menu, X } from "lucide-react";
 import { authApi } from "@/lib/api/endpoints/auth";
@@ -25,6 +25,7 @@ export default function NavigationBar({
   user: initialUser,
 }: NavigationBarProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const queryClient = useQueryClient();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -82,6 +83,11 @@ export default function NavigationBar({
     { href: "/how-it-works", label: "How It Works" },
     { href: "/pricing", label: "Pricing" },
   ];
+
+  // If the current path is /try-now/consulting, don't render the navigation bar
+  if (pathname === "/try-now/consulting") {
+    return null;
+  }
 
   return (
     <nav className="fixed top-0 left-0 w-full z-50">

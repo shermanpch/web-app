@@ -2,11 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import PageLayout from "@/components/layout/PageLayout";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { divinationApi } from "@/lib/api/endpoints/divination";
 import { authApi } from "@/lib/api/endpoints/auth";
-import { motion, AnimatePresence, useMotionValue, useTransform, animate } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, animate } from "framer-motion";
 import Heading from "@/components/ui/heading";
 import { calculateCoordsFromNumbers, getInitialHexagramLines } from "@/lib/divinationUtils";
 
@@ -144,45 +143,43 @@ export default function ConsultingPage() {
   }, [readingMutation, hasMutationStarted]);
 
   return (
-    <PageLayout>
-      <div className="flex min-h-screen bg-[#0A0D0A] absolute inset-0">
-        <div className="flex flex-col items-center justify-center text-center w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10">
-          {errorMessage ? (
-            <div className="text-red-500 mb-4">{errorMessage}</div>
-          ) : (
-            <>
-              <Heading className="mb-8 sm:mb-10 md:mb-12 text-white">
-                Consulting the Oracle...
-              </Heading>
+    <div className="flex min-h-screen bg-[#0A0D0A] absolute inset-0">
+      <div className="flex flex-col items-center justify-center text-center w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10">
+        {errorMessage ? (
+          <div className="text-red-500 mb-4">{errorMessage}</div>
+        ) : (
+          <>
+            <Heading className="mb-8 sm:mb-10 md:mb-12 text-white">
+              Consulting the Oracle...
+            </Heading>
 
-              {/* User's Question Display */}
-              <p className="text-xl text-gray-300 font-serif text-center mt-2 mb-12">
-                Seeking wisdom for: "{question || 'your query'}"
-              </p>
+            {/* User's Question Display */}
+            <p className="text-xl text-gray-300 font-serif text-center mt-2 mb-12">
+              Seeking wisdom for: &quot;{question || 'your query'}&quot;
+            </p>
 
-              {/* Abstract Loading Animation */}
-              <div className="w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 mb-12 relative">
-                <AbstractLoadingAnimation n1={n1} n2={n2} n3={n3} />
-              </div>
+            {/* Abstract Loading Animation */}
+            <div className="w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 mb-12 relative">
+              <AbstractLoadingAnimation n1={n1} n2={n2} n3={n3} />
+            </div>
 
-              {/* Cycling Loading Messages */}
-              <AnimatePresence mode="wait">
-                <motion.p
-                  key={currentMessageIndex}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.5 }}
-                  className="text-lg sm:text-xl text-gray-300 font-serif mt-4"
-                >
-                  {loadingMessages[currentMessageIndex]}
-                </motion.p>
-              </AnimatePresence>
-            </>
-          )}
-        </div>
+            {/* Cycling Loading Messages */}
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={currentMessageIndex}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.5 }}
+                className="text-lg sm:text-xl text-gray-300 font-serif mt-4"
+              >
+                {loadingMessages[currentMessageIndex]}
+              </motion.p>
+            </AnimatePresence>
+          </>
+        )}
       </div>
-    </PageLayout>
+    </div>
   );
 }
 
@@ -206,7 +203,7 @@ const AbstractLoadingAnimation = ({ n1, n2, n3 }: AbstractLoadingAnimationProps)
   useEffect(() => {
     const controls = animate(t, 1, { duration: 12, repeat: Infinity, ease: "linear" });
     return controls.stop; // Cleanup
-  }, []);
+  }, [t]);
   
   // Calculate hexagram lines based on the three numbers
   const { parentCoord } = calculateCoordsFromNumbers(n1, n2, n3);
@@ -284,14 +281,25 @@ const AbstractLoadingAnimation = ({ n1, n2, n3 }: AbstractLoadingAnimationProps)
         {/* Orbital particles */}
         <g>
           {orbits.map((r, i) => {
-            const angle = useTransform(t, (value: number) => ((value * 360) + i * 30) * (Math.PI / 180));
-            const x = useTransform(angle, (angleValue: number) => 100 + Math.cos(angleValue) * (r * 0.8));
-            const y = useTransform(angle, (angleValue: number) => 100 + Math.sin(angleValue) * (r * 0.8));
+            // Pre-calculate the transform functions outside the component render
+            const angle = t.get() * 360 + i * 30;
+            const angleRad = angle * (Math.PI / 180);
+            const xPos = 100 + Math.cos(angleRad) * (r * 0.8);
+            const yPos = 100 + Math.sin(angleRad) * (r * 0.8);
+            
             return (
               <motion.circle 
                 key={`particle-${i}`}
-                cx={x} 
-                cy={y} 
+                initial={{ cx: xPos, cy: yPos }}
+                animate={{ 
+                  cx: [xPos, 100 + Math.cos((angle + 360) * (Math.PI / 180)) * (r * 0.8)],
+                  cy: [yPos, 100 + Math.sin((angle + 360) * (Math.PI / 180)) * (r * 0.8)]
+                }}
+                transition={{ 
+                  duration: 12, 
+                  repeat: Infinity, 
+                  ease: "linear" 
+                }}
                 r={i % 4 === 0 ? 2 : 1.5}
                 fill="#fcd34d"
                 style={{ opacity: 0.3 + (i % 5) * 0.1 }}
