@@ -125,7 +125,7 @@ export default function NavigationBar({
         </div>
 
         {/* Account dropdown - aligned right on desktop */}
-        <div className="font-serif">
+        <div className="font-serif min-w-10 h-10 flex items-center justify-end">
           {user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
