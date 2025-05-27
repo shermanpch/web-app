@@ -37,19 +37,22 @@ export default function LoginPage() {
       router.push("/try-now");
       router.refresh();
 
-      // Prefetch user profile status in the background
-      queryClient.prefetchQuery({
-        queryKey: ["userProfileStatus"],
-        queryFn: userApi.getUserProfileStatus,
-        staleTime: 1000 * 60 * 5, // Keep prefetched data fresh for 5 minutes
-      });
+      // Defer prefetch calls to run after navigation starts
+      setTimeout(() => {
+        // Prefetch user profile status in the background
+        queryClient.prefetchQuery({
+          queryKey: ["userProfileStatus"],
+          queryFn: userApi.getUserProfileStatus,
+          staleTime: 1000 * 60 * 5, // Keep prefetched data fresh for 5 minutes
+        });
 
-      // Prefetch first page of readings data in the background
-      queryClient.prefetchQuery({
-        queryKey: ["userReadings", 1],
-        queryFn: () => userApi.getUserReadings({ page: 1, limit: 5 }),
-        staleTime: 1000 * 60 * 5, // Keep prefetched data fresh for 5 minutes
-      });
+        // Prefetch first page of readings data in the background
+        queryClient.prefetchQuery({
+          queryKey: ["userReadings", 1],
+          queryFn: () => userApi.getUserReadings({ page: 1, limit: 5 }),
+          staleTime: 1000 * 60 * 5, // Keep prefetched data fresh for 5 minutes
+        });
+      }, 0);
     },
     onError: (error) => {
       console.error("Login failed:", error);
