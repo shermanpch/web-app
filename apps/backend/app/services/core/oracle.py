@@ -38,6 +38,10 @@ class Oracle:
             model=settings.OPENAI_MODEL,
             api_key=settings.OPENAI_API_KEY,
             base_url="https://openrouter.ai/api/v1",
+            default_headers={
+                "HTTP-Referer": "https://deltao.ai",
+                "X-Title": "deltao.ai",
+            },
         )
 
         self.first = None
