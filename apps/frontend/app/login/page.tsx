@@ -33,23 +33,23 @@ export default function LoginPage() {
       // Force a refetch of the current user
       await queryClient.invalidateQueries({ queryKey: ["currentUser"] });
 
-      // Prefetch user profile status immediately after login
+      // Navigate to the try-now page immediately
+      router.push("/try-now");
+      router.refresh();
+
+      // Prefetch user profile status in the background
       queryClient.prefetchQuery({
         queryKey: ["userProfileStatus"],
         queryFn: userApi.getUserProfileStatus,
         staleTime: 1000 * 60 * 5, // Keep prefetched data fresh for 5 minutes
       });
 
-      // Prefetch first page of readings data immediately after login
+      // Prefetch first page of readings data in the background
       queryClient.prefetchQuery({
         queryKey: ["userReadings", 1],
         queryFn: () => userApi.getUserReadings({ page: 1, limit: 5 }),
         staleTime: 1000 * 60 * 5, // Keep prefetched data fresh for 5 minutes
       });
-
-      // Navigate using Next.js router
-      router.push("/try-now");
-      router.refresh();
     },
     onError: (error) => {
       console.error("Login failed:", error);
