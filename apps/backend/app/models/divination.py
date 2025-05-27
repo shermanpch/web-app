@@ -36,11 +36,11 @@ class DeepDiveContext(BaseModel):
 class IChingDeepDivePredictionDetails(BaseModel):
     """Detailed prediction data for Deep Dive readings."""
 
-    expanded_primary_interpretation: str = Field(..., description="A more in-depth analysis of the primary hexagram, specifically relating its symbolism and traditional meanings to the user's provided DeepDiveContext (area_of_life, background_situation, etc.). Should be more extensive than the basic interpretation.")
-    contextual_changing_line_interpretation: str = Field(..., description="A deeper interpretation of the changing line identified in the basic prediction (from IChingPrediction.line_change), specifically explaining its significance in relation to the user's DeepDiveContext.")
-    expanded_transformed_interpretation: str = Field(..., description="A richer interpretation of the hexagram that results from the line change(s) (from IChingPrediction.result), considering how it offers a path forward or a new perspective in relation to the user's DeepDiveContext.")
-    thematic_connections: List[str] = Field(..., description="A list of 2-3 key themes or overarching lessons synthesized from the entire reading (primary hexagram, changing line, transformed hexagram, and user context).")
-    actionable_insights_and_reflections: str = Field(..., description="More specific, tailored advice and actionable steps than the basic reading's advice. Should also include reflection prompts or questions for the user to consider, based on their DeepDiveContext and the reading's insights.")
+    expanded_primary_interpretation: str = Field(description="A more in-depth analysis of the primary hexagram, specifically relating its symbolism and traditional meanings to the user's provided DeepDiveContext (area_of_life, background_situation, etc.). Should be more extensive than the basic interpretation.")
+    contextual_changing_line_interpretation: str = Field(description="A deeper interpretation of the changing line identified in the basic prediction (from IChingPrediction.line_change), specifically explaining its significance in relation to the user's DeepDiveContext.")
+    expanded_transformed_interpretation: str = Field(description="A richer interpretation of the hexagram that results from the line change(s) (from IChingPrediction.result), considering how it offers a path forward or a new perspective in relation to the user's DeepDiveContext.")
+    thematic_connections: List[str] = Field(description="A list of 2-3 key themes or overarching lessons synthesized from the entire reading (primary hexagram, changing line, transformed hexagram, and user context).")
+    actionable_insights_and_reflections: str = Field(description="More specific, tailored advice and actionable steps than the basic reading's advice. Should also include reflection prompts or questions for the user to consider, based on their DeepDiveContext and the reading's insights.")
     potential_pitfalls: Optional[str] = Field(None, description="Potential challenges, obstacles, or areas of caution highlighted by the reading, relevant to the user's situation.")
     key_strengths: Optional[str] = Field(None, description="Identified strengths, positive aspects, or resources (internal/external) that the user can leverage, as indicated by the reading and their context.")
 
