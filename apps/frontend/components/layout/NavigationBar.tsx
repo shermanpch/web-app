@@ -47,9 +47,9 @@ export default function NavigationBar({
         return null;
       }
     },
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-    refetchOnMount: false, // Don't refetch on mount if we have data
-    refetchOnWindowFocus: false, // Don't refetch when window gains focus
+    staleTime: 1000 * 60 * 5, // Reduce cache time to 5 minutes for more frequent checks
+    refetchOnMount: true, // Changed from "always" to respect staleTime
+    refetchOnWindowFocus: true, // Refetch when window gains focus
     refetchOnReconnect: true, // Refetch when reconnecting to network
     retry: 2, // Retry twice if fetch fails
     retryDelay: 1000, // Wait 1 second between retries

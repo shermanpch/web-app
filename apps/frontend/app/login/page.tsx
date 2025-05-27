@@ -26,18 +26,19 @@ export default function LoginPage() {
 
   const loginMutation = useMutation({
     mutationFn: authApi.login,
-    onSuccess: (response) => {
+    onSuccess: async (response) => {
       // Update the user data in the cache
       queryClient.setQueryData(["currentUser"], response.data.user);
 
+      // Force a refetch of the current user
+      await queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+
       // Navigate to the try-now page immediately
       router.push("/try-now");
+      router.refresh();
 
-      // Defer all other operations to run after navigation starts
+      // Defer prefetch calls to run after navigation starts
       setTimeout(() => {
-        // Force a refetch of the current user (non-blocking)
-        queryClient.invalidateQueries({ queryKey: ["currentUser"] });
-
         // Prefetch user profile status in the background
         queryClient.prefetchQuery({
           queryKey: ["userProfileStatus"],
