@@ -90,7 +90,9 @@ apps/backend/migrations/scripts/preprocessing/data/
 # Generated Documentation / Temp Files
 todo.md
 database.md
-repomix-output.md
+
+# backend package.json
+apps/backend/package.json
 
 # =========================================
 # Testing / Coverage
