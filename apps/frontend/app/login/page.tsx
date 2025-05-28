@@ -3,7 +3,7 @@
 import React, { useState, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,7 @@ import ContentContainer from "@/components/layout/ContentContainer";
 import Heading from "@/components/ui/heading";
 import AuthInput from "@/components/auth/AuthInput";
 import AuthFormWrapper from "@/components/auth/AuthFormWrapper";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,6 +24,36 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [showEmailNotConfirmed, setShowEmailNotConfirmed] = useState(false);
+  const [resendError, setResendError] = useState<string | null>(null);
+  const [lastResendTime, setLastResendTime] = useState<number | null>(null);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+
+  // Cooldown timer effect
+  React.useEffect(() => {
+    if (cooldownSeconds > 0) {
+      const timer = setTimeout(() => {
+        setCooldownSeconds(cooldownSeconds - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [cooldownSeconds]);
+
+  const resendMutation = useMutation({
+    mutationFn: authApi.resendConfirmationEmail,
+    onSuccess: () => {
+      toast.success("Confirmation email sent! Please check your inbox.");
+      setShowEmailNotConfirmed(false);
+      setResendError(null);
+      setLastResendTime(Date.now());
+      setCooldownSeconds(60); // 60 second cooldown
+    },
+    onError: (error) => {
+      console.error("Resend failed:", error);
+      const errorMessage = (error as Error).message;
+      setResendError(errorMessage);
+    },
+  });
 
   const loginMutation = useMutation({
     mutationFn: authApi.login,
@@ -56,13 +87,55 @@ export default function LoginPage() {
     },
     onError: (error) => {
       console.error("Login failed:", error);
+      const errorMessage = (error as Error).message;
+      
+      // Check if the error is about email not being confirmed
+      if (errorMessage.toLowerCase().includes("email not confirmed")) {
+        setShowEmailNotConfirmed(true);
+        setResendError(null);
+      } else {
+        setShowEmailNotConfirmed(false);
+      }
     },
   });
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setShowEmailNotConfirmed(false);
+    setResendError(null);
     const credentials: LoginCredentials = { email, password, rememberMe };
     loginMutation.mutate(credentials);
+  };
+
+  const handleResendConfirmation = () => {
+    setResendError(null);
+    
+    // Check if we're still in cooldown
+    if (lastResendTime && Date.now() - lastResendTime < 60000) {
+      const remainingSeconds = Math.ceil((60000 - (Date.now() - lastResendTime)) / 1000);
+      const error = `Please wait ${remainingSeconds} seconds before requesting another email.`;
+      setResendError(error);
+      return;
+    }
+    
+    if (!email.trim()) {
+      const error = "Please enter your email address first";
+      setResendError(error);
+      return;
+    }
+    resendMutation.mutate(email.trim());
+  };
+
+  const isResendDisabled = resendMutation.isPending || cooldownSeconds > 0;
+
+  const getErrorMessage = () => {
+    if (!loginMutation.error) return null;
+    
+    const errorMessage = (loginMutation.error as Error).message;
+    if (errorMessage.toLowerCase().includes("email not confirmed")) {
+      return "Your email address is not confirmed. Please check your inbox for a confirmation email.";
+    }
+    return errorMessage;
   };
 
   const footerContent = (
@@ -91,9 +164,7 @@ export default function LoginPage() {
 
         <AuthFormWrapper
           title="Welcome Back!"
-          error={
-            loginMutation.error ? (loginMutation.error as Error).message : null
-          }
+          error={getErrorMessage()}
           footerContent={footerContent}
         >
           <form className="space-y-6" onSubmit={handleSubmit}>
@@ -142,6 +213,44 @@ export default function LoginPage() {
                 Forgot Password?
               </Link>
             </div>
+
+            {/* Email Not Confirmed Section */}
+            {showEmailNotConfirmed && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex flex-col space-y-3">
+                  <p className="text-sm text-yellow-800">
+                    Your email needs to be confirmed before you can log in.
+                  </p>
+                  
+                  {/* Resend Error Display */}
+                  {resendError && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                      <div className="flex items-start space-x-2">
+                        <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                        <div className="text-xs text-red-800">
+                          {resendError}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <Button
+                    type="button"
+                    onClick={handleResendConfirmation}
+                    disabled={isResendDisabled}
+                    variant="outline"
+                    size="sm"
+                    className="border-yellow-300 text-yellow-800 hover:bg-yellow-100"
+                  >
+                    {resendMutation.isPending 
+                      ? "Sending..." 
+                      : cooldownSeconds > 0 
+                        ? `Wait ${cooldownSeconds}s` 
+                        : "Resend Confirmation Email"}
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Login Button */}
             <Button

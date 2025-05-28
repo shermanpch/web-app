@@ -8,6 +8,7 @@ from ...config import settings
 from ...models.auth import (
     AuthenticatedSession,
     AuthResponse,
+    EmailRequest,
     PasswordChange,
     PasswordReset,
     UserData,
@@ -23,6 +24,7 @@ from ...services.auth.supabase import (
     delete_user,
     login_user,
     logout_user,
+    resend_confirmation_email,
     reset_password,
     signup_user,
 )
@@ -150,11 +152,30 @@ async def register_user(user: UserSignup, response: Response) -> UserSessionResp
         result = await signup_user(user.email, user.password)
 
         # Extract data
-        session_data = result.get("session", {})
+        session_data = result.get("session")
         user_data = result.get("user", {})
 
         logger.info(f"Successfully registered user: {user.email}")
 
+        # Create user object with email_confirmed_at
+        user_obj = UserData(
+            id=user_data.get("id", ""),
+            email=user_data.get("email"),
+            created_at=user_data.get("created_at"),
+            last_sign_in_at=user_data.get("last_sign_in_at"),
+            email_confirmed_at=user_data.get("email_confirmed_at"),
+        )
+
+        # If session_data is None, email confirmation is required
+        if session_data is None:
+            logger.info(f"Email confirmation required for user: {user.email}")
+            return UserSessionResponse(
+                success=True,
+                data=UserSession(user=user_obj),
+                message="Signup successful. Please check your email to confirm your account.",
+            )
+
+        # If session_data exists (e.g., email confirmation is disabled or auto-confirmed)
         # Set authentication cookies
         set_auth_cookies(
             response,
@@ -165,14 +186,7 @@ async def register_user(user: UserSignup, response: Response) -> UserSessionResp
 
         return UserSessionResponse(
             success=True,
-            data=UserSession(
-                user=UserData(
-                    id=user_data.get("id", ""),
-                    email=user_data.get("email"),
-                    created_at=user_data.get("created_at"),
-                    last_sign_in_at=user_data.get("last_sign_in_at"),
-                )
-            ),
+            data=UserSession(user=user_obj),
         )
 
     except SupabaseAuthError as e:
@@ -233,6 +247,7 @@ async def login(user: UserLogin, response: Response) -> UserSessionResponse:
                     email=user_data.get("email"),
                     created_at=user_data.get("created_at"),
                     last_sign_in_at=user_data.get("last_sign_in_at"),
+                    email_confirmed_at=user_data.get("email_confirmed_at"),
                 )
             ),
         )
@@ -247,6 +262,34 @@ async def login(user: UserLogin, response: Response) -> UserSessionResponse:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
+        )
+
+
+@router.post("/resend-confirmation", response_model=AuthResponse)
+async def resend_confirmation(data: EmailRequest) -> AuthResponse:
+    """
+    Resend confirmation email for a user.
+
+    Args:
+        data: Email request with user email
+
+    Returns:
+        Success response
+    """
+    try:
+        logger.info(f"Resend confirmation email requested for: {data.email}")
+        await resend_confirmation_email(data.email)
+        logger.info(f"Confirmation email resent for: {data.email}")
+        return AuthResponse(
+            success=True,
+            message="Confirmation email resent if user exists and is unconfirmed.",
+        )
+    except Exception as e:
+        # Always return success to avoid email enumeration attacks
+        logger.error(f"Resend confirmation error for {data.email}: {str(e)}")
+        return AuthResponse(
+            success=True,
+            message="Confirmation email resent if user exists and is unconfirmed.",
         )
 
 

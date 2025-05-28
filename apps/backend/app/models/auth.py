@@ -18,6 +18,7 @@ class UserData(UserBase):
     id: str
     last_sign_in_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
+    email_confirmed_at: Optional[datetime] = None
 
 
 class UserLogin(BaseModel):
@@ -44,6 +45,12 @@ class PasswordChange(BaseModel):
     """Password change request model."""
 
     password: str
+
+
+class EmailRequest(BaseModel):
+    """Email request model for resend confirmation."""
+
+    email: EmailStr
 
 
 class AuthResponse(BaseModel):

@@ -84,6 +84,7 @@ async def get_current_user(
             email=user.get("email"),
             last_sign_in_at=user.get("last_sign_in_at"),
             created_at=user.get("created_at"),
+            email_confirmed_at=user.get("email_confirmed_at"),
         )
 
     except SupabaseAuthError as e:

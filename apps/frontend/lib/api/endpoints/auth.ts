@@ -261,4 +261,69 @@ export const authApi = {
       throw error;
     }
   },
+
+  /**
+   * Resend confirmation email for unconfirmed user
+   */
+  async resendConfirmationEmail(email: string): Promise<void> {
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/auth/resend-confirmation`,
+        { email },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        },
+      );
+      
+      // The backend returns 200 with a generic success message for security reasons
+      // Rate limiting and other errors are only logged on the backend side
+      // We rely on client-side rate limiting to prevent the backend rate limit
+      
+    } catch (error: any) {
+      // Handle axios errors (actual HTTP errors)
+      if (error?.response?.data) {
+        // Extract backend error message
+        const errorData = error.response.data as ErrorResponse;
+
+        // Try multiple possible error message fields
+        const errorMessage =
+          errorData.detail ||
+          errorData.message ||
+          errorData.error_description ||
+          (errorData.errors
+            ? Object.values(errorData.errors).flat().join(", ")
+            : null);
+
+        if (errorMessage) {
+          throw new Error(errorMessage);
+        }
+      }
+
+      // If we have a response but no structured error data, try to extract the error
+      if (error?.response) {
+        const statusCode = error.response.status;
+        const statusText = error.response.statusText;
+        
+        // Handle different status codes
+        if (statusCode === 429) {
+          throw new Error("Too many requests. Please wait a moment before trying again.");
+        } else if (statusCode >= 400 && statusCode < 500) {
+          throw new Error(`Request failed: ${statusText || 'Client error'}`);
+        } else if (statusCode >= 500) {
+          throw new Error(`Server error: ${statusText || 'Internal server error'}`);
+        }
+      }
+
+      // If it's already an Error object (thrown above), re-throw it
+      if (error instanceof Error) {
+        throw error;
+      }
+
+      // Fallback error message
+      throw new Error("Failed to resend confirmation email. Please try again later.");
+    }
+  },
 };

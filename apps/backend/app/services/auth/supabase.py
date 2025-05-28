@@ -82,14 +82,23 @@ async def signup_user(email: str, password: str) -> Dict[str, Any]:
     """
     try:
         client = await get_supabase_client()
-        response = await client.auth.sign_up({"email": email, "password": password})
+        redirect_url = f"{settings.FRONTEND_URL}/auth/confirmed"
+        response = await client.auth.sign_up(
+            {
+                "email": email,
+                "password": password,
+                "options": {"email_redirect_to": redirect_url},
+            }
+        )
 
-        if not response.user or not response.session:
+        if not response.user:  # User object is essential
             raise SupabaseAuthError(
-                "User registration failed: No user or session data returned",
+                "User registration failed: No user data returned",
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
+        # If response.session is None, it typically means email confirmation is pending.
+        # The user object (response.user) will contain details like email_confirmed_at = None.
         return response.model_dump()
     except SupabaseAuthError:
         raise
@@ -128,6 +137,13 @@ async def login_user(email: str, password: str) -> Dict[str, Any]:
             raise SupabaseAuthError("Invalid email or password")
 
         return response.model_dump()
+    except AuthApiError as e:  # Ensure AuthApiError is correctly imported
+        if "email not confirmed" in str(e.message).lower():
+            raise SupabaseAuthError(
+                "Email not confirmed. Please check your inbox.",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+        raise SupabaseAuthError("Invalid email or password")
     except SupabaseAuthError:
         raise
     except Exception as e:
@@ -303,3 +319,33 @@ async def get_user(access_token: str, refresh_token: str) -> Dict[str, Any]:
         raise SupabaseAuthError(
             "Failed to authenticate user", status.HTTP_401_UNAUTHORIZED
         )
+
+
+async def resend_confirmation_email(email: str) -> Dict[str, Any]:
+    """
+    Resend confirmation email for a user.
+
+    Args:
+        email: User email
+
+    Returns:
+        Success response
+
+    Raises:
+        SupabaseAuthError: If resending fails
+    """
+    try:
+        client = await get_supabase_client()
+        redirect_url = f"{settings.FRONTEND_URL}/auth/confirmed"
+        await client.auth.resend(
+            {
+                "email": email,
+                "type": "signup",
+                "options": {"email_redirect_to": redirect_url},
+            }
+        )
+        return {"success": True}
+    except Exception as e:
+        # Return success to avoid email enumeration, but log the error
+        logger.error(f"Failed to resend confirmation email for {email}: {str(e)}")
+        return {"success": True}

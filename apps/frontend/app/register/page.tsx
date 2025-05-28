@@ -30,6 +30,18 @@ export default function RegisterPage() {
   const signupMutation = useMutation({
     mutationFn: authApi.signup,
     onSuccess: async (response) => {
+      // Check if email confirmation is required
+      const user = response.data.user;
+      const isEmailConfirmed = user.email_confirmed_at !== null && user.email_confirmed_at !== undefined;
+      
+      if (!isEmailConfirmed) {
+        // Email confirmation is pending - redirect to pending page
+        toast.success("Registration successful! Please check your email to confirm your account.");
+        router.push(`/auth/pending-confirmation?email=${encodeURIComponent(email)}`);
+        return;
+      }
+
+      // Email is confirmed or confirmation is disabled - proceed with normal flow
       // Update the user data in the cache
       queryClient.setQueryData(["currentUser"], response.data.user);
 
