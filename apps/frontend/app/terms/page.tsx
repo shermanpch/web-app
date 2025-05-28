@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import PageLayout from "@/components/layout/PageLayout";
 import ContentContainer from "@/components/layout/ContentContainer";
 import Heading from "@/components/ui/heading";
@@ -116,6 +117,13 @@ export default function TermsOfServicePage() {
               >
                 support@deltao.ai
               </a>
+            </p>
+            
+            <p className="mt-4">
+              For details on how we handle your data, please review our{" "}
+              <Link href="/privacy" className="text-[#B88A6A] hover:text-[#a87a5a]">
+                Privacy Policy
+              </Link>.
             </p>
 
             <p className="mt-12 text-sm text-gray-600">
