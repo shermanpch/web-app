@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Mail, CheckCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PageLayout from "@/components/layout/PageLayout";
@@ -15,7 +15,6 @@ import AuthInput from "@/components/auth/AuthInput";
 import AuthFormWrapper from "@/components/auth/AuthFormWrapper";
 
 export default function PendingConfirmationPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const emailFromQuery = searchParams.get("email") || "";
   
@@ -131,7 +130,7 @@ export default function PendingConfirmationPage() {
               {!showResendForm ? (
                 <div className="space-y-4">
                   <p className="text-sm text-gray-600">
-                    Didn't receive the email?
+                    Didn&apos;t receive the email?
                   </p>
                   <Button
                     onClick={() => {

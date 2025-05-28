@@ -22,8 +22,6 @@ function ConfirmedContent() {
       try {
         // Extract tokens from URL parameters that Supabase includes
         const accessToken = searchParams.get('access_token');
-        const refreshToken = searchParams.get('refresh_token');
-        const tokenType = searchParams.get('token_type');
         const type = searchParams.get('type');
 
         // Check if this looks like a confirmation URL from Supabase

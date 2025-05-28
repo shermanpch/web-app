@@ -267,7 +267,7 @@ export const authApi = {
    */
   async resendConfirmationEmail(email: string): Promise<void> {
     try {
-      const response = await axios.post(
+      await axios.post(
         `${API_URL}/api/auth/resend-confirmation`,
         { email },
         {
