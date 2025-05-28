@@ -6,9 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import ContentContainer from "@/components/layout/ContentContainer";
 import Heading from "@/components/ui/heading";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { userApi } from "@/lib/api/endpoints/user";
-import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface PricingTier {
   name: string;
@@ -21,46 +19,39 @@ interface PricingTier {
 
 const pricingTiers: PricingTier[] = [
   {
-    name: "Basic",
-    price: "$9.99",
-    description: "Perfect for getting started with I Ching readings",
+    name: "Basic Insight",
+    price: "Free",
+    description: "Start your I Ching journey with free access to basic readings and one deep dive.",
     features: [
-      "10 readings per month",
-      "Basic interpretation",
-      "Email support",
-      "Access to basic guides",
+      "7 Basic I Ching Readings per week",
+      "1 Free AI-powered Deep Dive Reading per week",
+      "Understand the core meaning, changing lines, and resulting hexagram",
+      "Receive direct, actionable advice for your questions",
+      "Ask clarifying questions to deepen your understanding",
+      "Save and revisit your reading history",
+      "Standard email support",
     ],
-    buttonText: "Start Basic",
+    buttonText: "Get Started Free",
   },
   {
-    name: "Premium",
-    price: "$19.99",
-    description: "Our most popular plan for serious seekers",
+    name: "Deep Dive",
+    price: "$19.99/month",
+    description: "Unlock unlimited profound, personalized interpretations with our AI-enhanced Deep Dive readings.",
     features: [
-      "30 readings per month",
-      "Detailed interpretations",
+      "Unlimited Basic I Ching Readings",
+      "7 AI-powered Deep Dive Readings per week",
+      "Expanded primary hexagram interpretation linked to your life context",
+      "Contextual analysis of changing lines based on your situation",
+      "In-depth exploration of the transformed hexagram's guidance",
+      "Key thematic connections and overarching lessons",
+      "Tailored, actionable insights and reflection prompts",
+      "Identification of potential pitfalls and key strengths",
+      "Ask clarifying questions to deepen your understanding",
+      "Save and revisit your reading history",
       "Priority email support",
-      "Access to all guides",
-      "Clarifying questions",
-      "Save readings history",
     ],
-    buttonText: "Go Premium",
+    buttonText: "Go Deep Dive",
     isPopular: true,
-  },
-  {
-    name: "Unlimited",
-    price: "$39.99",
-    description: "For professionals and dedicated practitioners",
-    features: [
-      "Unlimited readings",
-      "Advanced interpretations",
-      "24/7 priority support",
-      "Access to all guides",
-      "Unlimited clarifying questions",
-      "Extended readings history",
-      "Custom consultation time",
-    ],
-    buttonText: "Go Unlimited",
   },
 ];
 
@@ -68,36 +59,16 @@ export default function PricingPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const upgradeMutation = useMutation({
-    mutationFn: userApi.upgradeToPremium,
-    onSuccess: () => {
-      toast.success("Membership upgraded to Premium!");
-
-      // Invalidate the cache
-      queryClient.invalidateQueries({ queryKey: ["userProfileStatus"] });
-
-      // Set a flag in sessionStorage to indicate the upgrade just happened
-      sessionStorage.setItem("justUpgraded", "true");
-
-      // Navigate to profile page
-      router.push("/profile");
-    },
-    onError: (error) => {
-      toast.error(`Upgrade failed: ${(error as Error).message}`);
-    },
-  });
-
   return (
     <PageLayout>
       <ContentContainer className="max-w-7xl">
-        <Heading>Choose Your Path</Heading>
+        <Heading>Find the Wisdom You Seek</Heading>
         <p className="text-lg sm:text-xl text-gray-200 font-serif max-w-3xl mx-auto text-center mt-4">
-          Select the plan that best suits your journey of self-discovery and
-          spiritual growth
+          Choose a plan that aligns with your journey into the I Ching. Start free with Basic Readings and one Deep Dive, or unlock unlimited profound insights with our premium AI-enhanced interpretations.
         </p>
 
         {/* Pricing Tiers */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12 mt-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 mt-12 max-w-5xl mx-auto">
           {pricingTiers.map((tier) => (
             <div
               key={tier.name}
@@ -115,8 +86,17 @@ export default function PricingPage() {
                 <h2 className="text-2xl font-bold mb-2 text-gray-800">
                   {tier.name}
                 </h2>
-                <div className="text-3xl font-bold mb-3 text-gray-800">
-                  {tier.price}
+                <div className="mb-3">
+                  {tier.name === "Deep Dive" ? (
+                    <div className="flex items-baseline justify-center">
+                      <span className="text-3xl font-bold text-gray-800">$19.99</span>
+                      <span className="text-lg text-gray-600 ml-1">/month</span>
+                    </div>
+                  ) : (
+                    <div className="text-3xl font-bold text-gray-800">
+                      {tier.price}
+                    </div>
+                  )}
                 </div>
                 <p className="text-gray-600">{tier.description}</p>
               </div>
@@ -144,37 +124,44 @@ export default function PricingPage() {
 
               <Button
                 onClick={() => {
-                  if (tier.name === "Premium") {
-                    const user = queryClient.getQueryData(["currentUser"]);
+                  const user = queryClient.getQueryData(["currentUser"]);
+                  
+                  // Handle different tiers
+                  if (tier.name === "Deep Dive") {
                     if (!user) {
                       router.push("/login");
                       return;
                     }
-                    upgradeMutation.mutate();
+                    // Navigate to payment page for paid tier
+                    router.push("/payment?tier=deep_dive");
+                  } else if (tier.name === "Basic Insight") {
+                    if (!user) {
+                      // For free tier, redirect to login if not logged in
+                      router.push("/login");
+                      return;
+                    }
+                    // For free tier, navigate to try now if logged in
+                    router.push("/try-now");
                   } else {
-                    router.push("/login");
+                    if (!user) {
+                      router.push("/login");
+                      return;
+                    }
+                    // Fallback for any other tiers
+                    const tierParam = tier.name.toLowerCase().replace(/\s+/g, '_');
+                    router.push(`/payment?tier=${tierParam}`);
                   }
                 }}
-                disabled={tier.name === "Premium" && upgradeMutation.isPending}
                 className={`w-full py-3 rounded-full text-white font-semibold ${
                   tier.isPopular
                     ? "bg-brand-button-bg hover:bg-brand-button-hover"
                     : "bg-gray-700 hover:bg-gray-600"
                 }`}
               >
-                {tier.name === "Premium" && upgradeMutation.isPending
-                  ? "Upgrading..."
-                  : tier.buttonText}
+                {tier.buttonText}
               </Button>
             </div>
           ))}
-        </div>
-
-        {/* FAQ or Additional Info */}
-        <div className="mt-16 text-center">
-          <p className="text-gray-200 font-serif">
-            All plans include a 14-day money-back guarantee.
-          </p>
         </div>
       </ContentContainer>
     </PageLayout>
