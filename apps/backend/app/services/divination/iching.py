@@ -180,7 +180,7 @@ async def save_iching_reading_to_db(
         # Check if we have any data from the insert
         data = response.data
         if not data or len(data) == 0:
-            logger.warning(f"No data returned from user_readings insert")
+            logger.warning("No data returned from user_readings insert")
             raise Exception("Failed to save I Ching reading - no response data")
 
         # Return success response
@@ -229,7 +229,7 @@ async def update_iching_reading_in_db(
             logger.warning(f"No reading found with id: {request.id}")
             raise Exception("Reading not found")
 
-        logger.info(f"Found existing reading, getting clarifying response")
+        logger.info("Found existing reading, getting clarifying response")
         oracle = Oracle()
         response = await oracle.get_clarifying_reading(request)
 

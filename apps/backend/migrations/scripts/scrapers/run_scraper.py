@@ -86,7 +86,7 @@ def fetch_and_parse(url):
 
     # Check cache first
     if os.path.exists(cache_path):
-        with open(cache_path, "r", encoding="utf-8") as f:
+        with open(cache_path, encoding="utf-8") as f:
             html = f.read()
             return BeautifulSoup(html, "html.parser")
 

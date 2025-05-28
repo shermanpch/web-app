@@ -108,7 +108,7 @@ def load_parent_json(parent_coord, data_dir):
         return None
 
     try:
-        with open(parent_json_path, "r", encoding="utf-8") as f:
+        with open(parent_json_path, encoding="utf-8") as f:
             parent_data = json.load(f)
         return parent_data
     except Exception as e:
@@ -125,7 +125,7 @@ def process_child_json(child_file, data_dir, supabase_client):
     failed_records = []
 
     try:
-        with open(child_file, "r", encoding="utf-8") as f:
+        with open(child_file, encoding="utf-8") as f:
             child_data = json.load(f)
 
         parent_coord = child_data.get("parent_coordinate")

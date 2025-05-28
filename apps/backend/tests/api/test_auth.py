@@ -1,7 +1,7 @@
 """Tests for authentication endpoints."""
 
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import pytest
 from fastapi import status
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class TestAuthentication(BaseTest):
     """Test suite for authentication endpoints."""
 
-    def test_signup(self, client: TestClient, test_user: Dict[str, str]) -> None:
+    def test_signup(self, client: TestClient, test_user: dict[str, str]) -> None:
         """Test user signup."""
         # ARRANGE
         self.logger.info("Testing user signup")
@@ -31,7 +31,7 @@ class TestAuthentication(BaseTest):
         response = client.post("/api/auth/signup", json=test_user)
 
         # ASSERT
-        data: Dict[str, Any] = assert_successful_response(response)
+        data: dict[str, Any] = assert_successful_response(response)
         assert_has_fields(data, ["data"])
         assert_has_fields(data["data"], ["user"])
 
@@ -42,7 +42,7 @@ class TestAuthentication(BaseTest):
         assert "refresh_token" in cookies, "Response should set refresh_token cookie"
 
         # Verify user data
-        user_data: Dict[str, Any] = extract_user_data(response)
+        user_data: dict[str, Any] = extract_user_data(response)
         assert user_data.get("id"), "Response should include user ID"
         assert (
             user_data.get("email") == test_user["email"]
@@ -60,13 +60,13 @@ class TestAuthentication(BaseTest):
                 f"Deleted test user with status: {delete_response.status_code}"
             )
 
-    def test_login(self, client: TestClient, test_user: Dict[str, str]) -> None:
+    def test_login(self, client: TestClient, test_user: dict[str, str]) -> None:
         """Test user login."""
         # ARRANGE
         self.logger.info("Testing user login")
 
         # Just use a different test_user instance for this specific test
-        new_test_user: Dict[str, str] = {
+        new_test_user: dict[str, str] = {
             "email": f"login_test_{test_user['email']}",
             "password": test_user["password"],
         }
@@ -81,7 +81,7 @@ class TestAuthentication(BaseTest):
         response = client.post("/api/auth/login", json=new_test_user)
 
         # ASSERT
-        data: Dict[str, Any] = assert_successful_response(response)
+        data: dict[str, Any] = assert_successful_response(response)
         assert_has_fields(data, ["data"])
         assert_has_fields(data["data"], ["user"])
 
@@ -96,7 +96,7 @@ class TestAuthentication(BaseTest):
         client.cookies.set("refresh_token", cookies.get("refresh_token"))
 
         # Cleanup - delete the user we created for this test
-        user_data: Dict[str, Any] = extract_user_data(signup_response)
+        user_data: dict[str, Any] = extract_user_data(signup_response)
         user_id = user_data.get("id")
         if user_id:
             delete_response = client.delete(f"/api/auth/users/{user_id}")
@@ -105,7 +105,7 @@ class TestAuthentication(BaseTest):
             )
 
     def test_get_current_user(
-        self, authenticated_client: Tuple[TestClient, Optional[str]]
+        self, authenticated_client: tuple[TestClient, str | None]
     ) -> None:
         """Test getting current user info."""
         # ARRANGE
@@ -117,7 +117,7 @@ class TestAuthentication(BaseTest):
 
         # ASSERT
         assert response.status_code == status.HTTP_200_OK
-        user_data: Dict[str, Any] = response.json()
+        user_data: dict[str, Any] = response.json()
         assert_has_fields(user_data, ["id", "email"])
 
         # Verify the user_id matches what we got from the fixture
@@ -126,14 +126,14 @@ class TestAuthentication(BaseTest):
         ), "User ID in response doesn't match authenticated user"
 
     def test_reset_password(
-        self, client: TestClient, reset_password_user: Dict[str, str]
+        self, client: TestClient, reset_password_user: dict[str, str]
     ) -> None:
         """Test password reset request using specific email."""
         # ARRANGE
         self.logger.info("Testing password reset")
         # Just sign up the specific reset password user for this test
         signup_response = client.post("/api/auth/signup", json=reset_password_user)
-        user_data: Dict[str, Any] = extract_user_data(signup_response)
+        user_data: dict[str, Any] = extract_user_data(signup_response)
         user_id = user_data.get("id")
         assert user_id, "Failed to create reset password test user"
 
@@ -143,7 +143,7 @@ class TestAuthentication(BaseTest):
         )
 
         # ASSERT
-        data: Dict[str, Any] = assert_successful_response(response)
+        data: dict[str, Any] = assert_successful_response(response)
         assert "message" in data
 
         # Cleanup - delete the reset password user
@@ -163,8 +163,8 @@ class TestAuthentication(BaseTest):
 
     def test_password_change_flow(
         self,
-        authenticated_client: Tuple[TestClient, Optional[str]],
-        test_user: Dict[str, str],
+        authenticated_client: tuple[TestClient, str | None],
+        test_user: dict[str, str],
     ) -> None:
         """Test the entire password change flow."""
         # ARRANGE
@@ -173,7 +173,7 @@ class TestAuthentication(BaseTest):
 
         # ACT - Change password
         new_password = "NewPassword456!"
-        change_request: Dict[str, str] = {"password": new_password}
+        change_request: dict[str, str] = {"password": new_password}
 
         change_response = client.post("/api/auth/password/change", json=change_request)
 
@@ -181,7 +181,7 @@ class TestAuthentication(BaseTest):
         assert_successful_response(change_response)
 
         # Verify: Login with new password
-        new_credentials: Dict[str, str] = {
+        new_credentials: dict[str, str] = {
             "email": test_user["email"],
             "password": new_password,
         }
@@ -190,8 +190,8 @@ class TestAuthentication(BaseTest):
 
     def test_password_change_same_password(
         self,
-        authenticated_client: Tuple[TestClient, Optional[str]],
-        test_user: Dict[str, str],
+        authenticated_client: tuple[TestClient, str | None],
+        test_user: dict[str, str],
     ) -> None:
         """Test attempting to change password to the same value."""
         # ARRANGE
@@ -199,7 +199,7 @@ class TestAuthentication(BaseTest):
         client, user_id = authenticated_client
 
         # ACT - Try to change password to the same value
-        change_request: Dict[str, str] = {"password": test_user["password"]}
+        change_request: dict[str, str] = {"password": test_user["password"]}
         response = client.post("/api/auth/password/change", json=change_request)
 
         # Log the full response for debugging
@@ -245,7 +245,7 @@ class TestAuthentication(BaseTest):
     async def test_delete_user_success(
         self,
         client: TestClient,
-        test_user: Dict[str, str],
+        test_user: dict[str, str],
     ) -> None:
         """Test actual user creation and deletion (integration test)."""
         # ARRANGE
@@ -276,7 +276,7 @@ class TestAuthentication(BaseTest):
         delete_response = client.delete(f"/api/auth/users/{user_id}")
 
         # ASSERT - Deletion successful
-        data = assert_successful_response(delete_response)
+        assert_successful_response(delete_response)
 
         # Verify user is gone by trying to login
         verify_login = client.post("/api/auth/login", json=test_user)
@@ -286,7 +286,7 @@ class TestAuthentication(BaseTest):
     async def test_login_with_remember_me(
         self,
         client: TestClient,
-        test_user: Dict[str, str],
+        test_user: dict[str, str],
     ) -> None:
         """Test user login with remember_me flag set to True."""
         # ARRANGE
@@ -385,7 +385,7 @@ class TestAuthentication(BaseTest):
     async def test_login_without_remember_me(
         self,
         client: TestClient,
-        test_user: Dict[str, str],
+        test_user: dict[str, str],
     ) -> None:
         """Test login without remember_me flag."""
         # ARRANGE
@@ -421,7 +421,7 @@ class TestAuthentication(BaseTest):
         assert "Max-Age=3600" in auth_cookie or "max-age=3600" in auth_cookie.lower()
 
         # Cleanup
-        user_data: Dict[str, Any] = extract_user_data(signup_response)
+        user_data: dict[str, Any] = extract_user_data(signup_response)
         user_id = user_data.get("id")
         if user_id:
             # Set the auth cookies for deletion

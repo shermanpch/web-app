@@ -1,7 +1,7 @@
 """Supabase client utilities."""
 
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from fastapi import status
 from supabase import AuthApiError
@@ -66,7 +66,7 @@ async def get_supabase_admin_client() -> AsyncClient:
     )
 
 
-async def signup_user(email: str, password: str) -> Dict[str, Any]:
+async def signup_user(email: str, password: str) -> dict[str, Any]:
     """
     Register a new user using Supabase client.
 
@@ -113,7 +113,7 @@ async def signup_user(email: str, password: str) -> Dict[str, Any]:
         )
 
 
-async def login_user(email: str, password: str) -> Dict[str, Any]:
+async def login_user(email: str, password: str) -> dict[str, Any]:
     """
     Login a user using Supabase client.
 
@@ -146,11 +146,11 @@ async def login_user(email: str, password: str) -> Dict[str, Any]:
         raise SupabaseAuthError("Invalid email or password")
     except SupabaseAuthError:
         raise
-    except Exception as e:
+    except Exception:
         raise SupabaseAuthError("Invalid email or password")
 
 
-async def reset_password(email: str) -> Dict[str, Any]:
+async def reset_password(email: str) -> dict[str, Any]:
     """
     Request a password reset email through Supabase client.
 
@@ -174,7 +174,7 @@ async def reset_password(email: str) -> Dict[str, Any]:
 
 async def change_password(
     new_password: str, access_token: str, refresh_token: str
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Change user password using Supabase client.
 
@@ -216,7 +216,7 @@ async def change_password(
         )
 
 
-async def delete_user(user_id: str) -> Dict[str, Any]:
+async def delete_user(user_id: str) -> dict[str, Any]:
     """
     Delete a user by user ID using Supabase client.
 
@@ -235,14 +235,14 @@ async def delete_user(user_id: str) -> Dict[str, Any]:
         admin_client = await get_supabase_admin_client()
         await admin_client.auth.admin.delete_user(user_id)
         return {"success": True}
-    except Exception as e:
+    except Exception:
         raise SupabaseAuthError(
             "Failed to delete account. Please try again later.",
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
 
-async def logout_user(access_token: str, refresh_token: str) -> Dict[str, Any]:
+async def logout_user(access_token: str, refresh_token: str) -> dict[str, Any]:
     """
     Logout a user by invalidating their session using Supabase client.
 
@@ -262,7 +262,7 @@ async def logout_user(access_token: str, refresh_token: str) -> Dict[str, Any]:
         return {"success": True}
 
 
-async def get_user(access_token: str, refresh_token: str) -> Dict[str, Any]:
+async def get_user(access_token: str, refresh_token: str) -> dict[str, Any]:
     """
     Get the user information using Supabase client, attempting refresh if needed.
 
@@ -321,7 +321,7 @@ async def get_user(access_token: str, refresh_token: str) -> Dict[str, Any]:
         )
 
 
-async def resend_confirmation_email(email: str) -> Dict[str, Any]:
+async def resend_confirmation_email(email: str) -> dict[str, Any]:
     """
     Resend confirmation email for a user.
 

@@ -1,10 +1,9 @@
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
-from pydantic import ValidationError
 
 from ...config import settings
 from ...models.divination import (
@@ -251,7 +250,7 @@ class Oracle:
     def _load_prompt(self, prompt_path):
         """Load prompt from a file."""
         try:
-            with open(prompt_path, "r", encoding="utf-8") as file:
+            with open(prompt_path, encoding="utf-8") as file:
                 return file.read()
         except FileNotFoundError:
             logger.exception(f"CRITICAL: Prompt file not found at {prompt_path}")
@@ -262,7 +261,7 @@ class Oracle:
 
     def _format_nested_dict_to_markdown(
         self, data: Any, indent_level: int = 0
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Recursive helper to format nested dictionaries and lists into Markdown strings.
 
@@ -281,7 +280,7 @@ class Oracle:
                 # Format the key as a header or label
                 key_str = str(key).replace("_", " ").title()
 
-                if isinstance(value, (dict, list)):
+                if isinstance(value, dict | list):
                     lines.append(f"{indent}**{key_str}**:")
                     lines.extend(
                         self._format_nested_dict_to_markdown(value, indent_level + 1)
@@ -292,7 +291,7 @@ class Oracle:
 
         elif isinstance(data, list):
             for item in data:
-                if isinstance(item, (dict, list)):
+                if isinstance(item, dict | list):
                     lines.extend(
                         self._format_nested_dict_to_markdown(item, indent_level)
                     )
@@ -304,7 +303,7 @@ class Oracle:
 
         return lines
 
-    def _convert_dict_to_markdown(self, data_dict: Optional[Dict[str, Any]]) -> str:
+    def _convert_dict_to_markdown(self, data_dict: dict[str, Any] | None) -> str:
         """
         Convert a dictionary to a Markdown formatted string.
 

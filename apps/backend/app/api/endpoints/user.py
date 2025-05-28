@@ -2,7 +2,6 @@
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
@@ -19,7 +18,6 @@ from ...models.users import (
 from ...services.auth.dependencies import get_auth_tokens, get_current_user
 from ...services.auth.supabase import get_authenticated_client
 from ...services.users.quota import (
-    check_quota,
     get_current_weekly_usage,
     get_feature_quota_rule,
     get_user_profile,
@@ -74,7 +72,7 @@ async def get_user_status(
         feature_response = await client.from_("features").select("id, name").execute()
         features = feature_response.data
 
-        quotas: List[UserQuotaStatusResponse] = []
+        quotas: list[UserQuotaStatusResponse] = []
         for feature in features:
             # Get quota rule
             quota_rule = await get_feature_quota_rule(

@@ -2,7 +2,6 @@
 
 import logging
 import math
-from typing import List, Optional
 from uuid import UUID
 
 from supabase._async.client import AsyncClient
@@ -121,7 +120,7 @@ async def delete_user_reading_from_db(
 
         if not verify_response.data:
             logger.warning(f"Reading {reading_id} not found for user {user_id}")
-            raise Exception(f"Reading not found or does not belong to the user")
+            raise Exception("Reading not found or does not belong to the user")
 
         # Delete the reading
         delete_response = (
@@ -201,7 +200,7 @@ async def get_reading_by_id(
     user_id: UUID,
     reading_id: UUID,
     client: AsyncClient,
-) -> Optional[UserReadingResponse]:
+) -> UserReadingResponse | None:
     """
     Fetch a specific reading by ID for a user from the database.
 

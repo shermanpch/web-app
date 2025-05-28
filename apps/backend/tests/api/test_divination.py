@@ -1,9 +1,8 @@
 """Tests for divination endpoints."""
 
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
-import pytest
 from fastapi.testclient import TestClient
 
 from tests.api.base_test import BaseTest
@@ -43,7 +42,7 @@ class TestDivination(BaseTest):
         ), "Request should fail with authentication error when no auth is provided"
 
         # Verify error details in response
-        error_data: Dict[str, Any] = iching_response.json()
+        error_data: dict[str, Any] = iching_response.json()
         assert "detail" in error_data, "Response should contain error details"
         assert (
             "Authentication" in error_data["detail"]
@@ -52,7 +51,7 @@ class TestDivination(BaseTest):
         self.logger.info("Non-authenticated test passed successfully!")
 
     def test_iching_text_retrieval_authenticated(
-        self, authenticated_client: Tuple[TestClient, Optional[str]]
+        self, authenticated_client: tuple[TestClient, str | None]
     ) -> None:
         """Test retrieving I-Ching text using authentication cookies."""
         # ARRANGE
@@ -78,7 +77,7 @@ class TestDivination(BaseTest):
         ), f"I-Ching text retrieval failed: {iching_response.text}"
 
         # Verify response structure and content
-        iching_data: Dict[str, Any] = iching_response.json()
+        iching_data: dict[str, Any] = iching_response.json()
         assert_has_fields(
             iching_data,
             ["parent_coord", "child_coord", "parent_json", "child_json"],
@@ -97,7 +96,7 @@ class TestDivination(BaseTest):
 
         self.logger.info("I-Ching text retrieval test passed successfully!")
 
-    def _log_text_preview(self, iching_data: Dict[str, Any]) -> None:
+    def _log_text_preview(self, iching_data: dict[str, Any]) -> None:
         """Log preview of parent and child text content."""
         parent_json = iching_data.get("parent_json", "")
         child_json = iching_data.get("child_json", "")
@@ -144,7 +143,7 @@ class TestDivination(BaseTest):
         ), f"I-Ching coordinates conversion failed: {coordinates_response.text}"
 
         # Verify response structure and content
-        coordinates_data: Dict[str, Any] = coordinates_response.json()
+        coordinates_data: dict[str, Any] = coordinates_response.json()
         assert_has_fields(coordinates_data, ["parent_coord", "child_coord"])
 
         # Verify coordinates match expected values
@@ -158,7 +157,7 @@ class TestDivination(BaseTest):
         self.logger.info("I-Ching coordinates conversion test passed successfully!")
 
     def test_iching_reading_basic_mode_authenticated(
-        self, authenticated_client: Tuple[TestClient, Optional[str]]
+        self, authenticated_client: tuple[TestClient, str | None]
     ) -> None:
         """Test generating a complete I Ching reading in basic mode."""
         # ARRANGE
@@ -242,7 +241,7 @@ class TestDivination(BaseTest):
         self.logger.info(f"    Pinyin: {reading_data.get('result', {}).get('pinyin', 'N/A')}")
         self.logger.info(f"    Interpretation: {reading_data.get('result', {}).get('interpretation', '')[:50]}...")
         self.logger.info(f"  Advice: {reading_data.get('advice', '')[:100]}...")
-        
+
         # Log deep dive details (should be None for basic mode)
         deep_dive_details = reading_data.get("deep_dive_details")
         self.logger.info(f"  Deep Dive Details: {'N/A' if deep_dive_details is None else deep_dive_details}")
@@ -251,7 +250,7 @@ class TestDivination(BaseTest):
         self.logger.info("I-Ching basic mode reading test passed successfully!")
 
     def test_iching_reading_deep_dive_mode_authenticated(
-        self, authenticated_client: Tuple[TestClient, Optional[str]]
+        self, authenticated_client: tuple[TestClient, str | None]
     ) -> None:
         """Test generating a complete I Ching reading in deep dive mode."""
         self.logger.info("Testing I-Ching deep dive reading generation")
@@ -346,22 +345,22 @@ class TestDivination(BaseTest):
         self.logger.info(f"    Pinyin: {reading_data.get('result', {}).get('pinyin', 'N/A')}")
         self.logger.info(f"    Interpretation: {reading_data.get('result', {}).get('interpretation', '')[:50]}...")
         self.logger.info(f"  Advice: {reading_data.get('advice', '')[:100]}...")
-        
+
         # Log deep dive details
         self.logger.info("  Deep Dive Details:")
         if deep_dive_details:
             self.logger.info(f"    Expanded Primary Interpretation: {deep_dive_details.get('expanded_primary_interpretation', 'N/A')[:100]}...")
             self.logger.info(f"    Contextual Changing Line Interpretation: {deep_dive_details.get('contextual_changing_line_interpretation', 'N/A')[:100]}...")
             self.logger.info(f"    Expanded Transformed Interpretation: {deep_dive_details.get('expanded_transformed_interpretation', 'N/A')[:100]}...")
-            
+
             thematic_connections = deep_dive_details.get('thematic_connections', [])
             self.logger.info(f"    Thematic Connections: {', '.join(thematic_connections) if thematic_connections else 'N/A'}")
-            
+
             self.logger.info(f"    Actionable Insights and Reflections: {deep_dive_details.get('actionable_insights_and_reflections', 'N/A')[:100]}...")
-            
+
             potential_pitfalls = deep_dive_details.get('potential_pitfalls')
             self.logger.info(f"    Potential Pitfalls: {'N/A' if potential_pitfalls is None else potential_pitfalls[:100]}")
-            
+
             key_strengths = deep_dive_details.get('key_strengths')
             self.logger.info(f"    Key Strengths: {'N/A' if key_strengths is None else key_strengths[:100]}")
         else:
@@ -371,7 +370,7 @@ class TestDivination(BaseTest):
         self.logger.info("I-Ching deep dive reading test passed successfully!")
 
     def test_save_iching_reading(
-        self, authenticated_client: Tuple[TestClient, Optional[str]]
+        self, authenticated_client: tuple[TestClient, str | None]
     ) -> None:
         """Test saving an I Ching reading to the database."""
         # ARRANGE
@@ -458,7 +457,7 @@ class TestDivination(BaseTest):
         self.logger.info("I-Ching reading save test passed successfully!")
 
     def test_update_iching_reading(
-        self, authenticated_client: Tuple[TestClient, Optional[str]]
+        self, authenticated_client: tuple[TestClient, str | None]
     ) -> None:
         """Test updating an I Ching reading with a clarification question."""
         # ARRANGE
@@ -597,26 +596,26 @@ class TestDivination(BaseTest):
         self.logger.info(f"First Number: {update_data.get('first_number', 'N/A')}")
         self.logger.info(f"Second Number: {update_data.get('second_number', 'N/A')}")
         self.logger.info(f"Third Number: {update_data.get('third_number', 'N/A')}")
-        
+
         # Log prediction details
         prediction = update_data.get('prediction', {})
         self.logger.info(f"Hexagram Name: {prediction.get('hexagram_name', 'N/A')}")
         self.logger.info(f"Pinyin: {prediction.get('pinyin', 'N/A')}")
         self.logger.info(f"Summary: {prediction.get('summary', 'N/A')}")
         self.logger.info(f"Interpretation: {prediction.get('interpretation', 'N/A')[:100]}...")
-        
+
         # Format line_change as separate lines
         self.logger.info("Line Change:")
         self.logger.info(f"  Line: {prediction.get('line_change', {}).get('line', 'N/A')}")
         self.logger.info(f"  Interpretation: {prediction.get('line_change', {}).get('interpretation', '')[:50]}...")
-        
+
         # Format result as separate lines
         self.logger.info("Result Hexagram:")
         self.logger.info(f"  Name: {prediction.get('result', {}).get('name', 'N/A')}")
         self.logger.info(f"  Pinyin: {prediction.get('result', {}).get('pinyin', 'N/A')}")
         self.logger.info(f"  Interpretation: {prediction.get('result', {}).get('interpretation', '')[:50]}...")
         self.logger.info(f"Advice: {prediction.get('advice', '')[:100]}...")
-        
+
         # Log deep dive details
         self.logger.info("Deep Dive Details:")
         deep_dive_details = prediction.get('deep_dive_details')
@@ -624,24 +623,24 @@ class TestDivination(BaseTest):
             self.logger.info(f"  Expanded Primary Interpretation: {deep_dive_details.get('expanded_primary_interpretation', 'N/A')[:100]}...")
             self.logger.info(f"  Contextual Changing Line Interpretation: {deep_dive_details.get('contextual_changing_line_interpretation', 'N/A')[:100]}...")
             self.logger.info(f"  Expanded Transformed Interpretation: {deep_dive_details.get('expanded_transformed_interpretation', 'N/A')[:100]}...")
-            
+
             thematic_connections = deep_dive_details.get('thematic_connections', [])
             self.logger.info(f"  Thematic Connections: {', '.join(thematic_connections) if thematic_connections else 'N/A'}")
-            
+
             self.logger.info(f"  Actionable Insights and Reflections: {deep_dive_details.get('actionable_insights_and_reflections', 'N/A')[:100]}...")
-            
+
             potential_pitfalls = deep_dive_details.get('potential_pitfalls')
             self.logger.info(f"  Potential Pitfalls: {'N/A' if potential_pitfalls is None else potential_pitfalls[:100]}")
-            
+
             key_strengths = deep_dive_details.get('key_strengths')
             self.logger.info(f"  Key Strengths: {'N/A' if key_strengths is None else key_strengths[:100]}")
         else:
             self.logger.info(f"  {'N/A'}")
-        
+
         # Log clarification details
         self.logger.info("Clarification Details:")
         self.logger.info(f"  Clarifying Question: {update_data.get('clarifying_question', 'N/A')}")
         self.logger.info(f"  Clarifying Answer: {update_data.get('clarifying_answer', '')[:100]}...")
-        
+
         self.logger.info("I-Ching reading update test passed successfully!")
         # fmt:on

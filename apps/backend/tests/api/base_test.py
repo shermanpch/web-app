@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import Any, Dict, List
+from typing import Any
 
 # Get the logger with module name
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ class BaseTest:
         try:
             loop = asyncio.get_event_loop()
             if not loop.is_closed():
-                tasks: List[asyncio.Task] = [
+                tasks: list[asyncio.Task] = [
                     t for t in asyncio.all_tasks(loop) if not t.done()
                 ]
                 if tasks:

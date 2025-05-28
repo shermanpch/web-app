@@ -1,6 +1,6 @@
 """Divination models for the application."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -26,11 +26,11 @@ class HexagramResult(BaseModel):
 
 class DeepDiveContext(BaseModel):
     """Additional context for Deep Dive I Ching readings."""
-    
-    area_of_life: Optional[str] = Field(None, description="User's stated area of life (e.g., Career, Relationships). This helps focus the LLM's interpretation.")
-    background_situation: Optional[str] = Field(None, description="User's brief description of the situation or context surrounding their question. Provides specific details for the LLM.")
-    current_feelings: Optional[List[str]] = Field(None, description="User's current feelings or emotional state related to the question (e.g., ['Anxious', 'Hopeful']). Helps LLM tailor the tone.")
-    desired_outcome: Optional[str] = Field(None, description="What the user hopes to gain from the reading (e.g., Clarity, Reassurance). Guides the LLM in framing advice.")
+
+    area_of_life: str | None = Field(None, description="User's stated area of life (e.g., Career, Relationships). This helps focus the LLM's interpretation.")
+    background_situation: str | None = Field(None, description="User's brief description of the situation or context surrounding their question. Provides specific details for the LLM.")
+    current_feelings: list[str] | None = Field(None, description="User's current feelings or emotional state related to the question (e.g., ['Anxious', 'Hopeful']). Helps LLM tailor the tone.")
+    desired_outcome: str | None = Field(None, description="What the user hopes to gain from the reading (e.g., Clarity, Reassurance). Guides the LLM in framing advice.")
 
 
 class IChingDeepDivePredictionDetails(BaseModel):
@@ -39,10 +39,10 @@ class IChingDeepDivePredictionDetails(BaseModel):
     expanded_primary_interpretation: str = Field(description="A more in-depth analysis of the primary hexagram, specifically relating its symbolism and traditional meanings to the user's provided DeepDiveContext (area_of_life, background_situation, etc.). Should be more extensive than the basic interpretation.")
     contextual_changing_line_interpretation: str = Field(description="A deeper interpretation of the changing line identified in the basic prediction (from IChingPrediction.line_change), specifically explaining its significance in relation to the user's DeepDiveContext.")
     expanded_transformed_interpretation: str = Field(description="A richer interpretation of the hexagram that results from the line change(s) (from IChingPrediction.result), considering how it offers a path forward or a new perspective in relation to the user's DeepDiveContext.")
-    thematic_connections: List[str] = Field(description="A list of 2-3 key themes or overarching lessons synthesized from the entire reading (primary hexagram, changing line, transformed hexagram, and user context).")
+    thematic_connections: list[str] = Field(description="A list of 2-3 key themes or overarching lessons synthesized from the entire reading (primary hexagram, changing line, transformed hexagram, and user context).")
     actionable_insights_and_reflections: str = Field(description="More specific, tailored advice and actionable steps than the basic reading's advice. Should also include reflection prompts or questions for the user to consider, based on their DeepDiveContext and the reading's insights.")
-    potential_pitfalls: Optional[str] = Field(None, description="Potential challenges, obstacles, or areas of caution highlighted by the reading, relevant to the user's situation.")
-    key_strengths: Optional[str] = Field(None, description="Identified strengths, positive aspects, or resources (internal/external) that the user can leverage, as indicated by the reading and their context.")
+    potential_pitfalls: str | None = Field(None, description="Potential challenges, obstacles, or areas of caution highlighted by the reading, relevant to the user's situation.")
+    key_strengths: str | None = Field(None, description="Identified strengths, positive aspects, or resources (internal/external) that the user can leverage, as indicated by the reading and their context.")
 
 
 class IChingPrediction(BaseModel):
@@ -55,7 +55,7 @@ class IChingPrediction(BaseModel):
     line_change: LineChange = Field(description="Details of the changing line based on the Child Context.")
     result: HexagramResult = Field(description="The resulting hexagram after line changes, based on the Child Context.")
     advice: str = Field(description="Clear, specific, and practical recommendation directly answering the user's question.")
-    deep_dive_details: Optional[IChingDeepDivePredictionDetails] = Field(None, description="Contains all the detailed analyses specific to a Deep Dive reading. Will be null for basic readings.")
+    deep_dive_details: IChingDeepDivePredictionDetails | None = Field(None, description="Contains all the detailed analyses specific to a Deep Dive reading. Will be null for basic readings.")
 
 
 # --- Coordinate calculation models ---
@@ -89,8 +89,8 @@ class IChingTextResponse(BaseModel):
 
     parent_coord: str
     child_coord: str
-    parent_json: Optional[Dict[str, Any]] = None
-    child_json: Optional[Dict[str, Any]] = None
+    parent_json: dict[str, Any] | None = None
+    child_json: dict[str, Any] | None = None
 
 
 # --- Reading generation models ---
@@ -104,7 +104,7 @@ class IChingReadingRequest(BaseModel):
     first_number: int
     second_number: int
     third_number: int
-    deep_dive_context: Optional[DeepDiveContext] = Field(None, description="Additional context provided by the user for deep dive mode.")
+    deep_dive_context: DeepDiveContext | None = Field(None, description="Additional context provided by the user for deep dive mode.")
 
 
 class IChingReadingResponse(IChingPrediction):
@@ -130,9 +130,9 @@ class IChingSaveReadingRequest(BaseModel):
     first_number: int
     second_number: int
     third_number: int
-    prediction: Optional[IChingPrediction] = None
-    clarifying_question: Optional[str] = None
-    clarifying_answer: Optional[str] = None
+    prediction: IChingPrediction | None = None
+    clarifying_question: str | None = None
+    clarifying_answer: str | None = None
 
 
 class IChingSaveReadingResponse(BaseModel):
@@ -160,7 +160,7 @@ class IChingUpdateReadingRequest(BaseModel):
     third_number: int
     prediction: IChingPrediction
     clarifying_question: str
-    clarifying_answer: Optional[str] = None
+    clarifying_answer: str | None = None
 
 
 class IChingUpdateReadingResponse(BaseModel):

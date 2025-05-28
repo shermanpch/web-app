@@ -1,7 +1,6 @@
 """Authentication models for the application."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, EmailStr
 
@@ -9,16 +8,16 @@ from pydantic import BaseModel, EmailStr
 class UserBase(BaseModel):
     """Base user model with common fields."""
 
-    email: Optional[EmailStr] = None
+    email: EmailStr | None = None
 
 
 class UserData(UserBase):
     """User data model returned to clients."""
 
     id: str
-    last_sign_in_at: Optional[datetime] = None
-    created_at: Optional[datetime] = None
-    email_confirmed_at: Optional[datetime] = None
+    last_sign_in_at: datetime | None = None
+    created_at: datetime | None = None
+    email_confirmed_at: datetime | None = None
 
 
 class UserLogin(BaseModel):
@@ -26,7 +25,7 @@ class UserLogin(BaseModel):
 
     email: EmailStr
     password: str
-    remember_me: Optional[bool] = False
+    remember_me: bool | None = False
 
 
 class UserSignup(UserLogin):
@@ -57,7 +56,7 @@ class AuthResponse(BaseModel):
     """Base authentication response model."""
 
     success: bool
-    message: Optional[str] = None
+    message: str | None = None
 
 
 class AuthenticatedSession(BaseModel):
@@ -77,5 +76,5 @@ class UserSessionResponse(BaseModel):
     """Response model for user session data."""
 
     success: bool = True
-    data: Optional[UserSession] = None
-    message: Optional[str] = None
+    data: UserSession | None = None
+    message: str | None = None

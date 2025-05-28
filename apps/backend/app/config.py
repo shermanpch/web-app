@@ -1,7 +1,6 @@
 """Configuration settings for the application."""
 
 import os
-from typing import List
 from urllib.parse import urlparse
 
 from pydantic import ConfigDict
@@ -22,7 +21,7 @@ class Settings(BaseSettings):
     NETLIFY_DEV_PORT: int = int(os.getenv("NETLIFY_DEV_PORT", "8888"))
 
     @property
-    def cors_origins(self) -> List[str]:
+    def cors_origins(self) -> list[str]:
         """Get the CORS origins based on environment."""
         origins = [
             self.FRONTEND_URL,

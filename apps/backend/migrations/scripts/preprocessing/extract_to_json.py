@@ -67,7 +67,7 @@ class HexagramExtractor:
                     if "child" not in result[main_dir]:
                         result[main_dir]["child"] = {}
 
-                    with open(Path(dir_path) / "body.txt", "r") as f:
+                    with open(Path(dir_path) / "body.txt") as f:
                         content = f.read()
                     result[main_dir]["child"][child_id] = content
 
@@ -77,7 +77,7 @@ class HexagramExtractor:
                     if main_dir not in result:
                         result[main_dir] = {}
 
-                    with open(Path(dir_path) / "body.txt", "r") as f:
+                    with open(Path(dir_path) / "body.txt") as f:
                         content = f.read()
                     result[main_dir]["parent"] = content
 
@@ -93,7 +93,7 @@ class HexagramExtractor:
                 current_path = f"{parent_key}.{key}" if parent_key else key
                 if value is None:
                     return True, current_path
-                elif isinstance(value, (dict, list)):
+                elif isinstance(value, dict | list):
                     found, path = self.check_for_none_or_empty(value, current_path)
                     if found:
                         return True, path

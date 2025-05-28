@@ -1,11 +1,11 @@
 """Test configuration and fixtures for pytest."""
 
-import asyncio
 import logging
 import os
 import sys
+from collections.abc import Generator
 from pathlib import Path
-from typing import Any, Dict, Generator, List, Optional, Tuple
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -51,7 +51,7 @@ def client() -> Generator[TestClient, None, None]:
 
 
 @pytest.fixture(scope="function")
-def test_user() -> Generator[Dict[str, str], None, None]:
+def test_user() -> Generator[dict[str, str], None, None]:
     """
     Test user credentials.
 
@@ -67,8 +67,8 @@ def test_user() -> Generator[Dict[str, str], None, None]:
 
 @pytest.fixture(scope="function")
 def auth_tokens(
-    client: TestClient, test_user: Dict[str, str]
-) -> Generator[Dict[str, Any], None, None]:
+    client: TestClient, test_user: dict[str, str]
+) -> Generator[dict[str, Any], None, None]:
     """
     Get both access and refresh tokens for a test user.
     Automatically handles user creation and cleanup.
@@ -134,8 +134,8 @@ def auth_tokens(
 
 @pytest.fixture(scope="function")
 def authenticated_client(
-    client: TestClient, auth_tokens: Dict[str, Any]
-) -> Generator[Tuple[TestClient, Optional[str]], None, None]:
+    client: TestClient, auth_tokens: dict[str, Any]
+) -> Generator[tuple[TestClient, str | None], None, None]:
     """
     Provides a pre-authenticated TestClient instance.
 
@@ -161,7 +161,7 @@ def authenticated_client(
 
 
 @pytest.fixture(scope="function")
-def reset_password_user() -> Generator[Dict[str, str], None, None]:
+def reset_password_user() -> Generator[dict[str, str], None, None]:
     """
     User credentials for reset password test.
 
@@ -176,7 +176,7 @@ def reset_password_user() -> Generator[Dict[str, str], None, None]:
 # Assertion helper functions
 def assert_successful_response(
     response: Response, status_code: int = 200
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Assert that a response was successful with expected status code.
 
@@ -191,7 +191,7 @@ def assert_successful_response(
         response.status_code == status_code
     ), f"Expected status code {status_code}, got {response.status_code}: {response.text}"
 
-    data: Dict[str, Any] = response.json()
+    data: dict[str, Any] = response.json()
     if isinstance(data, dict) and "status" in data:
         assert (
             data.get("status") == "success"
@@ -200,7 +200,7 @@ def assert_successful_response(
     return data
 
 
-def assert_has_fields(obj: Dict[str, Any], fields: List[str], prefix: str = "") -> None:
+def assert_has_fields(obj: dict[str, Any], fields: list[str], prefix: str = "") -> None:
     """
     Assert that an object has all the specified fields.
 
@@ -213,7 +213,7 @@ def assert_has_fields(obj: Dict[str, Any], fields: List[str], prefix: str = "") 
         assert field in obj, f"{prefix}Missing required field: {field}"
 
 
-def extract_tokens_from_cookies(response: Response) -> Dict[str, str]:
+def extract_tokens_from_cookies(response: Response) -> dict[str, str]:
     """
     Extract authentication tokens from response cookies.
 
@@ -236,7 +236,7 @@ def extract_tokens_from_cookies(response: Response) -> Dict[str, str]:
     }
 
 
-def extract_user_data(response: Response) -> Dict[str, Any]:
+def extract_user_data(response: Response) -> dict[str, Any]:
     """
     Extract user data from response.
 

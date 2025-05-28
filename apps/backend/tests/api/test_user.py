@@ -2,7 +2,7 @@
 
 import logging
 import uuid
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -17,10 +17,10 @@ logger = logging.getLogger(__name__)
 class TestUser(BaseTest):
     """Test suite for user endpoints and functionality."""
 
-    def _create_test_reading(self, client: TestClient, user_id: str) -> Dict[str, Any]:
+    def _create_test_reading(self, client: TestClient, user_id: str) -> dict[str, Any]:
         """Helper method to create a test reading."""
         # Create a reading
-        reading_data: Dict[str, Any] = {
+        reading_data: dict[str, Any] = {
             "first_number": 123,
             "second_number": 456,
             "third_number": 789,
@@ -35,7 +35,7 @@ class TestUser(BaseTest):
             json=reading_data,
         )
         assert iching_response.status_code == 200, "Failed to get I-Ching reading"
-        prediction: Dict[str, Any] = iching_response.json()
+        prediction: dict[str, Any] = iching_response.json()
 
         # Save the reading
         save_response = client.post(
@@ -76,7 +76,7 @@ class TestUser(BaseTest):
         ), "Request should fail with authentication error when no auth is provided"
 
         # Verify error details in response
-        error_data: Dict[str, Any] = readings_response.json()
+        error_data: dict[str, Any] = readings_response.json()
         assert "detail" in error_data, "Response should contain error details"
         assert (
             "Authentication" in error_data["detail"]
@@ -85,7 +85,7 @@ class TestUser(BaseTest):
         self.logger.info("Non-authenticated get readings test passed successfully!")
 
     def test_get_readings_authenticated(
-        self, authenticated_client: Tuple[TestClient, Optional[str]]
+        self, authenticated_client: tuple[TestClient, str | None]
     ) -> None:
         """Test retrieving user readings with authentication."""
         # ARRANGE
@@ -101,11 +101,11 @@ class TestUser(BaseTest):
         ), f"User readings retrieval failed: {readings_response.text}"
 
         # Readings are now paginated in a dictionary, not a direct list
-        paginated_response: Dict[str, Any] = readings_response.json()
+        paginated_response: dict[str, Any] = readings_response.json()
         assert isinstance(paginated_response, dict), "Response should be a JSON object"
 
         # Access the list of readings using the "items" key
-        actual_readings_list: List[Dict[str, Any]] = paginated_response["items"]
+        actual_readings_list: list[dict[str, Any]] = paginated_response["items"]
 
         # Verify paginated response structure
         assert_has_fields(
@@ -116,7 +116,7 @@ class TestUser(BaseTest):
         # If we have readings, verify their structure
         if actual_readings_list:
             self.logger.info(f"Found {len(actual_readings_list)} readings for user")
-            first_reading: Dict[str, Any] = actual_readings_list[0]
+            first_reading: dict[str, Any] = actual_readings_list[0]
             assert_has_fields(
                 first_reading,
                 [
@@ -154,7 +154,7 @@ class TestUser(BaseTest):
         ), "Request should fail with authentication error when no auth is provided"
 
         # Verify error details in response
-        error_data: Dict[str, Any] = reading_response.json()
+        error_data: dict[str, Any] = reading_response.json()
         assert "detail" in error_data, "Response should contain error details"
         assert (
             "Authentication" in error_data["detail"]
@@ -165,7 +165,7 @@ class TestUser(BaseTest):
         )
 
     def test_get_single_reading_authenticated(
-        self, authenticated_client: Tuple[TestClient, Optional[str]]
+        self, authenticated_client: tuple[TestClient, str | None]
     ) -> None:
         """Test retrieving a single reading with authentication."""
         # ARRANGE
@@ -173,7 +173,7 @@ class TestUser(BaseTest):
         client, user_id = authenticated_client
 
         # Step 1: Create a test reading
-        save_data: Dict[str, Any] = self._create_test_reading(client, user_id)
+        save_data: dict[str, Any] = self._create_test_reading(client, user_id)
         reading_id = save_data["id"]
         self.logger.info(f"Successfully created reading with ID: {reading_id}")
 
@@ -187,7 +187,7 @@ class TestUser(BaseTest):
         ), f"Get single reading failed: {reading_response.text}"
 
         # Verify the retrieved reading
-        reading_data: Dict[str, Any] = reading_response.json()
+        reading_data: dict[str, Any] = reading_response.json()
         assert isinstance(reading_data, dict), "Response should be a JSON object"
 
         # Check that all required fields are present
@@ -217,7 +217,7 @@ class TestUser(BaseTest):
         self.logger.info("Get single reading test passed successfully!")
 
     def test_get_nonexistent_reading(
-        self, authenticated_client: Tuple[TestClient, Optional[str]]
+        self, authenticated_client: tuple[TestClient, str | None]
     ) -> None:
         """Test retrieving a nonexistent reading."""
         # ARRANGE
@@ -233,12 +233,12 @@ class TestUser(BaseTest):
             reading_response.status_code == 500
         ), f"Expected 500 for nonexistent reading, got {reading_response.status_code}"
 
-        error_data: Dict[str, Any] = reading_response.json()
+        error_data: dict[str, Any] = reading_response.json()
         assert "detail" in error_data, "Response should contain error details"
         self.logger.info("Get nonexistent reading test passed successfully!")
 
     def test_delete_nonexistent_reading(
-        self, authenticated_client: Tuple[TestClient, Optional[str]]
+        self, authenticated_client: tuple[TestClient, str | None]
     ) -> None:
         """Test deleting a nonexistent reading."""
         # ARRANGE
@@ -254,7 +254,7 @@ class TestUser(BaseTest):
             delete_response.status_code == 404
         ), f"Expected 404 for nonexistent reading, got {delete_response.status_code}"
 
-        error_data: Dict[str, Any] = delete_response.json()
+        error_data: dict[str, Any] = delete_response.json()
         assert "detail" in error_data, "Response should contain error details"
 
     def test_delete_single_reading_non_authenticated(self, client: TestClient) -> None:
@@ -275,7 +275,7 @@ class TestUser(BaseTest):
         ), "Request should fail with authentication error when no auth is provided"
 
         # Verify error details in response
-        error_data: Dict[str, Any] = delete_response.json()
+        error_data: dict[str, Any] = delete_response.json()
         assert "detail" in error_data, "Response should contain error details"
         assert (
             "Authentication" in error_data["detail"]
@@ -302,7 +302,7 @@ class TestUser(BaseTest):
         ), "Request should fail with authentication error when no auth is provided"
 
         # Verify error details in response
-        error_data: Dict[str, Any] = delete_response.json()
+        error_data: dict[str, Any] = delete_response.json()
         assert "detail" in error_data, "Response should contain error details"
         assert (
             "Authentication" in error_data["detail"]
@@ -313,7 +313,7 @@ class TestUser(BaseTest):
         )
 
     def test_delete_single_reading_authenticated(
-        self, authenticated_client: Tuple[TestClient, Optional[str]]
+        self, authenticated_client: tuple[TestClient, str | None]
     ) -> None:
         """Test deleting a single reading with authentication."""
         # ARRANGE
@@ -321,7 +321,7 @@ class TestUser(BaseTest):
         client, user_id = authenticated_client
 
         # Step 1: Create a test reading
-        save_data: Dict[str, Any] = self._create_test_reading(client, user_id)
+        save_data: dict[str, Any] = self._create_test_reading(client, user_id)
         reading_id = save_data["id"]
         self.logger.info(f"Successfully created reading with ID: {reading_id}")
 
@@ -335,7 +335,7 @@ class TestUser(BaseTest):
         ), f"Delete reading failed: {delete_response.text}"
 
         # Verify response structure
-        delete_data: Dict[str, Any] = delete_response.json()
+        delete_data: dict[str, Any] = delete_response.json()
         assert isinstance(delete_data, dict), "Response should be a JSON object"
 
         # Check that all required fields are present
@@ -367,7 +367,7 @@ class TestUser(BaseTest):
         self.logger.info("Delete single reading test passed successfully!")
 
     def test_delete_all_readings_authenticated(
-        self, authenticated_client: Tuple[TestClient, Optional[str]]
+        self, authenticated_client: tuple[TestClient, str | None]
     ) -> None:
         """Test deleting all readings with authentication."""
         # ARRANGE
@@ -376,7 +376,7 @@ class TestUser(BaseTest):
 
         # Step 1: Create multiple test readings
         num_readings = 3
-        created_readings: List[Dict[str, Any]] = []
+        created_readings: list[dict[str, Any]] = []
         for i in range(num_readings):
             save_data = self._create_test_reading(client, user_id)
             created_readings.append(save_data)
@@ -385,7 +385,7 @@ class TestUser(BaseTest):
         # Step 2: Verify readings were created
         readings_response = client.get("/api/user/readings")
         assert readings_response.status_code == 200, "Failed to get readings"
-        paginated_response: Dict[str, Any] = readings_response.json()
+        paginated_response: dict[str, Any] = readings_response.json()
         assert (
             paginated_response["total_items"] >= num_readings
         ), "Not all test readings were created"
@@ -400,7 +400,7 @@ class TestUser(BaseTest):
         ), f"Delete all readings failed: {delete_response.text}"
 
         # Verify response structure
-        delete_data: Dict[str, Any] = delete_response.json()
+        delete_data: dict[str, Any] = delete_response.json()
         assert isinstance(delete_data, dict), "Response should be a JSON object"
         assert "message" in delete_data, "Response should contain a message"
 
@@ -409,7 +409,7 @@ class TestUser(BaseTest):
         assert (
             final_response.status_code == 200
         ), "Failed to get readings after deletion"
-        final_paginated_data: Dict[str, Any] = final_response.json()
+        final_paginated_data: dict[str, Any] = final_response.json()
         assert final_paginated_data["total_items"] == 0, "Not all readings were deleted"
 
         self.logger.info("Delete all readings test passed successfully!")
@@ -420,7 +420,7 @@ class TestUser(BaseTest):
 
     @pytest.mark.asyncio
     async def test_get_user_profile_status(
-        self, authenticated_client: Tuple[TestClient, Optional[str]]
+        self, authenticated_client: tuple[TestClient, str | None]
     ) -> None:
         """Test retrieving user profile status with quotas."""
         # ARRANGE
@@ -504,7 +504,7 @@ class TestUser(BaseTest):
         assert "Authentication" in error_data["detail"]
 
     def test_upgrade_membership(
-        self, authenticated_client: Tuple[TestClient, Optional[str]]
+        self, authenticated_client: tuple[TestClient, str | None]
     ) -> None:
         """Test upgrading user membership to premium."""
         # ARRANGE

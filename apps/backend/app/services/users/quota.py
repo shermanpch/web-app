@@ -2,7 +2,6 @@
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Optional
 from uuid import UUID
 
 from supabase._async.client import AsyncClient
@@ -16,7 +15,7 @@ logger = logging.getLogger(__name__)
 async def get_user_profile(
     user_id: UUID,
     client: AsyncClient,
-) -> Optional[UserProfileResponse]:
+) -> UserProfileResponse | None:
     """
     Fetch user profile data from the profiles table, joining with membership_tiers for the tier name.
 
@@ -75,7 +74,7 @@ async def get_feature_quota_rule(
     tier_id: int,
     feature_id: int,
     client: AsyncClient,
-) -> Optional[Dict]:
+) -> dict | None:
     """
     Get the quota rule for a specific membership tier and feature.
 
@@ -229,7 +228,7 @@ async def log_usage(
     user_id: UUID,
     feature_name: str,
     client: AsyncClient,
-    details: Optional[Dict] = None,
+    details: dict | None = None,
 ) -> None:
     """
     Log a feature usage event.
