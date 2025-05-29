@@ -15,6 +15,7 @@ from ...models.divination import (
     IChingUpdateReadingResponse,
 )
 
+
 # Set up logger
 logger = logging.getLogger(__name__)
 

@@ -1,17 +1,18 @@
 """Test configuration and fixtures for pytest."""
 
+from collections.abc import Generator
 import logging
 import os
-import sys
-from collections.abc import Generator
 from pathlib import Path
+import sys
 from typing import Any
 
-import pytest
 from fastapi.testclient import TestClient
 from httpx import Response
+import pytest
 
 from main import app
+
 
 # Create logs directory if it doesn't exist
 log_dir = Path(__file__).parent.parent / "logs"

@@ -8,6 +8,7 @@ from supabase._async.client import AsyncClient
 
 from ...models.users import DeleteReadingResponse, UserReadingResponse
 
+
 # Create logger
 logger = logging.getLogger(__name__)
 

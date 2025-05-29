@@ -1,7 +1,7 @@
 """User API endpoints."""
 
-import logging
 from datetime import datetime, timedelta, timezone
+import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
@@ -29,6 +29,7 @@ from ...services.users.reading import (
     get_reading_by_id,
     get_user_readings_from_db,
 )
+
 
 router = APIRouter(prefix="/user", tags=["user"])
 

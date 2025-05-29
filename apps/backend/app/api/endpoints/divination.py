@@ -28,6 +28,7 @@ from ...services.divination.iching import (
 )
 from ...services.users.quota import check_quota, log_usage
 
+
 router = APIRouter(prefix="/divination", tags=["divination"])
 
 logger = logging.getLogger(__name__)

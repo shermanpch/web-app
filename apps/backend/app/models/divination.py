@@ -4,6 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+
 # fmt:off
 
 # --- Basic component models ---

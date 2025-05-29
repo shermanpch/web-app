@@ -3,9 +3,9 @@
 import logging
 from typing import Any
 
-import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
+import pytest
 
 from tests.api.base_test import BaseTest
 from tests.conftest import (
@@ -14,6 +14,7 @@ from tests.conftest import (
     extract_tokens_from_cookies,
     extract_user_data,
 )
+
 
 # Get the logger with module name
 logger = logging.getLogger(__name__)

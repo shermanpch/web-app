@@ -29,6 +29,7 @@ from ...services.auth.supabase import (
     signup_user,
 )
 
+
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 logger = logging.getLogger(__name__)

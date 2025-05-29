@@ -46,6 +46,7 @@ from .services.divination.iching import (
 from .services.users.quota import check_quota, log_usage
 from .services.users.reading import get_user_readings_from_db
 
+
 __all__ = [
     # API
     "api_router",

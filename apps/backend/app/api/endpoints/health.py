@@ -1,12 +1,13 @@
 """Generic Health Check Endpoints"""
 
+from datetime import datetime, timezone
 import platform
 import time
-from datetime import datetime, timezone
 
-import psutil
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
+import psutil
+
 
 router = APIRouter()
 

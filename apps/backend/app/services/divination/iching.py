@@ -18,6 +18,7 @@ from ...models.divination import (
 )
 from ...services.core.oracle import Oracle
 
+
 # Create logger
 logger = logging.getLogger(__name__)
 

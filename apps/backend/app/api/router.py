@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from .endpoints import auth, divination, health, user
 
+
 router = APIRouter()
 
 # Include routers from endpoints

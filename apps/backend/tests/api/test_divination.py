@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from tests.api.base_test import BaseTest
 from tests.conftest import assert_has_fields
 
+
 # Get the logger with module name
 logger = logging.getLogger(__name__)
 

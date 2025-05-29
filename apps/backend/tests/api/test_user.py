@@ -1,14 +1,15 @@
 """Tests for user endpoints and functionality."""
 
 import logging
-import uuid
 from typing import Any
+import uuid
 
-import pytest
 from fastapi.testclient import TestClient
+import pytest
 
 from tests.api.base_test import BaseTest
 from tests.conftest import assert_has_fields, assert_successful_response
+
 
 # Get the logger with module name
 logger = logging.getLogger(__name__)

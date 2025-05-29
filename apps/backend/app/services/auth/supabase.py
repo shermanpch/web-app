@@ -10,6 +10,7 @@ from supabase.lib.client_options import ClientOptions
 
 from ...config import settings
 
+
 logger = logging.getLogger(__name__)
 
 

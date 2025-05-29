@@ -12,9 +12,6 @@ classifiers = ["Programming Language :: Python :: 3", "License :: OSI Approved :
 [tool.black]
 line-length = 88
 
-[tool.isort]
-profile = "black"
-
 [tool.ruff]
 # Set the maximum line length to match Black
 line-length = 88
@@ -35,6 +32,16 @@ select = [
 ignore = [
     "E501",  # Line too long (handled by formatter)
 ]
+
+[tool.ruff.lint.isort]
+# Configure ruff's isort to be compatible with black
+force-single-line = false
+lines-after-imports = 2
+known-first-party = ["app", "tests"]
+known-third-party = ["fastapi", "supabase", "pydantic", "pytest"]
+split-on-trailing-comma = true
+combine-as-imports = true
+force-sort-within-sections = true
 
 [tool.ruff.lint.per-file-ignores]
 # Allow unused imports in __init__.py files (they're often re-exports)

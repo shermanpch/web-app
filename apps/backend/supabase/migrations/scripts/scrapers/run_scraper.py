@@ -16,17 +16,18 @@ import concurrent.futures
 import hashlib
 import logging
 import os
+from pathlib import Path
 import sys
 import time
-from pathlib import Path
 from urllib.parse import urlparse
 
-import requests
 from bs4 import BeautifulSoup
 
 # Import COORDINATE and HEXAGRAM from core modules
 from constants.coordinate import COORDINATE
 from constants.hexagram import HEXAGRAM
+import requests
+
 
 # Create logs directory if it doesn't exist
 log_dir = Path(

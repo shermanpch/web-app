@@ -12,6 +12,7 @@ Usage:
     python migrate_to_supabase.py
 """
 
+from functools import wraps
 import glob
 import json
 import logging
@@ -21,16 +22,17 @@ import random
 import sys
 import threading
 import time
-from functools import wraps
+
 
 # Add the parent directory to the system path to import config
 sys.path.insert(
     0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
 )
 import postgrest
+from supabase import create_client
 
 from app.config import settings
-from supabase import create_client
+
 
 # Set up logging
 logs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../logs")

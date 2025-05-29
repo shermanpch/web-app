@@ -1,6 +1,7 @@
 import os
 import sys
 
+
 # Add the parent directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -9,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import router as api_router
 from app.config import settings
+
 
 app = FastAPI(
     title="deltao.ai API",
