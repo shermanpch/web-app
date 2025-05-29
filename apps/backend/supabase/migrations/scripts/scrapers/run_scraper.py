@@ -141,7 +141,9 @@ def process_hexagram(coordinate_info):
     migrations_scripts_dir = os.path.abspath(os.path.join(script_dir, ".."))
     data_dir = os.path.join(migrations_scripts_dir, "data")
 
-    for idx, (title_div, body_div) in enumerate(zip(title_divs, body_divs)):
+    for idx, (title_div, body_div) in enumerate(
+        zip(title_divs, body_divs, strict=False)
+    ):
         title_text = title_div.get_text(separator="\n", strip=True)
         body_text = body_div.get_text(separator="\n", strip=True)
         combined = f"{title_text}\n{body_text}"

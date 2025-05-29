@@ -26,12 +26,32 @@ select = [
     "F",   # Pyflakes (unused imports, variables, etc.)
     "I",   # isort (import sorting)
     "UP",  # pyupgrade (modern Python syntax)
+    "B",   # flake8-bugbear (common bugs and design problems)
+    "C4",  # flake8-comprehensions (better list/dict comprehensions)
+    "SIM", # flake8-simplify (simplify code)
 ]
 
 # Ignore these specific rules globally
 ignore = [
     "E501",  # Line too long (handled by formatter)
+    "SIM108", # Use ternary operator (can reduce readability)
+    "B008",  # Do not perform function call in argument defaults (FastAPI dependency injection pattern)
+    "B904",  # Within except clause, raise exceptions with `raise ... from err` (intentional for API security)
 ]
+
+# Allow fix for all enabled rules (when `--fix`) is provided
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings
+quote-style = "double"
+# Like Black, indent with spaces, rather than tabs
+indent-style = "space"
+# Like Black, respect magic trailing commas
+skip-magic-trailing-comma = false
+# Like Black, automatically detect the appropriate line ending
+line-ending = "auto"
 
 [tool.ruff.lint.isort]
 # Configure ruff's isort to be compatible with black
@@ -47,6 +67,11 @@ force-sort-within-sections = true
 # Allow unused imports in __init__.py files (they're often re-exports)
 "__init__.py" = ["F401"]
 "*/__init__.py" = ["F401"]
+# Test files can have some additional flexibility
+"tests/**/*.py" = [
+    "S101",    # Use of assert detected (pytest uses assertions)
+    "PLR2004", # Magic value used in comparison
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
