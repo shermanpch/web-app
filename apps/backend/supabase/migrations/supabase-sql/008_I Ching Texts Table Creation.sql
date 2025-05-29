@@ -87,6 +87,6 @@ GRANT ALL ON TABLE public.iching_texts TO service_role;
 -- End of Script for 'iching_texts'
 -- ============================================================
 -- Reminder: After running this script, you need to run your
---           `migrations/scripts/migrate_to_supabase.py
+--           `supabase/migrations/scripts/migrate_to_supabase.py
 --           script again to populate this table with data.
 -- ============================================================

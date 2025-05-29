@@ -75,11 +75,11 @@ wheels/
 # Project Specific
 # =========================================
 # Scraped data
-apps/backend/migrations/scripts/data/
-apps/backend/migrations/scripts/scrapers/.scraper_cache/
+apps/backend/supabase/migrations/scripts/data/
+apps/backend/supabase/migrations/scripts/scrapers/.scraper_cache/
 
 # Preprocessed data
-apps/backend/migrations/scripts/preprocessing/data/
+apps/backend/supabase/migrations/scripts/preprocessing/data/
 
 # Cursor tool config
 .cursorrules

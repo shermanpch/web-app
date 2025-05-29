@@ -14,7 +14,7 @@ from httpx import Response
 from main import app
 
 # Create logs directory if it doesn't exist
-log_dir = Path("logs")
+log_dir = Path(__file__).parent.parent / "logs"
 log_dir.mkdir(exist_ok=True)
 
 # Configure root logger
