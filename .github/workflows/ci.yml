@@ -66,6 +66,12 @@ jobs:
         working-directory: ./apps/backend
         run: pip install -r requirements.txt
       
+      - name: Run Ruff linter & formatter check
+        working-directory: ./apps/backend
+        run: |
+          ruff check .
+          ruff format --check .
+      
       # Build frontend
       - name: Build frontend
         run: npm run build

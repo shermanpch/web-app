@@ -17,11 +17,15 @@
     "format": "prettier --write \"**/*.{ts,tsx,md,js,jsx,json}\"",
     "test:backend": "npm run --prefix apps/backend test:all",
     "lint": "npm run --prefix apps/frontend lint",
-    "build": "npm run --prefix apps/frontend build"
+    "build": "npm run --prefix apps/frontend build",
+    "backend:ruff:check": "ruff check apps/backend",
+    "pre-push-checks": "npm run lint && npm run backend:ruff:check",
+    "prepare": "husky install"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
-    "netlify-cli": "^19.1.4",
+    "husky": "^8.0.0",
+    "netlify-cli": "^21.5.0",
     "prettier": "^3.5.3"
   },
   "engines": {

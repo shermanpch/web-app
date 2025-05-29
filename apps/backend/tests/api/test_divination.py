@@ -37,16 +37,16 @@ class TestDivination(BaseTest):
         )
 
         # ASSERT
-        assert (
-            iching_response.status_code == 401
-        ), "Request should fail with authentication error when no auth is provided"
+        assert iching_response.status_code == 401, (
+            "Request should fail with authentication error when no auth is provided"
+        )
 
         # Verify error details in response
         error_data: dict[str, Any] = iching_response.json()
         assert "detail" in error_data, "Response should contain error details"
-        assert (
-            "Authentication" in error_data["detail"]
-        ), "Error should mention authentication"
+        assert "Authentication" in error_data["detail"], (
+            "Error should mention authentication"
+        )
 
         self.logger.info("Non-authenticated test passed successfully!")
 
@@ -72,9 +72,9 @@ class TestDivination(BaseTest):
         )
 
         # ASSERT
-        assert (
-            iching_response.status_code == 200
-        ), f"I-Ching text retrieval failed: {iching_response.text}"
+        assert iching_response.status_code == 200, (
+            f"I-Ching text retrieval failed: {iching_response.text}"
+        )
 
         # Verify response structure and content
         iching_data: dict[str, Any] = iching_response.json()
@@ -84,12 +84,12 @@ class TestDivination(BaseTest):
         )
 
         # Verify coordinates match request
-        assert (
-            iching_data["parent_coord"] == test_parent_coord
-        ), f"Expected parent_coord {test_parent_coord}, got {iching_data['parent_coord']}"
-        assert (
-            iching_data["child_coord"] == test_child_coord
-        ), f"Expected child_coord {test_child_coord}, got {iching_data['child_coord']}"
+        assert iching_data["parent_coord"] == test_parent_coord, (
+            f"Expected parent_coord {test_parent_coord}, got {iching_data['parent_coord']}"
+        )
+        assert iching_data["child_coord"] == test_child_coord, (
+            f"Expected child_coord {test_child_coord}, got {iching_data['child_coord']}"
+        )
 
         # Log a preview of the text content for debugging
         self._log_text_preview(iching_data)
@@ -138,21 +138,21 @@ class TestDivination(BaseTest):
         )
 
         # ASSERT
-        assert (
-            coordinates_response.status_code == 200
-        ), f"I-Ching coordinates conversion failed: {coordinates_response.text}"
+        assert coordinates_response.status_code == 200, (
+            f"I-Ching coordinates conversion failed: {coordinates_response.text}"
+        )
 
         # Verify response structure and content
         coordinates_data: dict[str, Any] = coordinates_response.json()
         assert_has_fields(coordinates_data, ["parent_coord", "child_coord"])
 
         # Verify coordinates match expected values
-        assert (
-            coordinates_data["parent_coord"] == expected_parent_coord
-        ), f"Expected parent_coord {expected_parent_coord}, got {coordinates_data['parent_coord']}"
-        assert (
-            coordinates_data["child_coord"] == expected_child_coord
-        ), f"Expected child_coord {expected_child_coord}, got {coordinates_data['child_coord']}"
+        assert coordinates_data["parent_coord"] == expected_parent_coord, (
+            f"Expected parent_coord {expected_parent_coord}, got {coordinates_data['parent_coord']}"
+        )
+        assert coordinates_data["child_coord"] == expected_child_coord, (
+            f"Expected child_coord {expected_child_coord}, got {coordinates_data['child_coord']}"
+        )
 
         self.logger.info("I-Ching coordinates conversion test passed successfully!")
 
@@ -181,9 +181,9 @@ class TestDivination(BaseTest):
         )
 
         # ASSERT
-        assert (
-            iching_response.status_code == 200
-        ), f"I-Ching reading retrieval failed: {iching_response.text}"
+        assert iching_response.status_code == 200, (
+            f"I-Ching reading retrieval failed: {iching_response.text}"
+        )
 
         # Verify response structure
         reading_data = iching_response.json()
@@ -208,9 +208,9 @@ class TestDivination(BaseTest):
         assert reading_data["mode"] == "basic", "Expected mode to be 'basic'"
 
         # Check that deep_dive_details is None or not present for basic mode
-        assert (
-            reading_data.get("deep_dive_details") is None
-        ), "deep_dive_details should be None for basic mode"
+        assert reading_data.get("deep_dive_details") is None, (
+            "deep_dive_details should be None for basic mode"
+        )
 
         # Check that line_change and result are properly structured
         assert_has_fields(reading_data["line_change"], ["line", "interpretation"])
@@ -276,9 +276,9 @@ class TestDivination(BaseTest):
             json=request_data,
         )
 
-        assert (
-            iching_response.status_code == 200
-        ), f"I-Ching deep dive reading retrieval failed: {iching_response.text}"
+        assert iching_response.status_code == 200, (
+            f"I-Ching deep dive reading retrieval failed: {iching_response.text}"
+        )
 
         reading_data = iching_response.json()
         assert isinstance(reading_data, dict), "Response should be a JSON object"
@@ -300,9 +300,9 @@ class TestDivination(BaseTest):
         assert reading_data["mode"] == "deep_dive"
 
         # Assert deep_dive_details is present and structured correctly
-        assert (
-            "deep_dive_details" in reading_data
-        ), "deep_dive_details should be present for deep_dive mode"
+        assert "deep_dive_details" in reading_data, (
+            "deep_dive_details should be present for deep_dive mode"
+        )
         deep_dive_details = reading_data["deep_dive_details"]
         assert deep_dive_details is not None, "deep_dive_details should not be None"
 
@@ -393,9 +393,9 @@ class TestDivination(BaseTest):
             json=reading_data,
         )
 
-        assert (
-            reading_response.status_code == 200
-        ), f"Failed to get I-Ching reading: {reading_response.text}"
+        assert reading_response.status_code == 200, (
+            f"Failed to get I-Ching reading: {reading_response.text}"
+        )
 
         # Get the real prediction data
         reading_data = reading_response.json()
@@ -423,9 +423,9 @@ class TestDivination(BaseTest):
         )
 
         # ASSERT
-        assert (
-            save_response.status_code == 200
-        ), f"I-Ching reading save failed: {save_response.text}"
+        assert save_response.status_code == 200, (
+            f"I-Ching reading save failed: {save_response.text}"
+        )
 
         # Verify response structure
         save_data = save_response.json()
@@ -438,9 +438,9 @@ class TestDivination(BaseTest):
         )
 
         # Verify the saved data matches what we sent
-        assert (
-            save_data["user_id"] == user_id
-        ), f"Expected user_id {user_id}, got {save_data['user_id']}"
+        assert save_data["user_id"] == user_id, (
+            f"Expected user_id {user_id}, got {save_data['user_id']}"
+        )
         assert save_data["success"] is True, "Expected success to be True"
 
         # Verify we got back a UUID
@@ -486,9 +486,9 @@ class TestDivination(BaseTest):
             json=reading_data,
         )
 
-        assert (
-            iching_response.status_code == 200
-        ), f"Failed to get I-Ching reading: {iching_response.text}"
+        assert iching_response.status_code == 200, (
+            f"Failed to get I-Ching reading: {iching_response.text}"
+        )
 
         # Get the real prediction data
         reading_data = iching_response.json()
@@ -518,9 +518,9 @@ class TestDivination(BaseTest):
         )
 
         # Verify save was successful
-        assert (
-            save_response.status_code == 200
-        ), f"I-Ching reading save failed: {save_response.text}"
+        assert save_response.status_code == 200, (
+            f"I-Ching reading save failed: {save_response.text}"
+        )
 
         save_data = save_response.json()
         reading_id = save_data.get("id")
@@ -550,9 +550,9 @@ class TestDivination(BaseTest):
         )
 
         # ASSERT
-        assert (
-            update_response.status_code == 200
-        ), f"I-Ching reading update failed: {update_response.text}"
+        assert update_response.status_code == 200, (
+            f"I-Ching reading update failed: {update_response.text}"
+        )
 
         # Verify response structure
         update_data = update_response.json()
@@ -572,18 +572,18 @@ class TestDivination(BaseTest):
         )
 
         # Verify the updated data matches what we sent
-        assert (
-            update_data["id"] == reading_id
-        ), f"Expected reading_id {reading_id}, got {update_data['id']}"
-        assert (
-            update_data["user_id"] == user_id
-        ), f"Expected user_id {user_id}, got {update_data['user_id']}"
-        assert (
-            update_data["clarifying_question"] == test_clarifying_question
-        ), "Clarifying question doesn't match"
-        assert (
-            update_data["clarifying_answer"] is not None
-        ), "Expected clarifying answer to be provided"
+        assert update_data["id"] == reading_id, (
+            f"Expected reading_id {reading_id}, got {update_data['id']}"
+        )
+        assert update_data["user_id"] == user_id, (
+            f"Expected user_id {user_id}, got {update_data['user_id']}"
+        )
+        assert update_data["clarifying_question"] == test_clarifying_question, (
+            "Clarifying question doesn't match"
+        )
+        assert update_data["clarifying_answer"] is not None, (
+            "Expected clarifying answer to be provided"
+        )
 
         # Log the updated reading details
         # fmt:off

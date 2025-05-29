@@ -187,15 +187,15 @@ def assert_successful_response(
     Returns:
         dict: Response data as JSON
     """
-    assert (
-        response.status_code == status_code
-    ), f"Expected status code {status_code}, got {response.status_code}: {response.text}"
+    assert response.status_code == status_code, (
+        f"Expected status code {status_code}, got {response.status_code}: {response.text}"
+    )
 
     data: dict[str, Any] = response.json()
     if isinstance(data, dict) and "status" in data:
-        assert (
-            data.get("status") == "success"
-        ), f"Expected 'success' status, got: {data.get('status')}"
+        assert data.get("status") == "success", (
+            f"Expected 'success' status, got: {data.get('status')}"
+        )
 
     return data
 

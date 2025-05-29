@@ -51,7 +51,7 @@ export default function ProfilePage() {
     if (!dateString) return "-";
     try {
       return format(new Date(dateString), "MMMM d, yyyy");
-    } catch (err) {
+    } catch {
       return "-";
     }
   };
@@ -94,7 +94,7 @@ export default function ProfilePage() {
 
       if (daysLeft < 0) return "0"; // Already passed
       return daysLeft.toString();
-    } catch (err) {
+    } catch {
       return "-";
     }
   };

@@ -44,9 +44,9 @@ class TestAuthentication(BaseTest):
         # Verify user data
         user_data: dict[str, Any] = extract_user_data(response)
         assert user_data.get("id"), "Response should include user ID"
-        assert (
-            user_data.get("email") == test_user["email"]
-        ), "Email should match test user"
+        assert user_data.get("email") == test_user["email"], (
+            "Email should match test user"
+        )
 
         # Set cookies for cleanup
         client.cookies.set("auth_token", cookies.get("auth_token"))
@@ -73,9 +73,9 @@ class TestAuthentication(BaseTest):
 
         # Create a user specifically for this test
         signup_response = client.post("/api/auth/signup", json=new_test_user)
-        assert (
-            signup_response.status_code == 200
-        ), "Failed to create test user for login test"
+        assert signup_response.status_code == 200, (
+            "Failed to create test user for login test"
+        )
 
         # ACT - Login with the user we just created
         response = client.post("/api/auth/login", json=new_test_user)
@@ -121,9 +121,9 @@ class TestAuthentication(BaseTest):
         assert_has_fields(user_data, ["id", "email"])
 
         # Verify the user_id matches what we got from the fixture
-        assert (
-            user_data["id"] == user_id
-        ), "User ID in response doesn't match authenticated user"
+        assert user_data["id"] == user_id, (
+            "User ID in response doesn't match authenticated user"
+        )
 
     def test_reset_password(
         self, client: TestClient, reset_password_user: dict[str, str]
@@ -253,9 +253,9 @@ class TestAuthentication(BaseTest):
 
         # Sign up the user
         signup_response = client.post("/api/auth/signup", json=test_user)
-        assert (
-            signup_response.status_code == 200
-        ), f"Failed to create user: {signup_response.text}"
+        assert signup_response.status_code == 200, (
+            f"Failed to create user: {signup_response.text}"
+        )
 
         # Get user ID from response
         user_data = extract_user_data(signup_response)
@@ -263,9 +263,9 @@ class TestAuthentication(BaseTest):
 
         # Login to get the token
         login_response = client.post("/api/auth/login", json=test_user)
-        assert (
-            login_response.status_code == 200
-        ), f"Failed to login: {login_response.text}"
+        assert login_response.status_code == 200, (
+            f"Failed to login: {login_response.text}"
+        )
 
         # Get token and set cookies on client instance
         tokens = extract_tokens_from_cookies(login_response)
@@ -361,12 +361,12 @@ class TestAuthentication(BaseTest):
         assert refresh_max_age, "Max-Age not found in refresh_token cookie"
 
         # Verify the cookies have 30-day expiry (2592000 seconds)
-        assert (
-            auth_max_age == "2592000"
-        ), f"auth_token should have 30-day expiry, got {auth_max_age}"
-        assert (
-            refresh_max_age == "2592000"
-        ), f"refresh_token should have 30-day expiry, got {refresh_max_age}"
+        assert auth_max_age == "2592000", (
+            f"auth_token should have 30-day expiry, got {auth_max_age}"
+        )
+        assert refresh_max_age == "2592000", (
+            f"refresh_token should have 30-day expiry, got {refresh_max_age}"
+        )
 
         # Set cookies for cleanup
         client.cookies.set("auth_token", cookies.get("auth_token"))

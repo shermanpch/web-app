@@ -260,13 +260,17 @@ async def log_usage(
         feature_id = feature_response.data[0]["id"]
 
         # Insert usage log
-        await client.from_("divinations").insert(
-            {
-                "user_id": str(user_id),
-                "feature_id": feature_id,
-                "details": details,
-            }
-        ).execute()
+        await (
+            client.from_("divinations")
+            .insert(
+                {
+                    "user_id": str(user_id),
+                    "feature_id": feature_id,
+                    "details": details,
+                }
+            )
+            .execute()
+        )
 
         logger.info("Usage logged successfully")
 

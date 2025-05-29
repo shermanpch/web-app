@@ -71,16 +71,16 @@ class TestUser(BaseTest):
         readings_response = client.get("/api/user/readings")
 
         # ASSERT
-        assert (
-            readings_response.status_code == 401
-        ), "Request should fail with authentication error when no auth is provided"
+        assert readings_response.status_code == 401, (
+            "Request should fail with authentication error when no auth is provided"
+        )
 
         # Verify error details in response
         error_data: dict[str, Any] = readings_response.json()
         assert "detail" in error_data, "Response should contain error details"
-        assert (
-            "Authentication" in error_data["detail"]
-        ), "Error should mention authentication"
+        assert "Authentication" in error_data["detail"], (
+            "Error should mention authentication"
+        )
 
         self.logger.info("Non-authenticated get readings test passed successfully!")
 
@@ -96,9 +96,9 @@ class TestUser(BaseTest):
         readings_response = client.get("/api/user/readings")
 
         # ASSERT
-        assert (
-            readings_response.status_code == 200
-        ), f"User readings retrieval failed: {readings_response.text}"
+        assert readings_response.status_code == 200, (
+            f"User readings retrieval failed: {readings_response.text}"
+        )
 
         # Readings are now paginated in a dictionary, not a direct list
         paginated_response: dict[str, Any] = readings_response.json()
@@ -149,16 +149,16 @@ class TestUser(BaseTest):
         reading_response = client.get(f"/api/user/readings/{reading_id}")
 
         # ASSERT
-        assert (
-            reading_response.status_code == 401
-        ), "Request should fail with authentication error when no auth is provided"
+        assert reading_response.status_code == 401, (
+            "Request should fail with authentication error when no auth is provided"
+        )
 
         # Verify error details in response
         error_data: dict[str, Any] = reading_response.json()
         assert "detail" in error_data, "Response should contain error details"
-        assert (
-            "Authentication" in error_data["detail"]
-        ), "Error should mention authentication"
+        assert "Authentication" in error_data["detail"], (
+            "Error should mention authentication"
+        )
 
         self.logger.info(
             "Non-authenticated get single reading test passed successfully!"
@@ -182,9 +182,9 @@ class TestUser(BaseTest):
         reading_response = client.get(f"/api/user/readings/{reading_id}")
 
         # ASSERT
-        assert (
-            reading_response.status_code == 200
-        ), f"Get single reading failed: {reading_response.text}"
+        assert reading_response.status_code == 200, (
+            f"Get single reading failed: {reading_response.text}"
+        )
 
         # Verify the retrieved reading
         reading_data: dict[str, Any] = reading_response.json()
@@ -207,12 +207,12 @@ class TestUser(BaseTest):
         )
 
         # Verify the reading data matches what we created
-        assert (
-            reading_data["id"] == reading_id
-        ), f"Expected reading ID {reading_id}, got {reading_data['id']}"
-        assert (
-            str(reading_data["user_id"]) == user_id
-        ), f"Expected user ID {user_id}, got {reading_data['user_id']}"
+        assert reading_data["id"] == reading_id, (
+            f"Expected reading ID {reading_id}, got {reading_data['id']}"
+        )
+        assert str(reading_data["user_id"]) == user_id, (
+            f"Expected user ID {user_id}, got {reading_data['user_id']}"
+        )
 
         self.logger.info("Get single reading test passed successfully!")
 
@@ -229,9 +229,9 @@ class TestUser(BaseTest):
         reading_response = client.get(f"/api/user/readings/{nonexistent_id}")
 
         # ASSERT
-        assert (
-            reading_response.status_code == 500
-        ), f"Expected 500 for nonexistent reading, got {reading_response.status_code}"
+        assert reading_response.status_code == 500, (
+            f"Expected 500 for nonexistent reading, got {reading_response.status_code}"
+        )
 
         error_data: dict[str, Any] = reading_response.json()
         assert "detail" in error_data, "Response should contain error details"
@@ -250,9 +250,9 @@ class TestUser(BaseTest):
         delete_response = client.delete(f"/api/user/readings/{nonexistent_id}")
 
         # ASSERT
-        assert (
-            delete_response.status_code == 404
-        ), f"Expected 404 for nonexistent reading, got {delete_response.status_code}"
+        assert delete_response.status_code == 404, (
+            f"Expected 404 for nonexistent reading, got {delete_response.status_code}"
+        )
 
         error_data: dict[str, Any] = delete_response.json()
         assert "detail" in error_data, "Response should contain error details"
@@ -270,16 +270,16 @@ class TestUser(BaseTest):
         delete_response = client.delete(f"/api/user/readings/{reading_id}")
 
         # ASSERT
-        assert (
-            delete_response.status_code == 401
-        ), "Request should fail with authentication error when no auth is provided"
+        assert delete_response.status_code == 401, (
+            "Request should fail with authentication error when no auth is provided"
+        )
 
         # Verify error details in response
         error_data: dict[str, Any] = delete_response.json()
         assert "detail" in error_data, "Response should contain error details"
-        assert (
-            "Authentication" in error_data["detail"]
-        ), "Error should mention authentication"
+        assert "Authentication" in error_data["detail"], (
+            "Error should mention authentication"
+        )
 
         self.logger.info(
             "Non-authenticated delete single reading test passed successfully!"
@@ -297,16 +297,16 @@ class TestUser(BaseTest):
         delete_response = client.delete("/api/user/readings")
 
         # ASSERT
-        assert (
-            delete_response.status_code == 401
-        ), "Request should fail with authentication error when no auth is provided"
+        assert delete_response.status_code == 401, (
+            "Request should fail with authentication error when no auth is provided"
+        )
 
         # Verify error details in response
         error_data: dict[str, Any] = delete_response.json()
         assert "detail" in error_data, "Response should contain error details"
-        assert (
-            "Authentication" in error_data["detail"]
-        ), "Error should mention authentication"
+        assert "Authentication" in error_data["detail"], (
+            "Error should mention authentication"
+        )
 
         self.logger.info(
             "Non-authenticated delete all readings test passed successfully!"
@@ -330,9 +330,9 @@ class TestUser(BaseTest):
         delete_response = client.delete(f"/api/user/readings/{reading_id}")
 
         # ASSERT
-        assert (
-            delete_response.status_code == 200
-        ), f"Delete reading failed: {delete_response.text}"
+        assert delete_response.status_code == 200, (
+            f"Delete reading failed: {delete_response.text}"
+        )
 
         # Verify response structure
         delete_data: dict[str, Any] = delete_response.json()
@@ -346,12 +346,12 @@ class TestUser(BaseTest):
 
         # Verify the deleted data matches what we sent
         assert delete_data["success"] is True, "Expected success to be True"
-        assert (
-            str(uuid.UUID(delete_data["reading_id"])) == reading_id
-        ), f"Expected reading_id {reading_id}, got {delete_data['reading_id']}"
-        assert (
-            str(uuid.UUID(delete_data["user_id"])) == user_id
-        ), f"Expected user_id {user_id}, got {delete_data['user_id']}"
+        assert str(uuid.UUID(delete_data["reading_id"])) == reading_id, (
+            f"Expected reading_id {reading_id}, got {delete_data['reading_id']}"
+        )
+        assert str(uuid.UUID(delete_data["user_id"])) == user_id, (
+            f"Expected user_id {user_id}, got {delete_data['user_id']}"
+        )
 
         # Step 3: Verify the reading is actually deleted by trying to fetch all readings
         readings_response = client.get("/api/user/readings")
@@ -360,9 +360,9 @@ class TestUser(BaseTest):
         # Check if the deleted reading is missing from the list
         paginated_response = readings_response.json()
         for reading in paginated_response["items"]:
-            assert (
-                reading["id"] != reading_id
-            ), f"Reading {reading_id} should have been deleted"
+            assert reading["id"] != reading_id, (
+                f"Reading {reading_id} should have been deleted"
+            )
 
         self.logger.info("Delete single reading test passed successfully!")
 
@@ -386,18 +386,18 @@ class TestUser(BaseTest):
         readings_response = client.get("/api/user/readings")
         assert readings_response.status_code == 200, "Failed to get readings"
         paginated_response: dict[str, Any] = readings_response.json()
-        assert (
-            paginated_response["total_items"] >= num_readings
-        ), "Not all test readings were created"
+        assert paginated_response["total_items"] >= num_readings, (
+            "Not all test readings were created"
+        )
 
         # Step 3: Delete all readings
         self.logger.info("Deleting all readings")
         delete_response = client.delete("/api/user/readings")
 
         # ASSERT
-        assert (
-            delete_response.status_code == 200
-        ), f"Delete all readings failed: {delete_response.text}"
+        assert delete_response.status_code == 200, (
+            f"Delete all readings failed: {delete_response.text}"
+        )
 
         # Verify response structure
         delete_data: dict[str, Any] = delete_response.json()
@@ -406,9 +406,9 @@ class TestUser(BaseTest):
 
         # Step 4: Verify all readings were deleted
         final_response = client.get("/api/user/readings")
-        assert (
-            final_response.status_code == 200
-        ), "Failed to get readings after deletion"
+        assert final_response.status_code == 200, (
+            "Failed to get readings after deletion"
+        )
         final_paginated_data: dict[str, Any] = final_response.json()
         assert final_paginated_data["total_items"] == 0, "Not all readings were deleted"
 
