@@ -3,7 +3,6 @@
 import os
 from urllib.parse import urlparse
 
-from pydantic import ConfigDict
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -36,9 +35,16 @@ class Settings(BaseSettings):
         if hostname == "localhost":
             return None  # Browser will automatically set cookie domain to localhost
 
+        # Extract the base domain (remove www. if present)
+        parts = hostname.split(".")
+        if len(parts) >= 3 and parts[0] == "www":
+            base_domain = ".".join(parts[1:])
+        else:
+            base_domain = hostname
+
         # For production with subdomains (e.g., deltao.ai and api.deltao.ai)
         # Add a dot prefix to allow sharing between subdomains
-        return f".{hostname}" if "." in hostname else hostname
+        return f".{base_domain}" if "." in base_domain else base_domain
 
     # Supabase
     SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
