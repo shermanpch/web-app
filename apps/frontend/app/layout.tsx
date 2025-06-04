@@ -8,9 +8,6 @@ import QueryProvider from "@/components/providers/QueryProvider";
 import { serverAuthApi } from "@/lib/api/endpoints/auth.server";
 import "./globals.css";
 
-// Force dynamic rendering since we use cookies
-export const dynamic = "force-dynamic";
-
 export const metadata: Metadata = {
   title: "deltao.ai",
   description: "deltao.ai: Your Personal Deltao AI Divination Assistant",

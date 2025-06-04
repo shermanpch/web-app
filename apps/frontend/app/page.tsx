@@ -9,12 +9,17 @@ export default function HomePage() {
       <ContentContainer>
         <div className="flex flex-col items-center mb-8">
           <Image
-            src="/assets/deltao-ai.png"
+            src="/assets/deltao-ai.webp"
             alt="Deltao AI Logo"
             width={150}
             height={150}
             priority
             className="mb-8"
+            onError={(e) => {
+              // Fallback to PNG if WebP fails
+              const target = e.target as HTMLImageElement;
+              target.src = "/assets/deltao-ai.png";
+            }}
           />
           <Heading>Welcome to deltao.ai</Heading>
         </div>

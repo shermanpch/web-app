@@ -13,15 +13,19 @@ export default function PageLayout({ children }: PageLayoutProps) {
       {/* Background image */}
       <div className="fixed inset-0 z-0 w-full h-full">
         <Image
-          src="/assets/background.png?v=2"
+          src="/assets/background.webp"
           alt="Background"
           fill
-          priority
-          quality={100}
+          quality={80}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
           style={{
             objectFit: "cover",
             objectPosition: "center",
+          }}
+          onError={(e) => {
+            // Fallback to PNG if WebP fails
+            const target = e.target as HTMLImageElement;
+            target.src = "/assets/background.png?v=2";
           }}
         />
       </div>
