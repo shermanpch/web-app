@@ -1,15 +1,16 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { divinationApi } from "@/lib/api/endpoints/divination";
 import { authApi } from "@/lib/api/endpoints/auth";
 import { motion, AnimatePresence, useMotionValue, animate } from "framer-motion";
+import { Loader2 } from "lucide-react";
 import Heading from "@/components/ui/heading";
 import { calculateCoordsFromNumbers, getInitialHexagramLines } from "@/lib/divinationUtils";
 
-export default function ConsultingPage() {
+function ConsultingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
@@ -190,6 +191,28 @@ export default function ConsultingPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ConsultingPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen bg-[#0A0D0A] absolute inset-0">
+        <div className="flex flex-col items-center justify-center text-center w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10">
+          <Heading className="mb-8 sm:mb-10 md:mb-12 text-white">
+            Loading Oracle...
+          </Heading>
+          <div className="w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 mb-12 relative flex items-center justify-center">
+            <Loader2 className="h-16 w-16 animate-spin text-[#EDE6D6]" />
+          </div>
+          <p className="text-lg sm:text-xl text-gray-300 font-serif mt-4">
+            Preparing your consultation...
+          </p>
+        </div>
+      </div>
+    }>
+      <ConsultingContent />
+    </Suspense>
   );
 }
 

@@ -1,15 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import PageLayout from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
 import ContentContainer from "@/components/layout/ContentContainer";
 import Heading from "@/components/ui/heading";
 
-export default function EnterNumbersPage() {
+function EnterNumbersContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -83,116 +84,131 @@ export default function EnterNumbersPage() {
   };
 
   return (
-    <PageLayout>
-      <ContentContainer>
-        <Heading>Focus Your Mind</Heading>
+    <ContentContainer>
+      <Heading>Focus Your Mind</Heading>
 
-        {/* Instructions */}
-        <p className="text-xl text-gray-200 font-serif leading-relaxed text-left mb-6">
-          Take a moment, breathe deeply, and focus on your question.
-        </p>
-        <p className="text-xl text-gray-200 font-serif leading-relaxed text-left mb-12">
-          Then, think of three random 3-digit numbers and enter them below.
-        </p>
+      {/* Instructions */}
+      <p className="text-xl text-gray-200 font-serif leading-relaxed text-left mb-6">
+        Take a moment, breathe deeply, and focus on your question.
+      </p>
+      <p className="text-xl text-gray-200 font-serif leading-relaxed text-left mb-12">
+        Then, think of three random 3-digit numbers and enter them below.
+      </p>
 
-        {/* Number Inputs */}
-        <div className="w-full max-w-xs mx-auto space-y-8">
-          <div>
-            <Label
-              htmlFor="firstNumber"
-              className="text-gray-300 font-serif mb-2 block"
-            >
-              First Number
-            </Label>
-            <Input
-              id="firstNumber"
-              type="number"
-              min="0"
-              max="999"
-              placeholder="Enter first number (0-999)"
-              value={firstNumber}
-              onChange={(e) =>
-                handleNumberChange(
-                  e.target.value,
-                  setFirstNumber,
-                  setFirstNumberError,
-                )
-              }
-              className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-900 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
-            />
-            {firstNumberError && (
-              <p className="text-red-500 text-sm mt-2">{firstNumberError}</p>
-            )}
-          </div>
-
-          <div>
-            <Label
-              htmlFor="secondNumber"
-              className="text-gray-300 font-serif mb-2 block"
-            >
-              Second Number
-            </Label>
-            <Input
-              id="secondNumber"
-              type="number"
-              min="0"
-              max="999"
-              placeholder="Enter second number (0-999)"
-              value={secondNumber}
-              onChange={(e) =>
-                handleNumberChange(
-                  e.target.value,
-                  setSecondNumber,
-                  setSecondNumberError,
-                )
-              }
-              className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-900 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
-            />
-            {secondNumberError && (
-              <p className="text-red-500 text-sm mt-2">{secondNumberError}</p>
-            )}
-          </div>
-
-          <div>
-            <Label
-              htmlFor="thirdNumber"
-              className="text-gray-300 font-serif mb-2 block"
-            >
-              Third Number
-            </Label>
-            <Input
-              id="thirdNumber"
-              type="number"
-              min="0"
-              max="999"
-              placeholder="Enter third number (0-999)"
-              value={thirdNumber}
-              onChange={(e) =>
-                handleNumberChange(
-                  e.target.value,
-                  setThirdNumber,
-                  setThirdNumberError,
-                )
-              }
-              className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-900 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
-            />
-            {thirdNumberError && (
-              <p className="text-red-500 text-sm mt-2">{thirdNumberError}</p>
-            )}
-          </div>
-        </div>
-
-        {/* Next Button */}
-        <div className="text-center">
-          <Button
-            onClick={handleNumberSubmit}
-            disabled={!isFormValid}
-            className="bg-brand-button-bg hover:bg-brand-button-hover text-white px-16 py-3 rounded-full text-lg font-semibold mt-12 w-[200px]"
+      {/* Number Inputs */}
+      <div className="w-full max-w-xs mx-auto space-y-8">
+        <div>
+          <Label
+            htmlFor="firstNumber"
+            className="text-gray-300 font-serif mb-2 block"
           >
-            Next
-          </Button>
+            First Number
+          </Label>
+          <Input
+            id="firstNumber"
+            type="number"
+            min="0"
+            max="999"
+            placeholder="Enter first number (0-999)"
+            value={firstNumber}
+            onChange={(e) =>
+              handleNumberChange(
+                e.target.value,
+                setFirstNumber,
+                setFirstNumberError,
+              )
+            }
+            className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-900 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
+          />
+          {firstNumberError && (
+            <p className="text-red-500 text-sm mt-2">{firstNumberError}</p>
+          )}
         </div>
-      </ContentContainer>
+
+        <div>
+          <Label
+            htmlFor="secondNumber"
+            className="text-gray-300 font-serif mb-2 block"
+          >
+            Second Number
+          </Label>
+          <Input
+            id="secondNumber"
+            type="number"
+            min="0"
+            max="999"
+            placeholder="Enter second number (0-999)"
+            value={secondNumber}
+            onChange={(e) =>
+              handleNumberChange(
+                e.target.value,
+                setSecondNumber,
+                setSecondNumberError,
+              )
+            }
+            className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-900 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
+          />
+          {secondNumberError && (
+            <p className="text-red-500 text-sm mt-2">{secondNumberError}</p>
+          )}
+        </div>
+
+        <div>
+          <Label
+            htmlFor="thirdNumber"
+            className="text-gray-300 font-serif mb-2 block"
+          >
+            Third Number
+          </Label>
+          <Input
+            id="thirdNumber"
+            type="number"
+            min="0"
+            max="999"
+            placeholder="Enter third number (0-999)"
+            value={thirdNumber}
+            onChange={(e) =>
+              handleNumberChange(
+                e.target.value,
+                setThirdNumber,
+                setThirdNumberError,
+              )
+            }
+            className="bg-brand-input-bg placeholder:text-brand-input-text text-gray-900 rounded-full px-6 py-3 border-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-button-bg focus:outline-none w-full"
+          />
+          {thirdNumberError && (
+            <p className="text-red-500 text-sm mt-2">{thirdNumberError}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Next Button */}
+      <div className="text-center">
+        <Button
+          onClick={handleNumberSubmit}
+          disabled={!isFormValid}
+          className="bg-brand-button-bg hover:bg-brand-button-hover text-white px-16 py-3 rounded-full text-lg font-semibold mt-12 w-[200px]"
+        >
+          Next
+        </Button>
+      </div>
+    </ContentContainer>
+  );
+}
+
+export default function EnterNumbersPage() {
+  return (
+    <PageLayout>
+      <Suspense fallback={
+        <ContentContainer>
+          <div className="flex items-center justify-center min-h-[50vh]">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-200" />
+            <p className="text-gray-200 ml-3">Loading...</p>
+          </div>
+        </ContentContainer>
+      }>
+        <EnterNumbersContent />
+      </Suspense>
     </PageLayout>
   );
 }

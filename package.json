@@ -8,12 +8,10 @@
   "scripts": {
     "dev": "concurrently \"npm run frontend:dev\" \"npm run backend:dev\"",
     "dev:https": "concurrently \"NODE_TLS_REJECT_UNAUTHORIZED=0 npm run frontend:dev:https\" \"npm run backend:dev:https\"",
-    "dev:netlify": "concurrently \"npm run netlify\" \"npm run backend:dev:https\"",
     "frontend:dev": "npm run --prefix apps/frontend dev",
     "frontend:dev:https": "npm run --prefix apps/frontend dev:https",
     "backend:dev": "npm run --prefix apps/backend dev",
     "backend:dev:https": "npm run --prefix apps/backend dev:https",
-    "netlify": "NODE_EXTRA_CA_CERTS='/Users/sherman/Library/Application Support/mkcert/rootCA.pem' netlify dev --filter frontend",
     "format": "prettier --write \"**/*.{ts,tsx,md,js,jsx,json}\"",
     "test:backend": "npm run --prefix apps/backend test:all",
     "lint": "npm run --prefix apps/frontend lint",
@@ -25,7 +23,6 @@
   "devDependencies": {
     "concurrently": "^8.2.2",
     "husky": "^8.0.0",
-    "netlify-cli": "^21.5.0",
     "prettier": "^3.5.3"
   },
   "engines": {

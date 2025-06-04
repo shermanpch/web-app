@@ -84,9 +84,6 @@ apps/backend/supabase/migrations/scripts/preprocessing/data/
 # Cursor tool config
 .cursorrules
 
-# Local Netlify dev folder
-.netlify/
-
 # Generated Documentation / Temp Files
 todo.md
 database.md

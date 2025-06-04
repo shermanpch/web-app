@@ -5,7 +5,6 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import NavigationBar from "@/components/layout/NavigationBar";
 import QueryProvider from "@/components/providers/QueryProvider";
-import { serverAuthApi } from "@/lib/api/endpoints/auth.server";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -34,14 +33,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Fetch user data server-side
-  const user = await serverAuthApi.getCurrentUser();
-
   return (
     <html lang="en">
       <head>
@@ -51,7 +47,7 @@ export default async function RootLayout({
         <QueryProvider>
           <div className="min-h-screen flex flex-col">
             <div className="relative z-20">
-              <NavigationBar user={user} />
+              <NavigationBar user={null} />
             </div>
             <main className="flex-grow flex flex-col">{children}</main>
             <Toaster richColors position="top-center" duration={2000} />

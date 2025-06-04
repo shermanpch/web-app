@@ -15,11 +15,6 @@ export default function HomePage() {
             height={150}
             priority
             className="mb-8"
-            onError={(e) => {
-              // Fallback to PNG if WebP fails
-              const target = e.target as HTMLImageElement;
-              target.src = "/assets/deltao-ai.png";
-            }}
           />
           <Heading>Welcome to deltao.ai</Heading>
         </div>
