@@ -4,7 +4,7 @@ import os
 from urllib.parse import urlparse
 
 from pydantic import ConfigDict
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -17,16 +17,10 @@ class Settings(BaseSettings):
     # CORS
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
-    # Define the port netlify dev runs on (from your netlify.toml [dev] block)
-    NETLIFY_DEV_PORT: int = int(os.getenv("NETLIFY_DEV_PORT", "8888"))
-
     @property
     def cors_origins(self) -> list[str]:
         """Get the CORS origins based on environment."""
-        origins = [
-            self.FRONTEND_URL,
-            f"https://localhost:{self.NETLIFY_DEV_PORT}",
-        ]
+        origins = [self.FRONTEND_URL]
         print(f"CORS Origins Allowed: {origins}")
         return origins
 
@@ -60,7 +54,7 @@ class Settings(BaseSettings):
     TEST_EMAIL: str = os.getenv("TEST_EMAIL", "test@example.com")
 
     # Settings
-    model_config = ConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 
 settings = Settings()
