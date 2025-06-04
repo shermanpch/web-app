@@ -1,6 +1,7 @@
 import React from "react";
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
+import { Analytics } from "@vercel/analytics/react";
 import NavigationBar from "@/components/layout/NavigationBar";
 import QueryProvider from "@/components/providers/QueryProvider";
 import { serverAuthApi } from "@/lib/api/endpoints/auth.server";
@@ -58,6 +59,7 @@ export default async function RootLayout({
             <Toaster richColors position="top-center" duration={2000} />
           </div>
         </QueryProvider>
+        <Analytics />
       </body>
     </html>
   );
