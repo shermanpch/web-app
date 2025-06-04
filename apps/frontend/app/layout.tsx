@@ -2,6 +2,7 @@ import React from "react";
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import NavigationBar from "@/components/layout/NavigationBar";
 import QueryProvider from "@/components/providers/QueryProvider";
 import { serverAuthApi } from "@/lib/api/endpoints/auth.server";
@@ -60,6 +61,7 @@ export default async function RootLayout({
           </div>
         </QueryProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
