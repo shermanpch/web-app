@@ -42,6 +42,7 @@ COPY --from=builder --chown=app:app /app/apps/frontend/.next ./apps/frontend/.ne
 COPY --from=builder --chown=app:app /app/apps/frontend/public ./apps/frontend/public
 COPY --from=builder --chown=app:app /app/apps/frontend/postcss.config.js ./apps/frontend/
 COPY --from=builder --chown=app:app /app/apps/frontend/tailwind.config.ts ./apps/frontend/
+COPY --from=builder --chown=app:app /app/apps/frontend/next.config.js ./apps/frontend/
 
 # Install only production dependencies
 WORKDIR /app
@@ -50,7 +51,9 @@ RUN npm ci --only=production
 # Set working directory to frontend app
 WORKDIR /app/apps/frontend
 
-# Use non-root user
+# Install curl for healthcheck
+USER root
+RUN apk add --no-cache curl
 USER app
 
 # Expose port
@@ -58,7 +61,7 @@ EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+    CMD curl --fail --silent --output /dev/null http://localhost:3000/ || exit 1
 
 # Start the application in production mode
 CMD ["npm", "run", "start"] 

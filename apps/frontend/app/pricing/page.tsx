@@ -35,7 +35,7 @@ const pricingTiers: PricingTier[] = [
   },
   {
     name: "Deep Dive",
-    price: "$19.99/month",
+    price: "Beta Preview Access",
     description: "Unlock unlimited profound, personalized interpretations with our AI-enhanced Deep Dive readings.",
     features: [
       "Unlimited Basic I Ching Readings",
@@ -87,16 +87,9 @@ export default function PricingPage() {
                   {tier.name}
                 </h2>
                 <div className="mb-3">
-                  {tier.name === "Deep Dive" ? (
-                    <div className="flex items-baseline justify-center">
-                      <span className="text-3xl font-bold text-gray-800">$19.99</span>
-                      <span className="text-lg text-gray-600 ml-1">/month</span>
-                    </div>
-                  ) : (
-                    <div className="text-3xl font-bold text-gray-800">
-                      {tier.price}
-                    </div>
-                  )}
+                  <div className="text-3xl font-bold text-gray-800">
+                    {tier.price}
+                  </div>
                 </div>
                 <p className="text-gray-600">{tier.description}</p>
               </div>
